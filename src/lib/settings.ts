@@ -17,6 +17,7 @@ export const SETTINGS: readonly Setting[] = [
   { name: "LASTFM_API_KEY", kind: "secret", about: "Last.fm API key: https://www.last.fm/api/account/create" },
   { name: "LASTFM_USER", kind: "variable", about: "the Last.fm user whose plays are shown", fallback: "snowpony69" },
   { name: "TRAKT_CLIENT_ID", kind: "secret", about: "Trakt app Client ID: https://trakt.tv/oauth/applications (the profile must be public)" },
+  { name: "TMDB_API_KEY", kind: "secret", about: "TMDB API key or read access token, for the posters: https://www.themoviedb.org/settings/api" },
   { name: "TRAKT_USER", kind: "variable", about: "the Trakt user whose history is shown", fallback: "lmfaole" },
 ]
 

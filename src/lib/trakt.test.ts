@@ -3,19 +3,19 @@ import { test } from "node:test"
 
 import { episodeCode, mergeHistory, parseHistory } from "./trakt.ts"
 
-const movie = { id: 1, watched_at: "2026-11-18T20:00:00.000Z", type: "movie", movie: { title: "Heat", year: 1995, ids: { slug: "heat-1995" } } }
+const movie = { id: 1, watched_at: "2026-11-18T20:00:00.000Z", type: "movie", movie: { title: "Heat", year: 1995, ids: { slug: "heat-1995", tmdb: 949 } } }
 const episode = {
   id: 2,
   watched_at: "2026-11-19T19:00:00.000Z",
   type: "episode",
   episode: { season: 2, number: 5, title: "Rubicon" },
-  show: { title: "Andor", year: 2022, ids: { slug: "andor" } },
+  show: { title: "Andor", year: 2022, ids: { slug: "andor", tmdb: 83867 } },
 }
 
 test("a film and an episode are read with their links to Trakt, and anything else is left out", () => {
   assert.deepEqual(parseHistory([movie, episode, { id: 3, type: "movie" }, "junk"]), [
-    { id: 1, watchedAt: "2026-11-18T20:00:00.000Z", kind: "film", title: "Heat", year: 1995, episode: null, url: "https://trakt.tv/movies/heat-1995" },
-    { id: 2, watchedAt: "2026-11-19T19:00:00.000Z", kind: "episode", title: "Andor", year: 2022, episode: { title: "Rubicon", season: 2, number: 5 }, url: "https://trakt.tv/shows/andor/seasons/2/episodes/5" },
+    { id: 1, watchedAt: "2026-11-18T20:00:00.000Z", kind: "film", title: "Heat", year: 1995, episode: null, url: "https://trakt.tv/movies/heat-1995", tmdbId: 949, poster: null },
+    { id: 2, watchedAt: "2026-11-19T19:00:00.000Z", kind: "episode", title: "Andor", year: 2022, episode: { title: "Rubicon", season: 2, number: 5 }, url: "https://trakt.tv/shows/andor/seasons/2/episodes/5", tmdbId: 83867, poster: null },
   ])
   assert.deepEqual(parseHistory({ error: "x" }), [])
 })

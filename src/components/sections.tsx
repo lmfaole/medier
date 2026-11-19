@@ -37,27 +37,19 @@ export function TopArtistRows({ artists }: { artists: readonly TopArtist[] }) {
   )
 }
 
-/** Films and episodes, newest first, each with a link to it on Trakt. */
+/** Films and episodes, newest first, each with its poster and a link to it on Trakt. */
 export function WatchRows({ items, limit }: { items: readonly Watch[]; limit?: number }) {
   const shown = limit === undefined ? items : items.slice(0, limit)
   if (shown.length === 0) return <EmptyState icon="film" title="Ingenting sett ennå" description="Det kommer når Trakt er hentet første gang." />
   return (
-    <Rows
-      lead="icon"
-      columns={{ name: "Tittel", value: "Sett" }}
+    <PictureRows
+      ratio="poster"
       rows={shown.map((watch) => ({
         key: String(watch.id),
-        icon: watch.kind === "film" ? "film" : "tv",
-        iconLabel: watch.kind === "film" ? "Film" : "Episode",
-        body: (
-          <span>
-            <TextLink href={watch.url} external>{watch.title}</TextLink>
-            <Text as="span" size="sm" tone="muted">
-              {watch.episode === null ? (watch.year === null ? "" : ` · ${watch.year}`) : ` · ${episodeCode(watch.episode)}${watch.episode.title === "" ? "" : ` «${watch.episode.title}»`}`}
-            </Text>
-          </span>
-        ),
-        trailing: <Text as="span" size="sm" tone="muted">{when(watch.watchedAt)}</Text>,
+        picture: watch.poster,
+        title: <TextLink href={watch.url} external>{watch.title}</TextLink>,
+        detail: details([watch.kind === "film" ? "Film" : "Episode", watch.year, watch.episode === null ? null : `${episodeCode(watch.episode)}${watch.episode.title === "" ? "" : ` «${watch.episode.title}»`}`]),
+        aside: when(watch.watchedAt),
       }))}
     />
   )

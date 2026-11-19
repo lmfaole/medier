@@ -1,6 +1,6 @@
 name: Site
 
-# Fetches what was played and watched (Last.fm, Trakt) every three hours, commits data/ when it changed, builds the static site and publishes it
+# Fetches what was played and watched (Last.fm, Trakt, with posters from TMDB) every three hours, commits data/ when it changed, builds the static site and publishes it
 # on GitHub Pages. A push to main builds and publishes too, with the data as it is. The keys are repository secrets; the user names are variables.
 on:
   push:
@@ -42,6 +42,7 @@ jobs:
           LASTFM_USER: ${{ vars.LASTFM_USER }}
           TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
           TRAKT_USER: ${{ vars.TRAKT_USER }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
         run: npm run settings:check && npm run fetch
 
       # A commit made with the workflow's own token starts no new run, so this run goes on to build with it.
