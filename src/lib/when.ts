@@ -4,3 +4,10 @@ import { describeTime } from "@lmfaole/designsystem/lib/time"
 export function when(iso: string): string {
   return describeTime(iso, new Date(iso), "datetime")?.text ?? ""
 }
+
+const SHORT = new Intl.DateTimeFormat("nb-NO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Europe/Oslo" })
+
+/** «9. nov., 12:39», for the end of a row, where the year only takes room: the lists hold the last weeks. */
+export function shortWhen(iso: string): string {
+  return SHORT.format(new Date(iso))
+}

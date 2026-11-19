@@ -64,3 +64,45 @@ export function mergeHistory(...pages: readonly Watch[][]): Watch[] {
 
 /** «S2 E5» */
 export const episodeCode = (episode: { season: number; number: number }): string => `S${episode.season} E${episode.number}`
+
+/** One row of the list: a film, or the episodes of one show watched in a row on one day (a binge is one row, not nine). */
+export interface Viewing {
+  key: string
+  kind: "film" | "episode"
+  title: string
+  year: number | null
+  url: string
+  poster: string | null
+  /** The latest of the row. */
+  watchedAt: string
+  /** The episodes, oldest first; empty for a film. */
+  episodes: { title: string; season: number; number: number }[]
+}
+
+const osloDay = (iso: string): string => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" })
+
+/** The history (newest first) as rows: episodes of the same show that follow each other on the same day in Oslo are one row. */
+export function groupViewings(items: readonly Watch[]): Viewing[] {
+  const rows: Viewing[] = []
+  for (const watch of items) {
+    const last = rows.at(-1)
+    if (watch.episode !== null && last !== undefined && last.kind === "episode" && last.title === watch.title && osloDay(last.watchedAt) === osloDay(watch.watchedAt)) {
+      last.episodes.unshift(watch.episode)
+      last.poster ??= watch.poster
+      continue
+    }
+    rows.push({ key: String(watch.id), kind: watch.kind, title: watch.title, year: watch.year, url: watch.url, poster: watch.poster, watchedAt: watch.watchedAt, episodes: watch.episode === null ? [] : [watch.episode] })
+  }
+  return rows
+}
+
+/** «S3 E9», «S3 E5–E10» for a run in one season, «S2 E9–S3 E2» across seasons, «S3: 4 episoder» for a season with gaps. */
+export function episodesCode(episodes: readonly { season: number; number: number }[]): string {
+  const first = episodes[0]
+  const last = episodes.at(-1)
+  if (first === undefined || last === undefined) return ""
+  if (episodes.length === 1) return episodeCode(first)
+  if (first.season !== last.season) return `${episodeCode(first)}–${episodeCode(last)}`
+  const inOrder = episodes.every((episode, index) => episode.season === first.season && episode.number === first.number + index)
+  return inOrder ? `S${first.season} E${first.number}–E${last.number}` : `S${first.season}: ${episodes.length} episoder`
+}
