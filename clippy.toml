@@ -1,7 +1,0 @@
-# `unwrap`/`expect` are denied in Cargo.toml's workspace lints; a test failing
-# on one is the test doing its job, so tests are exempt.
-allow-unwrap-in-tests = true
-allow-expect-in-tests = true
-
-# Product names, not identifiers; `..` keeps clippy's own list.
-doc-valid-idents = ["ListenBrainz", "MusicBrainz", "SQLite", ".."]

@@ -1,6 +1,0 @@
-# Searches skip the big generated and machine-written files (70 MB of data-dump,
-# lockfiles): one hit in them costs more tokens than the whole task.
-data-dump/
-package-lock.json
-Cargo.lock
-packages/content/src/generated/

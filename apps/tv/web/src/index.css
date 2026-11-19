@@ -1,3 +1,0 @@
-@import "@designsystem/ui/theme.css";
-/* The watch-log pages live in packages/watch, which Tailwind does not scan on its own. */
-@source "../../../../packages/watch/src";

@@ -1,4 +1,0 @@
-@import "@designsystem/ui/theme.css";
-/* The shelf pages live in packages/shelf, and their covers and links in packages/watch; Tailwind does not scan either on its own. */
-@source "../../../../packages/shelf/src";
-@source "../../../../packages/watch/src";

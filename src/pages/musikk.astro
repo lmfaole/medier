@@ -1,0 +1,21 @@
+---
+import { PageSection } from '@lmfaole/designsystem/components/page-section'
+
+import music from '../../data/music.json'
+import { Fetched, PlayRows, TopArtistRows } from '../components/sections'
+import Page from '../layouts/Page.astro'
+import type { Music } from '../lib/lastfm'
+
+const base = import.meta.env.BASE_URL
+const listening: Music = music
+---
+
+<Page title="Musikk" lead="De siste avspillingene og de mest spilte artistene siste måned, fra Last.fm." crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }]}>
+  <PageSection id="siste" title="Siste avspillinger">
+    <PlayRows music={listening} />
+  </PageSection>
+  <PageSection id="artister" title="Mest spilt siste måned">
+    <TopArtistRows artists={listening.topArtists} />
+  </PageSection>
+  <Fetched sources={[{ at: listening.at, source: 'Last.fm' }]} />
+</Page>

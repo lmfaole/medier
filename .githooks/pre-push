@@ -1,7 +1,0 @@
-#!/bin/sh
-# The checks CI runs before it deploys, run here first: a red push to main
-# costs a whole CI run and another push to fix it. They do not depend on each
-# other, so they run at the same time. `git push --no-verify` skips this.
-# Turned on by `npm install` (the root `prepare` script).
-set -e
-node scripts/run-parallel.ts "npm run -s lint" "npm run -s typecheck" "npm test --silent"

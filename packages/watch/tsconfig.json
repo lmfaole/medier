@@ -1,4 +1,0 @@
-{
-  "extends": "@designsystem/config/tsconfig/app.json",
-  "include": ["src", "../config/cloudflare-workers.d.ts"]
-}

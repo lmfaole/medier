@@ -1,8 +1,0 @@
-#!/bin/sh
-# AGENTS.md rule 7: a commit that changes an app is followed by that app's deploy. Runs in the
-# background so the commit returns at once; the log is in .data/tmp/ship/last.log.
-# `SKIP_SHIP=1 git commit` skips it. Only on main, where the deployed code lives.
-[ "$SKIP_SHIP" = 1 ] && exit 0
-[ "$(git symbolic-ref --short HEAD 2>/dev/null)" = main ] || exit 0
-mkdir -p .data/tmp/ship
-nohup npm run -s ship > .data/tmp/ship/last.log 2>&1 &

@@ -1,4 +1,0 @@
-@import "@designsystem/ui/theme.css";
-/* The review's response schema is the shelf apps' and where a page stands is the watch apps'; Tailwind does not scan either package on its own. */
-@source "../../../../packages/shelf/src";
-@source "../../../../packages/watch/src";

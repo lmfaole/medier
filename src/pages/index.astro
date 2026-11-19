@@ -1,0 +1,27 @@
+---
+import { PageSection } from '@lmfaole/designsystem/components/page-section'
+
+import music from '../../data/music.json'
+import watched from '../../data/watched.json'
+import { Fetched, PlayRows, TopArtistRows, WatchRows } from '../components/sections'
+import Page from '../layouts/Page.astro'
+import type { Music } from '../lib/lastfm'
+import type { Watched } from '../lib/trakt'
+
+const base = import.meta.env.BASE_URL
+const listening: Music = music
+const seen: Watched = watched
+---
+
+<Page title="Medier" lead="Hva jeg hører på og ser, hentet fra Last.fm og Trakt.">
+  <PageSection id="musikk" title="Musikk" icon="music" more={{ href: `${base}musikk/`, label: 'Se all musikk' }}>
+    <PlayRows music={listening} limit={5} />
+  </PageSection>
+  <PageSection id="film-og-tv" title="Film og TV" icon="film" more={{ href: `${base}film-og-tv/`, label: 'Se all film og TV' }}>
+    <WatchRows items={seen.items} limit={5} />
+  </PageSection>
+  <PageSection id="artister" title="Mest spilt siste måned" icon="trend-up">
+    <TopArtistRows artists={listening.topArtists.slice(0, 5)} />
+  </PageSection>
+  <Fetched sources={[{ at: listening.at, source: 'Last.fm' }, { at: seen.at, source: 'Trakt' }]} />
+</Page>

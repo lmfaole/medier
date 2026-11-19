@@ -1,9 +1,0 @@
-{
-  "requires": [],
-  "modes": {
-    "daily": ["all"]
-  },
-  "timers": [
-    { "name": "daily", "description": "Refresh the GitHub repositories, pull requests, issues and contributions", "mode": "daily", "calendar": "*-*-* 03:42:00", "timeout": "10min" }
-  ]
-}

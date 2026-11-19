@@ -1,0 +1,72 @@
+name: Site
+
+# Fetches what was played and watched (Last.fm, Trakt) every three hours, commits data/ when it changed, builds the static site and publishes it
+# on GitHub Pages. A push to main builds and publishes too, with the data as it is. The keys are repository secrets; the user names are variables.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: site-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run skills:check
+
+      - name: Fetch the data
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_USER: ${{ vars.LASTFM_USER }}
+          TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
+          TRAKT_USER: ${{ vars.TRAKT_USER }}
+        run: npm run fetch
+
+      # A commit made with the workflow's own token starts no new run, so this run goes on to build with it.
+      - name: Commit what changed
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          if git diff --quiet -- data; then echo "no change"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git commit -m "Data: $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
+
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

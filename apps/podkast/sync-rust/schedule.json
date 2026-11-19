@@ -1,9 +1,0 @@
-{
-  "requires": [],
-  "modes": {
-    "frequent": ["import"]
-  },
-  "timers": [
-    { "name": "frequent", "description": "Import what gpoddersync recorded of the podcast listening, from the export in the Nextcloud repository", "mode": "frequent", "calendar": "*-*-* 00/3:35:00", "timeout": "10min" }
-  ]
-}

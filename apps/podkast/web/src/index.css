@@ -1,3 +1,0 @@
-@import "@designsystem/ui/theme.css";
-/* @designsystem/watch has components, and Tailwind does not scan a package it finds through node_modules. */
-@source "../../../../packages/watch/src";

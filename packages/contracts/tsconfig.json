@@ -1,4 +1,0 @@
-{
-  "extends": "@designsystem/config/tsconfig/node.json",
-  "include": ["src"]
-}
