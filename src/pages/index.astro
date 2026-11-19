@@ -15,13 +15,13 @@ const seen: Watched = watched
 
 <Page title="Medier" lead="Hva jeg hører på og ser, hentet fra Last.fm og Trakt.">
   <PageSection id="musikk" title="Musikk" icon="music" more={{ href: `${base}musikk/`, label: 'Se all musikk' }}>
-    <PlayRows music={listening} limit={5} />
+    <PlayRows plays={listening.recent} base={base} limit={5} />
   </PageSection>
   <PageSection id="film-og-tv" title="Film og TV" icon="film" more={{ href: `${base}film-og-tv/`, label: 'Se all film og TV' }}>
-    <WatchRows items={seen.items} limit={5} />
+    <WatchRows items={seen.items} base={base} limit={5} />
   </PageSection>
   <PageSection id="artister" title="Mest spilt siste måned" icon="trend-up">
-    <TopArtistRows artists={listening.topArtists.slice(0, 5)} />
+    <TopArtistRows artists={listening.topArtists.slice(0, 5)} base={base} />
   </PageSection>
   <Fetched sources={[{ at: listening.at, source: 'Last.fm' }, { at: seen.at, source: 'Trakt' }]} />
 </Page>

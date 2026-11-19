@@ -1,0 +1,22 @@
+---
+import '../styles.css'
+import { PageLayout } from '@lmfaole/designsystem/components/page-layout'
+
+import { NotFound } from '../components/not-found'
+
+const base = import.meta.env.BASE_URL
+---
+
+<!doctype html>
+<html lang="nb">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Siden finnes ikke – Medier</title>
+  </head>
+  <body>
+    <PageLayout>
+      <NotFound base={base} />
+    </PageLayout>
+  </body>
+</html>

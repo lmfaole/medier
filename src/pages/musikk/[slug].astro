@@ -1,0 +1,19 @@
+---
+import music from '../../../data/music.json'
+import { ArtistDetail } from '../../components/detail'
+import Page from '../../layouts/Page.astro'
+import type { Music } from '../../lib/lastfm'
+import { artistPages, type ArtistPage } from '../../lib/pages'
+
+export function getStaticPaths() {
+  const listening: Music = music
+  return artistPages(listening).map((page) => ({ params: { slug: page.slug }, props: { page } }))
+}
+
+const { page } = Astro.props as { page: ArtistPage }
+const base = import.meta.env.BASE_URL
+---
+
+<Page title={page.name} lead="Artist" crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.name, href: `${base}musikk/${page.slug}/` }]}>
+  <ArtistDetail page={page} base={base} />
+</Page>
