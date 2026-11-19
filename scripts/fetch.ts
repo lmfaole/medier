@@ -1,15 +1,16 @@
 /**
- * `npm run fetch`: asks Last.fm and Trakt for what was played and watched, and writes `data/music.json` and `data/watched.json`. A source whose
- * key is not set is skipped, so the site builds with what it has. A file is only rewritten when what it holds changed, so a run that found
+ * `npm run fetch`: asks Last.fm and Trakt for what was played and watched, and writes `data/music.json` and `data/watched.json`. The keys are
+ * GitHub Actions secrets (`src/lib/settings.ts`); locally a source whose key is not set is skipped, in CI it is an error (`settings:check` runs
+ * first and names it). A file is only rewritten when what it holds changed, so a run that found
  * nothing new makes no commit. GitHub Actions runs it on a timer with the keys as secrets (`.github/workflows/site.yml`).
  *
- *   LASTFM_API_KEY, LASTFM_USER (snowpony69)     TRAKT_CLIENT_ID, TRAKT_USER (lmfaole)
  */
 
 import { readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 
 import { type Music, parseRecentTracks, parseTopArtists } from "../src/lib/lastfm.ts"
+import { SETTINGS } from "../src/lib/settings.ts"
 import { mergeHistory, parseHistory, type Watched } from "../src/lib/trakt.ts"
 
 const DATA = join(import.meta.dirname, "..", "data")
@@ -48,12 +49,17 @@ async function watched(clientId: string, user: string): Promise<void> {
   save<Watched>("watched.json", { user, items: mergeHistory(await page("movies"), await page("episodes")).slice(0, 50) })
 }
 
-const env = process.env
+/** A setting from the environment, or a variable's fallback; empty for a secret that is not set. */
+const setting = (name: string): string => process.env[name] || (SETTINGS.find((one) => one.name === name)?.fallback ?? "")
 const jobs: Promise<void>[] = []
-if (env["LASTFM_API_KEY"]) jobs.push(music(env["LASTFM_API_KEY"], env["LASTFM_USER"] || "snowpony69"))
-else console.log("music.json: LASTFM_API_KEY is not set, skipped")
-if (env["TRAKT_CLIENT_ID"]) jobs.push(watched(env["TRAKT_CLIENT_ID"], env["TRAKT_USER"] || "lmfaole"))
-else console.log("watched.json: TRAKT_CLIENT_ID is not set, skipped")
+for (const [file, key, run] of [
+  ["music.json", "LASTFM_API_KEY", () => music(setting("LASTFM_API_KEY"), setting("LASTFM_USER"))],
+  ["watched.json", "TRAKT_CLIENT_ID", () => watched(setting("TRAKT_CLIENT_ID"), setting("TRAKT_USER"))],
+] as const) {
+  if (setting(key) !== "") jobs.push(run())
+  else if (process.env["CI"] === "true") jobs.push(Promise.reject(new Error(`${file}: the secret ${key} is not set`)))
+  else console.log(`${file}: ${key} is not set, skipped`)
+}
 
 // One source failing does not stop the other; the run still fails, so it is seen.
 const results = await Promise.allSettled(jobs)

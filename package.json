@@ -15,7 +15,9 @@
     "typecheck": "tsc --noEmit",
     "skills": "designsystem-skills",
     "skills:check": "designsystem-skills --check",
-    "ds:bump": "designsystem-bump"
+    "ds:bump": "designsystem-bump",
+    "settings:push": "node scripts/settings.ts push",
+    "settings:check": "node scripts/settings.ts check"
   },
   "dependencies": {
     "@astrojs/react": "^7.1.2",

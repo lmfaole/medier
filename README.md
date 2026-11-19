@@ -12,10 +12,19 @@ Hva jeg hører på og ser: en statisk side på GitHub Pages, <https://lmfaole.gi
 
 ## Set up once
 
+The keys live in GitHub, as Actions **secrets** of this repository, and the user names as **variables**; nothing of them is in a file here.
+The list is `src/lib/settings.ts`; the workflow checks it before every fetch (`npm run settings:check`) and fails naming what is missing.
+
 1. Settings → Pages → Source: **GitHub Actions**.
-2. Settings → Secrets and variables → Actions:
-   - secrets `LASTFM_API_KEY` (<https://www.last.fm/api/account/create>) and `TRAKT_CLIENT_ID` (<https://trakt.tv/oauth/applications>);
-   - variables `LASTFM_USER` and `TRAKT_USER` (default `snowpony69` and `lmfaole`). The Trakt profile must be public.
+2. Put the settings in GitHub, from the env files the private monorepo already has (only the names in the list are taken; values go to `gh` on
+   stdin and are never printed):
+
+   ```sh
+   npm run settings:push -- ~/Applikasjoner/Documents/monorepo/secrets/music-sync.env ~/Applikasjoner/Documents/monorepo/secrets/film-sync.env
+   ```
+
+   `-- … --dry-run` says what it would set. It needs the GitHub CLI signed in with admin rights to this repository. By hand instead: Settings →
+   Secrets and variables → Actions, secrets `LASTFM_API_KEY` and `TRAKT_CLIENT_ID`, variables `LASTFM_USER` and `TRAKT_USER`.
 3. Actions → Site → Run workflow, for the first fetch.
 
 ## Work on it
@@ -23,7 +32,7 @@ Hva jeg hører på og ser: en statisk side på GitHub Pages, <https://lmfaole.gi
 ```sh
 npm install
 npm test && npm run typecheck   # the parsers' tests and the types
-LASTFM_API_KEY=… TRAKT_CLIENT_ID=… npm run fetch   # fresh data locally
+LASTFM_API_KEY=… TRAKT_CLIENT_ID=… npm run fetch   # fresh data locally (a key not set is skipped here, an error in CI)
 npm run dev                      # http://localhost:4321/medier/
 npm run ds:bump                  # a newer design system and its skills
 ```

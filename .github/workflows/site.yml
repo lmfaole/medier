@@ -34,6 +34,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run skills:check
 
+      # Every setting of src/lib/settings.ts, from the repository's secrets and variables; the check names any that is missing.
       - name: Fetch the data
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         env:
@@ -41,7 +42,7 @@ jobs:
           LASTFM_USER: ${{ vars.LASTFM_USER }}
           TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
           TRAKT_USER: ${{ vars.TRAKT_USER }}
-        run: npm run fetch
+        run: npm run settings:check && npm run fetch
 
       # A commit made with the workflow's own token starts no new run, so this run goes on to build with it.
       - name: Commit what changed
