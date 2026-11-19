@@ -1,0 +1,8 @@
+---
+// An address no page owns: the shared 404 page, the same one the Worker answers elsewhere.
+import { errorPageHtml } from '@designsystem/config/error-pages'
+
+Astro.response.status = 404
+---
+
+<Fragment set:html={errorPageHtml(404)} />

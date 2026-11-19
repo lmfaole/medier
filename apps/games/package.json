@@ -1,0 +1,16 @@
+{
+  "name": "games",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "sky.lmfaole.party/apps/medier/spill: the games the owner has played, from the log and Steam, with what the register IGDB says about them, read per request from the local games database",
+  "scripts": {
+    "test": "node --test",
+    "dev": "npm run build:web && MEDIA_ONLY=games MEDIA_LOGIN=off node ../../scripts/media-server.ts",
+    "lint": "npm --prefix web run lint",
+    "build:web": "npm --prefix web run build",
+    "build": "npm run build:web",
+    "images": "node ../../scripts/snapshot.ts && node ../../scripts/fetch-shelf-covers.ts",
+    "typecheck": "npm --prefix web run typecheck"
+  }
+}

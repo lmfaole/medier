@@ -1,0 +1,57 @@
+[
+  {
+    "id": "aksel",
+    "term": "Aksel",
+    "url": "https://aksel.nav.no"
+  },
+  {
+    "id": "barhaug-skole",
+    "term": "Barhaug skole",
+    "url": "https://www.nord-fron.kommune.no/tjenester/skole-og-barnehage/skole/skolar-i-nord-fron/barhaug-skole/"
+  },
+  {
+    "id": "figma",
+    "term": "Figma",
+    "url": "https://www.figma.com"
+  },
+  {
+    "id": "fremtind",
+    "term": "Fremtind",
+    "url": "https://www.fremtind.no"
+  },
+  {
+    "id": "gjovik-videregaende-skole",
+    "term": "Gjøvik videregående skole",
+    "url": "https://www.gjovik.vgs.no"
+  },
+  {
+    "id": "hoyskolen-kristiania",
+    "term": "Høyskolen Kristiania",
+    "url": "https://www.kristiania.no"
+  },
+  {
+    "id": "jokul",
+    "term": "Jøkul",
+    "url": "https://jokul.fremtind.no"
+  },
+  {
+    "id": "mangfold-i-mai",
+    "term": "Mangfold i mai",
+    "url": "https://mangfoldimai.no"
+  },
+  {
+    "id": "nav",
+    "term": "NAV",
+    "url": "https://www.nav.no"
+  },
+  {
+    "id": "vinstra-ungdomsskole",
+    "term": "Vinstra ungdomsskole",
+    "url": "https://www.nord-fron.kommune.no/tjenester/skole-og-barnehage/skole/skolar-i-nord-fron/vinstra-ungdomsskole/"
+  },
+  {
+    "id": "vipps",
+    "term": "Vipps",
+    "url": "https://vipps.no"
+  }
+]

@@ -1,0 +1,63 @@
+# Clippy and tests for the Rust workspace, only when something it builds from
+# changed: about one push in eight. Split from `ci.yml` so the other seven do
+# not start a job for it, since Actions bills every job a whole minute.
+#
+# The data tools and music's sync run outside CI (locally), so without this
+# nothing checks them before they run against the local database. The lints are Cargo.toml's `[workspace.lints]` and clippy.toml.
+#
+# Actions are pinned to commit SHAs rather than tags, same reasoning as
+# ci.yml.
+
+name: Rust
+
+# What the workspace compiles from: its members, the shared crate, the
+# schemas it embeds with `include_str!`, and the generated TypeScript it
+# writes, which the last step checks.
+# Push and pull_request triggers are off while the repository runs local
+# only; run it by hand (the paths it watched: Cargo.toml, crates/, sync-rust,
+# db/*.sql, generated TypeScript).
+on:
+  push:
+    branches: [main]
+    paths: ['crates/**', 'apps/*/sync-rust/**', 'db/**', 'Cargo.toml', 'Cargo.lock']
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    name: Clippy and test the Rust workspace
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable, 2026-10-01
+        with:
+          toolchain: stable
+          components: clippy
+
+      - name: Cache the build
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --workspace
+
+      # `cargo test` rewrites each app's `web/src/generated/` from the Rust
+      # structs (ts-rs). Anything changed or new there means a struct changed
+      # and its TypeScript types were not regenerated and committed with it;
+      # `git status` and not `git diff`, which does not see a new file.
+      - name: Generated TypeScript types are up to date
+        run: |
+          changed="$(git status --porcelain -- ':(glob)apps/*/web/src/generated/**')"
+          if [ -n "$changed" ]; then echo "$changed"; echo "Run cargo test and commit web/src/generated/."; exit 1; fi

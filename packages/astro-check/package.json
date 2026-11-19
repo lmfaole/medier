@@ -1,0 +1,14 @@
+{
+  "name": "@designsystem/astro-check",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The `astro-check` binary and the TypeScript 6 it needs, apart from the TypeScript 7 (tsc) the apps compile with: @astrojs/check drives the language server through the JavaScript API, which TypeScript 7 does not ship",
+  "scripts": {
+    "check": "astro-check"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "typescript": "~6.0.3"
+  }
+}

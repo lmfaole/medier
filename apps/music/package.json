@@ -1,0 +1,17 @@
+{
+  "name": "music",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "sky.lmfaole.party/apps/medier/musikk: a personal music-listening dashboard, built on Last.fm, Rust, SQLite and Cloudflare Workers",
+  "scripts": {
+    "test": "node --test",
+    "sync": "PATH=\"$HOME/.cargo/bin:$PATH\" cargo run --release --manifest-path sync-rust/Cargo.toml --",
+    "dev": "npm run build:web && MEDIA_ONLY=music MEDIA_LOGIN=off node ../../scripts/media-server.ts",
+    "lint": "npm --prefix web run lint",
+    "build:web": "npm --prefix web run build",
+    "build": "npm run build:web",
+    "images": "node ../../scripts/snapshot.ts && node ../../scripts/fetch-covers.ts && node ../../scripts/fetch-artist-images.ts",
+    "typecheck": "npm --prefix web run typecheck"
+  }
+}

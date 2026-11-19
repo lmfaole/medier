@@ -1,0 +1,11 @@
+{
+  "requires": ["HARDCOVER_TOKEN"],
+  "modes": {
+    "daily": ["hardcover", "import-log", "import-collection", "openlibrary"],
+    "weekly": ["hardcover", "import-log", "import-collection", "openlibrary --everything"]
+  },
+  "timers": [
+    { "name": "daily", "description": "Add the books Hardcover has to the log and look up new books in Open Library", "mode": "daily", "calendar": "*-*-* 04:05:00", "timeout": "10min" },
+    { "name": "weekly", "description": "Fetch every book's facts from Open Library again", "mode": "weekly", "calendar": "Sun *-*-* 04:35:00", "timeout": "30min" }
+  ]
+}

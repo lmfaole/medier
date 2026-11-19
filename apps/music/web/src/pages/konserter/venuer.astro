@@ -1,0 +1,15 @@
+---
+// `/konserter/venuer`: the venues the concerts were at.
+import { readApi } from '@designsystem/config/astro-api'
+
+import MusicPage from '@/layouts/MusicPage.astro'
+import { RESPONSES } from '@/server/responses'
+import { Venues } from '@/views/Venues'
+import '../../index.css'
+
+const data = await readApi(Astro.url, 'concerts', RESPONSES.concerts)
+---
+
+<MusicPage>
+  <Venues concerts={data.concerts} />
+</MusicPage>

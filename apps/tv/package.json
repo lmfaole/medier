@@ -1,0 +1,16 @@
+{
+  "name": "tv",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "sky.lmfaole.party/apps/medier/tv: the series the owner has watched, episode for episode, and what the TV register TMDB says about them, read per request from the local tv database",
+  "scripts": {
+    "test": "node --test",
+    "dev": "npm run build:web && MEDIA_ONLY=tv MEDIA_LOGIN=off node ../../scripts/media-server.ts",
+    "lint": "npm --prefix web run lint",
+    "build:web": "npm --prefix web run build",
+    "build": "npm run build:web",
+    "images": "node ../../scripts/snapshot.ts && node ../../scripts/fetch-posters.ts && node ../../scripts/fetch-backdrops.ts",
+    "typecheck": "npm --prefix web run typecheck"
+  }
+}

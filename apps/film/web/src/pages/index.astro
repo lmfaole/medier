@@ -1,0 +1,16 @@
+---
+// `/`: the front page of the film log.
+import { readPage } from '@designsystem/config/astro-api'
+import { overviewRequest } from '@designsystem/ui/lib/page-requests'
+
+import FilmPage from '@/layouts/FilmPage.astro'
+import { RESPONSES } from '@/server/responses'
+import { Overview } from '@/views/Overview'
+import '../index.css'
+
+const data = await readPage(Astro.url, overviewRequest(), RESPONSES.overview)
+---
+
+<FilmPage>
+  <Overview data={data} />
+</FilmPage>

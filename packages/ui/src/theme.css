@@ -1,0 +1,89 @@
+@import "@lmfaole/designsystem/theme.css";
+
+/*
+ * The theme is the design system's (`@lmfaole/designsystem`, a repository of its own). What is added here is what only
+ * this repository has: the classes written inside this package's components, which Tailwind does not find on its own
+ * under `node_modules`, and one colour per app of the registry (`lib/apps.ts`).
+ */
+@source "./components";
+@source "./lib";
+@source "./layouts";
+
+:root {
+  --app-music: oklch(0.5 0.14 25);
+  --app-podkast: oklch(0.5 0.14 300);
+  --app-film: oklch(0.5 0.14 250);
+  --app-tv: oklch(0.5 0.14 190);
+  --app-games: oklch(0.5 0.14 140);
+  --app-books: oklch(0.5 0.14 60);
+  --app-boardgames: oklch(0.5 0.14 340);
+  --app-innboks: oklch(0.5 0.14 275);
+  --app-hjem: oklch(0.5 0.14 230);
+  --app-miniflux: oklch(0.5 0.14 45);
+  --app-penger: oklch(0.5 0.14 165);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-music: oklch(0.78 0.12 25);
+    --app-podkast: oklch(0.78 0.12 300);
+    --app-film: oklch(0.78 0.12 250);
+    --app-tv: oklch(0.78 0.12 190);
+    --app-games: oklch(0.78 0.12 140);
+    --app-books: oklch(0.78 0.12 60);
+    --app-boardgames: oklch(0.78 0.12 340);
+    --app-innboks: oklch(0.78 0.12 275);
+    --app-hjem: oklch(0.78 0.12 230);
+    --app-miniflux: oklch(0.78 0.12 45);
+    --app-penger: oklch(0.78 0.12 165);
+  }
+}
+
+/*
+ * An app's colour, for its icon and for the places one app points at another.
+ * Never text colour, and never alone: an icon and a name always go with it.
+ * `data-app="<id>"` on an element sets `--app-color` for it and its children.
+ */
+[data-app="music"] {
+    --app-color: var(--app-music);
+}
+
+[data-app="podkast"] {
+    --app-color: var(--app-podkast);
+}
+
+[data-app="film"] {
+    --app-color: var(--app-film);
+}
+
+[data-app="tv"] {
+    --app-color: var(--app-tv);
+}
+
+[data-app="games"] {
+    --app-color: var(--app-games);
+}
+
+[data-app="books"] {
+    --app-color: var(--app-books);
+}
+
+[data-app="boardgames"] {
+    --app-color: var(--app-boardgames);
+}
+
+[data-app="innboks"] {
+    --app-color: var(--app-innboks);
+}
+
+[data-app="hjem"] {
+    --app-color: var(--app-hjem);
+}
+
+[data-app="miniflux"] {
+    --app-color: var(--app-miniflux);
+}
+
+[data-app="penger"] {
+    --app-color: var(--app-penger);
+}

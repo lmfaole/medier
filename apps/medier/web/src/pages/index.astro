@@ -1,0 +1,16 @@
+---
+// `/`: the hub of the media apps, the list of them and their latest.
+import { readApi } from '@designsystem/config/astro-api'
+import Document from '@designsystem/ui/layouts/document'
+import { HUB } from '@designsystem/ui/lib/hub'
+
+import { RESPONSES } from '@designsystem/timeline/response'
+import { Hub } from '@/views/Hub'
+import '../index.css'
+
+const timeline = await readApi(Astro.url, 'timeline', RESPONSES.timeline)
+---
+
+<Document title={HUB.label}>
+  <Hub timeline={timeline} />
+</Document>

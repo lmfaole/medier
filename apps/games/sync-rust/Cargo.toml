@@ -1,0 +1,21 @@
+[package]
+name = "games-sync"
+version = "0.1.0"
+edition = "2021"
+description = "Imports the owner's hand-kept games log, adds what Steam has, and fetches what the register IGDB says about each game, into the local database"
+
+[[bin]]
+name = "games-sync"
+path = "src/main.rs"
+
+[dependencies]
+shared-data = { path = "../../../crates/shared-data", features = ["local-sqlite"] }
+anyhow = { workspace = true }
+reqwest = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+csv = { workspace = true }
+zip = { version = "9.0.5", default-features = false, features = ["deflate"] }
+
+[lints]
+workspace = true

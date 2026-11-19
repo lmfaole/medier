@@ -1,0 +1,24 @@
+---
+// `/serie/[slug]`: a series' own page.
+import { notFoundPage } from '@designsystem/config/astro-api'
+import { readPageIfPresent } from '@designsystem/config/astro-page-data'
+import { entityRequest } from '@designsystem/ui/lib/page-requests'
+import { SlugParams } from '@designsystem/ui/lib/slug-params'
+import * as v from 'valibot'
+
+import TvPage from '@/layouts/TvPage.astro'
+import { RESPONSES } from '@/server/responses'
+import { Entity } from '@/views/Entity'
+import '../../index.css'
+
+const params = v.safeParse(SlugParams, Astro.params)
+const data = params.success ? await readPageIfPresent(Astro.url, entityRequest(params.output.slug, 'serie'), RESPONSES.entity) : null
+if (data === null) {
+  Astro.cache.set(false)
+  return notFoundPage()
+}
+---
+
+<TvPage thing>
+  <Entity data={data} client:visible />
+</TvPage>

@@ -1,0 +1,16 @@
+---
+// `/`: the front page of the music log: the way into the pages and the newest listens.
+import { readApi } from '@designsystem/config/astro-api'
+import { whereOf } from '@designsystem/watch/where'
+
+import MusicPage from '@/layouts/MusicPage.astro'
+import { RESPONSES } from '@/server/responses'
+import { Overview } from '@/views/Overview'
+import '../index.css'
+
+const [listens, index] = await Promise.all([readApi(Astro.url, 'recent', RESPONSES.recent), readApi(Astro.url, 'entities', RESPONSES.entities)])
+---
+
+<MusicPage>
+  <Overview listens={listens} index={index} where={whereOf(Astro.url)} />
+</MusicPage>

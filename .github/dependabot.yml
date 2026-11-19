@@ -1,0 +1,36 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    # Actions change rarely enough that weekly review is plenty. One pull
+    # request for the week's bumps, since each pull request runs CI.
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    # Pinning is already enforced in workflows, so Dependabot only bumps to
+    # newer pinned SHAs.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    # This repository ships zero runtime dependencies by design. If Dependabot
+    # ever opens a PR here, the repository itself is drifting from that rule
+    # and the change needs scrutiny before merging.

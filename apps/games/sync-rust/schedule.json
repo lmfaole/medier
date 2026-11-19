@@ -1,0 +1,11 @@
+{
+  "requires": ["STEAM_API_KEY", "STEAM_ID", "IGDB_CLIENT_ID", "IGDB_CLIENT_SECRET", "RA_USER", "RA_API_KEY"],
+  "modes": {
+    "daily": ["steam", "romm", "retroachievements", "import-log", "import-collection", "steam-achievements", "igdb"],
+    "weekly": ["steam", "romm", "retroachievements", "import-log", "import-collection", "steam-achievements", "igdb --everything"]
+  },
+  "timers": [
+    { "name": "daily", "description": "Add the games Steam has to the log and look up new games in IGDB", "mode": "daily", "calendar": "*-*-* 04:15:00", "timeout": "10min" },
+    { "name": "weekly", "description": "Fetch every game's facts from IGDB again", "mode": "weekly", "calendar": "Sun *-*-* 04:45:00", "timeout": "30min" }
+  ]
+}

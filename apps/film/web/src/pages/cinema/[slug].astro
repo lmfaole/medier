@@ -1,0 +1,24 @@
+---
+// `/cinema/[slug]`: one cinema's own page.
+import { notFoundPage } from '@designsystem/config/astro-api'
+import { readPageIfPresent } from '@designsystem/config/astro-page-data'
+import { entityRequest } from '@designsystem/ui/lib/page-requests'
+import { SlugParams } from '@designsystem/ui/lib/slug-params'
+import * as v from 'valibot'
+
+import FilmPage from '@/layouts/FilmPage.astro'
+import { RESPONSES } from '@/server/responses'
+import { Entity } from '@/views/Entity'
+import '../../index.css'
+
+const params = v.safeParse(SlugParams, Astro.params)
+const data = params.success ? await readPageIfPresent(Astro.url, entityRequest(params.output.slug, 'cinema'), RESPONSES.entity) : null
+if (data === null) {
+  Astro.cache.set(false)
+  return notFoundPage()
+}
+---
+
+<FilmPage thing>
+  <Entity data={data} client:visible />
+</FilmPage>

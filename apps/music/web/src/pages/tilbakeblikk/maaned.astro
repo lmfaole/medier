@@ -1,0 +1,16 @@
+---
+// `/tilbakeblikk/maaned`: the latest months of listening, newest first, with what changed from one to the next.
+import { readApi } from '@designsystem/config/astro-api'
+import { whereOf } from '@designsystem/watch/where'
+
+import MusicPage from '@/layouts/MusicPage.astro'
+import { RESPONSES } from '@/server/responses'
+import { Months } from '@/views/Spans'
+import '../../index.css'
+
+const [data, index] = await Promise.all([readApi(Astro.url, 'months', RESPONSES.months), readApi(Astro.url, 'entities', RESPONSES.entities)])
+---
+
+<MusicPage>
+  <Months data={data} index={index} where={whereOf(Astro.url)} />
+</MusicPage>

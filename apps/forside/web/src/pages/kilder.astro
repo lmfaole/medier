@@ -1,0 +1,15 @@
+---
+export const prerender = true
+// `/kilder`: where the content comes from; the next fetch is worked out in the browser, so the page hydrates when the browser is idle.
+import Document from '@designsystem/ui/layouts/document'
+
+import { pageHead, pageOg } from '@/lib/profile'
+import { Kilder } from '@/views/Kilder'
+import '../index.css'
+
+const page = pageHead('/kilder')
+---
+
+<Document title={page.title} index og={pageOg('/kilder')}>
+  <Kilder client:idle />
+</Document>

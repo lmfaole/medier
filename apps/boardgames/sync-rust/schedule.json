@@ -1,0 +1,11 @@
+{
+  "requires": ["BGG_TOKEN"],
+  "modes": {
+    "daily": ["import-log", "import-collection", "bgg"],
+    "weekly": ["import-log", "import-collection", "bgg --everything"]
+  },
+  "timers": [
+    { "name": "daily", "description": "Import the board games log and look up new games on BoardGameGeek", "mode": "daily", "calendar": "*-*-* 04:25:00", "timeout": "10min" },
+    { "name": "weekly", "description": "Fetch every board game's facts from BoardGameGeek again", "mode": "weekly", "calendar": "Sun *-*-* 04:55:00", "timeout": "30min" }
+  ]
+}

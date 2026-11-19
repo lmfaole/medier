@@ -1,0 +1,54 @@
+---
+/**
+ * A page of an app with its chrome: the document (`Document`), the skip link, `<main>` and the sentence about the data (`AppLayout`),
+ * the app's navigation (`AppNav`: a bar at the foot of the screen on a phone, a rail at the left from tablet width) and the breadcrumbs at the top
+ * (`AppBreadcrumbs`: where the page is, and on a phone the parent alone as a way back), all rendered on the server with no script. The page is the
+ * default slot. A page that has subpages lists them under its title (`PageHeader`); the front page of a home app lists the other apps (`AppSwitcher`).
+ * `path` is the page's own address, which the navigation and the breadcrumbs mark; it is read from the request here, so a page need not pass it.
+ * The sentence about the data is a server island (`Freshness`), so the page itself can be kept at the edge. The page of one thing (`thing`) has none:
+ * what there is to say of it is the last section of the page (`EntityAbout`), and it is named in the breadcrumbs by its `title`.
+ */
+import type { OgTagsOptions } from '@designsystem/config/og-tags'
+import { AppLayout } from '../components/app-layout'
+import { AppNav } from '../components/app-nav'
+import { AppBreadcrumbs } from '../components/app-breadcrumbs'
+import { AppSwitcher } from '../components/app-sub-pages'
+import { ANY_APPS, type AnyAppId } from '../lib/apps'
+import Document from './Document.astro'
+import Freshness from './Freshness.astro'
+
+interface Props {
+  /** Which app this is: the breadcrumbs lead from its group to it and its page. */
+  app: AnyAppId
+  title: string
+  /** The page of one thing's name in the breadcrumbs, when it is not the title (the title often has the app after it). */
+  crumb?: string
+  lang?: string
+  index?: boolean
+  og?: OgTagsOptions
+  jsonLd?: Record<string, unknown>
+  /** The page's address as the browser has it; the request's own path when left out. */
+  path?: string
+  /** The page of one thing (`/artist/<slug>`, `/film/<slug>`): no sentence about the data under it. */
+  thing?: boolean
+}
+
+const { app, title, crumb, lang, index, og, jsonLd, path = Astro.url.pathname, thing = false } = Astro.props
+// A page of one thing is titled «Alien – Film»: in the breadcrumbs it is «Alien», the app is already the crumb before it.
+const thingName = crumb ?? title.replace(new RegExp(`\\s+[–-]\\s+${ANY_APPS[app].label}$`), '')
+---
+
+<Document title={title} lang={lang} index={index} og={og} jsonLd={jsonLd}>
+  <AppLayout app={app}>
+    <AppNav slot="nav" app={app} path={path} />
+    <AppBreadcrumbs app={app} path={path} {...(thing ? { title: thingName } : {})} />
+    <slot />
+    <AppSwitcher app={app} path={path} />
+    {thing ? null : (
+    <Freshness slot="after" server:defer>
+      {/* Room for the sentence (two lines on a phone, one beyond) with no text of its own, so the island lands without moving anything and a crawler reads no date that is not true. */}
+      <p slot="fallback" aria-hidden="true" class="mt-12 min-h-10 text-sm sm:min-h-5"></p>
+    </Freshness>
+    )}
+  </AppLayout>
+</Document>

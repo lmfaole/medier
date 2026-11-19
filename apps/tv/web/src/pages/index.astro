@@ -1,0 +1,16 @@
+---
+// `/`: the front page of the TV log.
+import { readPage } from '@designsystem/config/astro-api'
+import { overviewRequest } from '@designsystem/ui/lib/page-requests'
+
+import TvPage from '@/layouts/TvPage.astro'
+import { RESPONSES } from '@/server/responses'
+import { Overview } from '@/views/Overview'
+import '../index.css'
+
+const data = await readPage(Astro.url, overviewRequest(), RESPONSES.overview)
+---
+
+<TvPage>
+  <Overview data={data} />
+</TvPage>

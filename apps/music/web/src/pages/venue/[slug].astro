@@ -1,0 +1,24 @@
+---
+// `/venue/[slug]`: the page of one venue (the concerts there), a page of one thing like the concert's.
+import { notFoundPage, readApi } from '@designsystem/config/astro-api'
+import { SlugParams } from '@designsystem/ui/lib/slug-params'
+import * as v from 'valibot'
+
+import MusicPage from '@/layouts/MusicPage.astro'
+import { RESPONSES } from '@/server/responses'
+import { Venue } from '@/views/Venue'
+import '../../index.css'
+
+const params = v.safeParse(SlugParams, Astro.params)
+const data = await readApi(Astro.url, 'concerts', RESPONSES.concerts)
+const concerts = params.success ? data.concerts.filter((concert) => concert.venueSlug === params.output.slug) : []
+const name = concerts[0]?.venue ?? null
+if (name === null) {
+  Astro.cache.set(false)
+  return notFoundPage()
+}
+---
+
+<MusicPage thing>
+  <Venue name={name} concerts={concerts} client:visible />
+</MusicPage>

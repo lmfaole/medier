@@ -1,0 +1,22 @@
+[package]
+name = "podkast-sync"
+version = "0.1.0"
+edition = "2021"
+description = "Keeps what gpoddersync (AntennaPod, through Nextcloud, exported by its own repository) recorded of the owner's podcast listening in the local database"
+
+[[bin]]
+name = "podkast-sync"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+rusqlite = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
+roxmltree = { workspace = true }
+shared-data = { path = "../../../crates/shared-data", features = ["local-sqlite"] }
+
+[lints]
+workspace = true

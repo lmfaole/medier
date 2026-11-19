@@ -1,0 +1,9 @@
+{
+  "requires": ["TMDB_API_KEY", "TRAKT_CLIENT_ID", "TRAKT_USER"],
+  "modes": {
+    "daily": ["import-log", "import-cinemas", "import-calendar", "tmdb --refresh", "related", "franchises", "trakt"]
+  },
+  "timers": [
+    { "name": "daily", "description": "Import the film log, look up new films in TMDB and fetch again those TMDB lists as changed", "mode": "daily", "calendar": "*-*-* 03:55:00", "timeout": "20min" }
+  ]
+}

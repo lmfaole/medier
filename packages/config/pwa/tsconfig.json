@@ -1,0 +1,9 @@
+{
+  // The worker runs in a service worker, its tests and build in Node: the Worker lib, Node's types.
+  "extends": "../tsconfig.node.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "WebWorker"],
+    "types": ["node"]
+  },
+  "include": ["*.ts"]
+}

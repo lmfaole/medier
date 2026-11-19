@@ -1,0 +1,24 @@
+---
+// `/show/[slug]`: one show's own page. The chart of plays per year hydrates when seen.
+import { notFoundPage } from '@designsystem/config/astro-api'
+import { readPageIfPresent } from '@designsystem/config/astro-page-data'
+import { entityRequest } from '@designsystem/ui/lib/page-requests'
+import { SlugParams } from '@designsystem/ui/lib/slug-params'
+import * as v from 'valibot'
+
+import PodkastPage from '@/layouts/PodkastPage.astro'
+import { RESPONSES } from '@/server/responses'
+import { Entity } from '@/views/Entity'
+import '../../index.css'
+
+const params = v.safeParse(SlugParams, Astro.params)
+const data = params.success ? await readPageIfPresent(Astro.url, entityRequest(params.output.slug, 'show'), RESPONSES.entity) : null
+if (data === null) {
+  Astro.cache.set(false)
+  return notFoundPage()
+}
+---
+
+<PodkastPage title={`${data.name} – Podkast`} thing>
+  <Entity data={data} client:visible />
+</PodkastPage>

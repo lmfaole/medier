@@ -1,0 +1,28 @@
+{
+  "name": "@designsystem/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The shape of every D1 table one app owns and another reads, as valibot schemas checked against the owner's schema.sql",
+  "scripts": {
+    "test": "node --test",
+    "lint": "oxlint -c ../config/oxlintrc.json src",
+    "typecheck": "tsc --noEmit -p tsconfig.json --tsBuildInfoFile node_modules/.tmp/tsconfig.tsbuildinfo"
+  },
+  "exports": {
+    "./music-tables": "./src/music-tables.ts",
+    "./github-tables": "./src/github-tables.ts",
+    "./podcast-tables": "./src/podcast-tables.ts",
+    "./podcast-history-tables": "./src/podcast-history-tables.ts",
+    "./film-tables": "./src/film-tables.ts",
+    "./tv-tables": "./src/tv-tables.ts",
+    "./watch-tables": "./src/watch-tables.ts",
+    "./shelf-tables": "./src/shelf-tables.ts",
+    "./boardgame-tables": "./src/boardgame-tables.ts",
+    "./media-timeline": "./src/media-timeline.ts",
+    "./media-taste": "./src/media-taste.ts"
+  },
+  "dependencies": {
+    "valibot": "^1.5.0"
+  }
+}

@@ -1,0 +1,20 @@
+[package]
+name = "tv-sync"
+version = "0.1.0"
+edition = "2021"
+description = "Imports the owner's hand-written tv log and fetches what the series register TMDB says about each series, into the local database"
+
+[[bin]]
+name = "tv-sync"
+path = "src/main.rs"
+
+[dependencies]
+shared-data = { path = "../../../crates/shared-data", features = ["local-sqlite"] }
+anyhow = { workspace = true }
+reqwest = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+csv = { workspace = true }
+
+[lints]
+workspace = true

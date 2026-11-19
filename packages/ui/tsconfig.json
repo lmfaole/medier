@@ -1,0 +1,9 @@
+{
+  "extends": "@designsystem/config/tsconfig/app.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"]
+}

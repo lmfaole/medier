@@ -1,0 +1,19 @@
+{
+  "name": "forside",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "lmfaole.party: the front page, a profile picture and links, and the media timeline; public and indexable",
+  "scripts": {
+    "test": "node --test",
+    "dev": "npm --prefix web run dev",
+    "dev:worker": "npm run build:web && npm --prefix web run preview",
+    "lint": "npm --prefix web run lint",
+    "build:web": "npm --prefix web run build",
+    "build": "npm run build:web",
+    "preview": "npm --prefix web run preview",
+    "snapshot": "node ../../scripts/snapshot.ts",
+    "deploy": "node ../../scripts/deploy-app.ts",
+    "typecheck": "npm --prefix web run typecheck"
+  }
+}

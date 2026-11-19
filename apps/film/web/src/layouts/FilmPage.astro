@@ -1,0 +1,19 @@
+---
+/**
+ * A page of the film app: the shared page frame (menu, the foot of the page) with the head from
+ * `og-pages.json`.
+ */
+import AppPage from '@designsystem/ui/layouts/app-page'
+import { pageHeadOf } from '@designsystem/ui/lib/page-head'
+
+interface Props {
+  /** The page of one thing: no sentence about the data under it (`AppPage`'s `thing`). */
+  thing?: boolean
+}
+
+const head = pageHeadOf('film', Astro.url, 'Film')
+---
+
+<AppPage app="film" title={head.title} og={head.og} thing={Astro.props.thing}>
+  <slot />
+</AppPage>

@@ -1,0 +1,27 @@
+---
+/**
+ * A page of a shelf app: `AppPage` with the head the page's row in `og-pages.json` gives.
+ * `here` is `hereOf(Astro.url)`, which the page also needs for its links; the page is the default slot.
+ */
+import AppPage from '@designsystem/ui/layouts/app-page'
+import { pageOg } from '@designsystem/ui/lib/og-pages'
+import type { AppId } from '@designsystem/ui/lib/apps'
+
+import type { Here } from '../here.ts'
+
+interface Props {
+  app: AppId
+  /** The app's name, for a page with no row of its own. */
+  title: string
+  here: Here
+  /** The page of one thing: no sentence about the data under it (`AppPage`'s `thing`). */
+  thing?: boolean
+}
+
+const { app, title, here, thing } = Astro.props
+const head = pageOg(app, here.path)
+---
+
+<AppPage app={app} title={head?.title ?? title} og={head?.og} thing={thing}>
+  <slot />
+</AppPage>

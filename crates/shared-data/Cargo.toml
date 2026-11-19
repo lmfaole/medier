@@ -1,0 +1,29 @@
+[package]
+name = "shared-data"
+version = "0.1.0"
+edition = "2021"
+description = "Shared plumbing for the apps' Rust data tools: the local SQLite client, source fingerprints, JSON files and the local SQLite build"
+
+[lib]
+name = "shared_data"
+path = "src/lib.rs"
+
+# Every data tool works on a local SQLite file; nothing here reaches a
+# database over the network.
+[features]
+local-sqlite = ["dep:rusqlite"]
+
+[dependencies]
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+rusqlite = { workspace = true, optional = true }
+unicode-normalization = { workspace = true }
+# The register TMDB is reached over HTTP and the hand-kept logs are CSV files.
+reqwest = { workspace = true }
+csv = { workspace = true }
+zip = { version = "9.0.5", default-features = false, features = ["deflate"] }
+
+[lints]
+workspace = true

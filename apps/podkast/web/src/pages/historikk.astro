@@ -1,0 +1,27 @@
+---
+// `/historikk?month=YYYY-MM`: every play of one month, the newest without one.
+import { notFoundPage } from '@designsystem/config/astro-api'
+import { readPageIfPresent } from '@designsystem/config/astro-page-data'
+import { historyRequest } from '@designsystem/ui/lib/page-requests'
+import { MonthSearch } from '@designsystem/ui/lib/period-search'
+import * as v from 'valibot'
+
+import PodkastPage from '@/layouts/PodkastPage.astro'
+import { readSlugs } from '@/server/page-data'
+import { RESPONSES } from '@/server/responses'
+import { History } from '@/views/History'
+import '../index.css'
+
+const search = v.parse(MonthSearch, Object.fromEntries(Astro.url.searchParams))
+// A month the log has no file for is not a page.
+const data = await readPageIfPresent(Astro.url, historyRequest(search), RESPONSES.history)
+if (data === null) {
+  Astro.cache.set(false)
+  return notFoundPage()
+}
+const slugs = await readSlugs(Astro.request, Astro.url, data)
+---
+
+<PodkastPage>
+  <History data={data} slugs={slugs} />
+</PodkastPage>

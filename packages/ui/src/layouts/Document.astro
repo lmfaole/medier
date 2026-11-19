@@ -1,0 +1,61 @@
+---
+/**
+ * The whole HTML document of an Astro app: the head of every page,
+ * with the page's content in the default slot. `lang` is the app's own and has to be stated.
+ */
+import { ogMetaTags, type OgTagsOptions } from '@designsystem/config/og-tags'
+import { BASE_URL, appUrl } from '../lib/base-url'
+import { ROBOTS_META, THEME_COLOR } from '../lib/app-head.ts'
+import { HUB_MOUNT } from '../lib/hub.ts'
+
+interface Props {
+  title: string
+  lang?: string
+  /** True for a page that wants a search engine: the one without the robots meta. */
+  index?: boolean
+  og?: OgTagsOptions
+  /** Structured data for search engines (schema.org), as a data block that no script runs. */
+  jsonLd?: Record<string, unknown>
+}
+
+const { title, lang = 'nb', index = false, og, jsonLd } = Astro.props
+// Every media app is part of the one installed app, the hub (`lib/hub.ts`); the preset says which builds are.
+// `true`: part of the hub's installed app; `'app'`: a home app, installed on its own, with its own manifest at its own base.
+const pwa = import.meta.env.PUBLIC_PWA
+const installable = pwa === true || pwa === 'app'
+const tags = og ? ogMetaTags({ image: appUrl('/og-image.jpg', BASE_URL), ...og }) : []
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    {index ? null : <meta name="robots" content={ROBOTS_META} />}
+    <meta name="theme-color" content={THEME_COLOR.light} media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={THEME_COLOR.dark} media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="color-scheme" content="light dark" />
+    <title>{title}</title>
+    {tags.map((tag) => <meta {...tag} />)}
+    <link rel="icon" href={appUrl('/favicon.ico', BASE_URL)} sizes="any" />
+    {/* use-credentials: the apps sit behind Cloudflare Access, and a manifest is fetched without credentials otherwise (Access answers 302). */}
+    {installable ? <link rel="manifest" href={pwa === 'app' ? appUrl('/manifest.webmanifest', BASE_URL) : `${HUB_MOUNT}/manifest.webmanifest`} crossorigin="use-credentials" /> : null}
+    {jsonLd ? <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replaceAll('<', '\\u003c')} /> : null}
+  </head>
+  <body>
+    <slot />
+    <script>
+    // A bundled module, so the CSP's `script-src 'self'` holds. Builds that are no PWA (forside, work) get a no-op.
+    import { enableNavigatingSelects } from '@lmfaole/designsystem/lib/navigating-select'
+    import { BASE_URL } from '../lib/base-url.ts'
+    import { registerServiceWorker } from '../lib/register-service-worker.ts'
+
+    enableNavigatingSelects()
+    const pwa = import.meta.env.PUBLIC_PWA
+    void registerServiceWorker((pwa === true || pwa === 'app') && import.meta.env.PROD, pwa === 'app' ? `${BASE_URL.replace(/\/+$/, '')}/` : undefined)
+    </script>
+  </body>
+</html>

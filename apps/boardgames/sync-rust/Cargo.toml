@@ -1,0 +1,20 @@
+[package]
+name = "boardgames-sync"
+version = "0.1.0"
+edition = "2021"
+description = "Imports the owner's hand-kept board games log and fetches what the register BoardGameGeek says about each game, into the local database"
+
+[[bin]]
+name = "boardgames-sync"
+path = "src/main.rs"
+
+[dependencies]
+shared-data = { path = "../../../crates/shared-data", features = ["local-sqlite"] }
+anyhow = { workspace = true }
+reqwest = { workspace = true }
+serde_json = { workspace = true }
+roxmltree = { workspace = true }
+chrono = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,15 @@
+---
+// How long ago the newest line of the log happened. The page is kept at the edge for minutes; this line is not, so it
+// is a server island (`server:defer` where it is used) that reads the same snapshot and answers on its own request.
+import { readApi } from '@designsystem/config/astro-api'
+import { Text } from '@lmfaole/designsystem/components/text'
+
+import { sinceLabel } from '@/lib/freshness'
+import { RESPONSES } from '@designsystem/timeline/response'
+
+const { entries } = await readApi(Astro.url, 'timeline', RESPONSES.timeline)
+const newest = entries[0]
+Astro.cache.set(false)
+---
+
+{newest === undefined ? null : <Text size="sm" tone="muted">Sist registrert {sinceLabel(newest.at, new Date())}.</Text>}

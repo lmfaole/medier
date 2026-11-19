@@ -1,0 +1,28 @@
+---
+// `/historikk?year=YYYY`: every viewing of one year, the newest without one.
+import { notFoundPage } from '@designsystem/config/astro-api'
+import { readPageIfPresent } from '@designsystem/config/astro-page-data'
+import { legacyYearOf, YearSearch } from '@designsystem/ui/lib/period-search'
+import { yearHistoryRequest } from '@designsystem/ui/lib/page-requests'
+import * as v from 'valibot'
+
+import FilmPage from '@/layouts/FilmPage.astro'
+import { RESPONSES } from '@/server/responses'
+import { History } from '@/views/History'
+import '../index.css'
+
+// An old link with `?month=YYYY-MM` goes on to the year that month is in.
+const legacyYear = legacyYearOf(Astro.url.searchParams)
+if (legacyYear !== null) return Astro.redirect(`${Astro.url.pathname}?year=${legacyYear}`, 301)
+const search = v.parse(YearSearch, Object.fromEntries(Astro.url.searchParams))
+// A year the log has no file for is not a page.
+const data = await readPageIfPresent(Astro.url, yearHistoryRequest(search), RESPONSES.history)
+if (data === null) {
+  Astro.cache.set(false)
+  return notFoundPage()
+}
+---
+
+<FilmPage>
+  <History data={data} />
+</FilmPage>

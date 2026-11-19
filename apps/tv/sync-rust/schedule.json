@@ -1,0 +1,9 @@
+{
+  "requires": ["TMDB_API_KEY", "TRAKT_CLIENT_ID", "TRAKT_USER"],
+  "modes": {
+    "daily": ["import-log", "trakt", "tmdb --refresh", "related", "tvmaze"]
+  },
+  "timers": [
+    { "name": "daily", "description": "Import the TV log, look up new series in TMDB and fetch again those TMDB lists as changed", "mode": "daily", "calendar": "*-*-* 03:58:00", "timeout": "20min" }
+  ]
+}

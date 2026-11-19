@@ -1,0 +1,18 @@
+---
+// `/`: the front page of the boardgames log. Plain HTML.
+import { readPage } from '@designsystem/config/astro-api'
+import { hereOf } from '@designsystem/shelf/here'
+import ShelfPage from '@designsystem/shelf/layouts/shelf-page'
+import { overviewRequest } from '@designsystem/ui/lib/page-requests'
+
+import { RESPONSES } from '@/server/responses'
+import { Overview } from '@/views/boardgames'
+import '../index.css'
+
+const here = hereOf(Astro.url)
+const overview = await readPage(Astro.url, overviewRequest(), RESPONSES.overview)
+---
+
+<ShelfPage app="boardgames" title="Brettspill" here={here}>
+  <Overview data={overview} />
+</ShelfPage>

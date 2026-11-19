@@ -1,0 +1,35 @@
+{
+  "path": [
+    "apps",
+    "packages",
+    "crates",
+    "scripts"
+  ],
+  "format": [
+    "typescript",
+    "tsx",
+    "javascript",
+    "rust"
+  ],
+  "minTokens": 50,
+  "gitignore": true,
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/target/**",
+    "**/.wrangler/**",
+    "**/generated/**",
+    "**/web/public/api/**",
+    "**/data/**"
+  ],
+  "reporters": [
+    "console"
+  ],
+  "threshold": 0.5,
+  "formatsExts": {
+    "javascript": [
+      "js",
+      "mjs"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  // The scripts run in Node, and one test imports the Worker pipeline from
+  // `packages/config`, so that package's own setup applies: the DOM's fetch
+  // types beside Node's, and the Workers-only bindings from its ambient file.
+  "extends": "../packages/config/tsconfig.node.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"]
+  },
+  "include": ["*.ts", "../packages/config/cloudflare-workers.d.ts"]
+}
