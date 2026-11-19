@@ -1,5 +1,5 @@
 {
-  "at": "2026-11-19T13:24:01.203Z",
+  "at": "2026-11-19T13:29:36.861Z",
   "user": "lmfaole",
   "items": [
     {
@@ -9,7 +9,9 @@
       "title": "Godzilla Minus Zero",
       "year": 2026,
       "episode": null,
-      "url": "https://trakt.tv/movies/godzilla-minus-zero-2026"
+      "url": "https://trakt.tv/movies/godzilla-minus-zero-2026",
+      "tmdbId": 1381071,
+      "poster": "https://image.tmdb.org/t/p/w185/hSmIJluOJmTWvJs4d7kHRxjc8s8.jpg"
     },
     {
       "id": 14621145491,
@@ -18,7 +20,9 @@
       "title": "Wolfs",
       "year": 2024,
       "episode": null,
-      "url": "https://trakt.tv/movies/wolfs-2024"
+      "url": "https://trakt.tv/movies/wolfs-2024",
+      "tmdbId": 877817,
+      "poster": "https://image.tmdb.org/t/p/w185/vOX1Zng472PC2KnS0B9nRfM8aaZ.jpg"
     },
     {
       "id": 14618967302,
@@ -27,7 +31,9 @@
       "title": "Cold Prey",
       "year": 2006,
       "episode": null,
-      "url": "https://trakt.tv/movies/cold-prey-2006"
+      "url": "https://trakt.tv/movies/cold-prey-2006",
+      "tmdbId": 21786,
+      "poster": "https://image.tmdb.org/t/p/w185/sxYjsslcs5FSsAkEfjr50gAQWNo.jpg"
     },
     {
       "id": 14618088820,
@@ -40,7 +46,9 @@
         "season": 3,
         "number": 10
       },
-      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/10"
+      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/10",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14617993357,
@@ -53,7 +61,9 @@
         "season": 3,
         "number": 9
       },
-      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/9"
+      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/9",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14617909059,
@@ -66,7 +76,9 @@
         "season": 3,
         "number": 8
       },
-      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/8"
+      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/8",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14616601812,
@@ -79,7 +91,9 @@
         "season": 3,
         "number": 7
       },
-      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/7"
+      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/7",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14616347127,
@@ -92,7 +106,9 @@
         "season": 3,
         "number": 6
       },
-      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/6"
+      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/6",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14616051307,
@@ -105,7 +121,9 @@
         "season": 3,
         "number": 5
       },
-      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/5"
+      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/5",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14615844419,
@@ -118,7 +136,9 @@
         "season": 3,
         "number": 4
       },
-      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/4"
+      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/4",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14615609649,
@@ -131,7 +151,9 @@
         "season": 3,
         "number": 3
       },
-      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/3"
+      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/3",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14610473775,
@@ -140,7 +162,9 @@
       "title": "Wild Horse Nine",
       "year": 2026,
       "episode": null,
-      "url": "https://trakt.tv/movies/wild-horse-nine-2026"
+      "url": "https://trakt.tv/movies/wild-horse-nine-2026",
+      "tmdbId": 891621,
+      "poster": "https://image.tmdb.org/t/p/w185/dNJFRtVg3xLQ7dbNIQ55cmmIniD.jpg"
     },
     {
       "id": 14608315488,
@@ -153,7 +177,9 @@
         "season": 3,
         "number": 6
       },
-      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/6"
+      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/6",
+      "tmdbId": 261203,
+      "poster": "https://image.tmdb.org/t/p/w185/hIMzXm9RcylDrVSnM22hEbM9Ny9.jpg"
     },
     {
       "id": 14608309619,
@@ -166,7 +192,9 @@
         "season": 5,
         "number": 10
       },
-      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/10"
+      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/10",
+      "tmdbId": 243518,
+      "poster": "https://image.tmdb.org/t/p/w185/gQe9FXhQrVQVM63R9fRHuXtqqHJ.jpg"
     },
     {
       "id": 14608309307,
@@ -179,7 +207,9 @@
         "season": 5,
         "number": 9
       },
-      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/9"
+      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/9",
+      "tmdbId": 243518,
+      "poster": "https://image.tmdb.org/t/p/w185/gQe9FXhQrVQVM63R9fRHuXtqqHJ.jpg"
     },
     {
       "id": 14607697464,
@@ -188,7 +218,9 @@
       "title": "Primetime",
       "year": 2026,
       "episode": null,
-      "url": "https://trakt.tv/movies/primetime-2026"
+      "url": "https://trakt.tv/movies/primetime-2026",
+      "tmdbId": 1375441,
+      "poster": "https://image.tmdb.org/t/p/w185/lmrulvLbmaejTix1YaMxo1oGhH1.jpg"
     },
     {
       "id": 14595985493,
@@ -197,7 +229,9 @@
       "title": "Growth of the Soil",
       "year": 2026,
       "episode": null,
-      "url": "https://trakt.tv/movies/growth-of-the-soil-2026"
+      "url": "https://trakt.tv/movies/growth-of-the-soil-2026",
+      "tmdbId": 1729732,
+      "poster": "https://image.tmdb.org/t/p/w185/5Gcdlpf1a3KMe0ANL1ZT8mKDOqj.jpg"
     },
     {
       "id": 14591689737,
@@ -210,7 +244,9 @@
         "season": 3,
         "number": 5
       },
-      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/5"
+      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/5",
+      "tmdbId": 261203,
+      "poster": "https://image.tmdb.org/t/p/w185/hIMzXm9RcylDrVSnM22hEbM9Ny9.jpg"
     },
     {
       "id": 14591689696,
@@ -223,7 +259,9 @@
         "season": 5,
         "number": 8
       },
-      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/8"
+      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/8",
+      "tmdbId": 243518,
+      "poster": "https://image.tmdb.org/t/p/w185/gQe9FXhQrVQVM63R9fRHuXtqqHJ.jpg"
     },
     {
       "id": 14591689675,
@@ -236,7 +274,9 @@
         "season": 5,
         "number": 7
       },
-      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/7"
+      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/7",
+      "tmdbId": 243518,
+      "poster": "https://image.tmdb.org/t/p/w185/gQe9FXhQrVQVM63R9fRHuXtqqHJ.jpg"
     },
     {
       "id": 14588936154,
@@ -245,7 +285,9 @@
       "title": "The Ring",
       "year": 2002,
       "episode": null,
-      "url": "https://trakt.tv/movies/the-ring-2002"
+      "url": "https://trakt.tv/movies/the-ring-2002",
+      "tmdbId": 565,
+      "poster": "https://image.tmdb.org/t/p/w185/AeRpUynJKDpJveklBJipOYrVxCS.jpg"
     },
     {
       "id": 14567521930,
@@ -258,7 +300,9 @@
         "season": 5,
         "number": 6
       },
-      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/6"
+      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/6",
+      "tmdbId": 243518,
+      "poster": "https://image.tmdb.org/t/p/w185/gQe9FXhQrVQVM63R9fRHuXtqqHJ.jpg"
     },
     {
       "id": 14567521571,
@@ -271,7 +315,9 @@
         "season": 5,
         "number": 5
       },
-      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/5"
+      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/5",
+      "tmdbId": 243518,
+      "poster": "https://image.tmdb.org/t/p/w185/gQe9FXhQrVQVM63R9fRHuXtqqHJ.jpg"
     },
     {
       "id": 14623354306,
@@ -284,7 +330,9 @@
         "season": 6,
         "number": 5
       },
-      "url": "https://trakt.tv/shows/black-mirror/seasons/6/episodes/5"
+      "url": "https://trakt.tv/shows/black-mirror/seasons/6/episodes/5",
+      "tmdbId": 42009,
+      "poster": "https://image.tmdb.org/t/p/w185/seN6rRfN0I6n8iDXjlSMk1QjNcq.jpg"
     },
     {
       "id": 14623354304,
@@ -297,7 +345,9 @@
         "season": 4,
         "number": 10
       },
-      "url": "https://trakt.tv/shows/side-by-side/seasons/4/episodes/10"
+      "url": "https://trakt.tv/shows/side-by-side/seasons/4/episodes/10",
+      "tmdbId": 67581,
+      "poster": "https://image.tmdb.org/t/p/w185/mQnyxZYyJU4pzuZlrmapNDmPw6M.jpg"
     },
     {
       "id": 14623354305,
@@ -310,7 +360,9 @@
         "season": 1,
         "number": 8
       },
-      "url": "https://trakt.tv/shows/euphoria-2019/seasons/1/episodes/8"
+      "url": "https://trakt.tv/shows/euphoria-2019/seasons/1/episodes/8",
+      "tmdbId": 85552,
+      "poster": "https://image.tmdb.org/t/p/w185/aJrG7OkoTMPWG5c8opz8a93AZPY.jpg"
     },
     {
       "id": 14617373761,
@@ -323,7 +375,9 @@
         "season": 1,
         "number": 4
       },
-      "url": "https://trakt.tv/shows/silo/seasons/1/episodes/4"
+      "url": "https://trakt.tv/shows/silo/seasons/1/episodes/4",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14617373760,
@@ -336,7 +390,9 @@
         "season": 1,
         "number": 3
       },
-      "url": "https://trakt.tv/shows/silo/seasons/1/episodes/3"
+      "url": "https://trakt.tv/shows/silo/seasons/1/episodes/3",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14617373759,
@@ -349,7 +405,9 @@
         "season": 1,
         "number": 2
       },
-      "url": "https://trakt.tv/shows/silo/seasons/1/episodes/2"
+      "url": "https://trakt.tv/shows/silo/seasons/1/episodes/2",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14617373734,
@@ -362,7 +420,9 @@
         "season": 3,
         "number": 2
       },
-      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/2"
+      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/2",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14617373692,
@@ -375,7 +435,9 @@
         "season": 3,
         "number": 1
       },
-      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/1"
+      "url": "https://trakt.tv/shows/silo/seasons/3/episodes/1",
+      "tmdbId": 125988,
+      "poster": "https://image.tmdb.org/t/p/w185/r2QXomqKjkKHVtYGGtkf2l2Y7go.jpg"
     },
     {
       "id": 14617373679,
@@ -388,7 +450,9 @@
         "season": 1,
         "number": 7
       },
-      "url": "https://trakt.tv/shows/sunny/seasons/1/episodes/7"
+      "url": "https://trakt.tv/shows/sunny/seasons/1/episodes/7",
+      "tmdbId": 157226,
+      "poster": "https://image.tmdb.org/t/p/w185/7x3rqEpps3msoQhBUJyiaXotGBL.jpg"
     },
     {
       "id": 14569341481,
@@ -401,7 +465,9 @@
         "season": 3,
         "number": 4
       },
-      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/4"
+      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/4",
+      "tmdbId": 261203,
+      "poster": "https://image.tmdb.org/t/p/w185/hIMzXm9RcylDrVSnM22hEbM9Ny9.jpg"
     },
     {
       "id": 14559863682,
@@ -414,7 +480,9 @@
         "season": 5,
         "number": 4
       },
-      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/4"
+      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/4",
+      "tmdbId": 243518,
+      "poster": "https://image.tmdb.org/t/p/w185/gQe9FXhQrVQVM63R9fRHuXtqqHJ.jpg"
     },
     {
       "id": 14559863681,
@@ -427,7 +495,9 @@
         "season": 5,
         "number": 3
       },
-      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/3"
+      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/3",
+      "tmdbId": 243518,
+      "poster": "https://image.tmdb.org/t/p/w185/gQe9FXhQrVQVM63R9fRHuXtqqHJ.jpg"
     },
     {
       "id": 14557428450,
@@ -436,7 +506,9 @@
       "title": "Rose",
       "year": 2026,
       "episode": null,
-      "url": "https://trakt.tv/movies/rose-2026"
+      "url": "https://trakt.tv/movies/rose-2026",
+      "tmdbId": 1176962,
+      "poster": "https://image.tmdb.org/t/p/w185/4k3ph6BoeZr7IMiQx8ioEV8d9cJ.jpg"
     },
     {
       "id": 14557428441,
@@ -445,7 +517,9 @@
       "title": "The Devils",
       "year": 1971,
       "episode": null,
-      "url": "https://trakt.tv/movies/the-devils-1971"
+      "url": "https://trakt.tv/movies/the-devils-1971",
+      "tmdbId": 31767,
+      "poster": "https://image.tmdb.org/t/p/w185/y1k7eiOFc6fzm8XeTa1kNGx6JIs.jpg"
     },
     {
       "id": 14569341480,
@@ -458,7 +532,9 @@
         "season": 3,
         "number": 3
       },
-      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/3"
+      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/3",
+      "tmdbId": 261203,
+      "poster": "https://image.tmdb.org/t/p/w185/hIMzXm9RcylDrVSnM22hEbM9Ny9.jpg"
     },
     {
       "id": 14557419494,
@@ -471,7 +547,9 @@
         "season": 5,
         "number": 2
       },
-      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/2"
+      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/2",
+      "tmdbId": 243518,
+      "poster": "https://image.tmdb.org/t/p/w185/gQe9FXhQrVQVM63R9fRHuXtqqHJ.jpg"
     },
     {
       "id": 14557419493,
@@ -484,7 +562,9 @@
         "season": 5,
         "number": 1
       },
-      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/1"
+      "url": "https://trakt.tv/shows/spillet/seasons/5/episodes/1",
+      "tmdbId": 243518,
+      "poster": "https://image.tmdb.org/t/p/w185/gQe9FXhQrVQVM63R9fRHuXtqqHJ.jpg"
     },
     {
       "id": 14569341479,
@@ -497,7 +577,9 @@
         "season": 3,
         "number": 2
       },
-      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/2"
+      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/2",
+      "tmdbId": 261203,
+      "poster": "https://image.tmdb.org/t/p/w185/hIMzXm9RcylDrVSnM22hEbM9Ny9.jpg"
     },
     {
       "id": 14560248181,
@@ -510,7 +592,9 @@
         "season": 6,
         "number": 24
       },
-      "url": "https://trakt.tv/shows/forraeder/seasons/6/episodes/24"
+      "url": "https://trakt.tv/shows/forraeder/seasons/6/episodes/24",
+      "tmdbId": 208458,
+      "poster": "https://image.tmdb.org/t/p/w185/oRpQRfInqVCIHU0r3RTR57nnlBF.jpg"
     },
     {
       "id": 14560248180,
@@ -523,7 +607,9 @@
         "season": 6,
         "number": 23
       },
-      "url": "https://trakt.tv/shows/forraeder/seasons/6/episodes/23"
+      "url": "https://trakt.tv/shows/forraeder/seasons/6/episodes/23",
+      "tmdbId": 208458,
+      "poster": "https://image.tmdb.org/t/p/w185/oRpQRfInqVCIHU0r3RTR57nnlBF.jpg"
     },
     {
       "id": 14569341478,
@@ -536,7 +622,9 @@
         "season": 3,
         "number": 1
       },
-      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/1"
+      "url": "https://trakt.tv/shows/norway-s-dumbest/seasons/3/episodes/1",
+      "tmdbId": 261203,
+      "poster": "https://image.tmdb.org/t/p/w185/hIMzXm9RcylDrVSnM22hEbM9Ny9.jpg"
     },
     {
       "id": 14617373755,
@@ -549,7 +637,9 @@
         "season": 1,
         "number": 49
       },
-      "url": "https://trakt.tv/shows/digimon-beatbreak/seasons/1/episodes/49"
+      "url": "https://trakt.tv/shows/digimon-beatbreak/seasons/1/episodes/49",
+      "tmdbId": 286791,
+      "poster": "https://image.tmdb.org/t/p/w185/qcy74ZdijvhaIyiPKFVZJZZrpJt.jpg"
     },
     {
       "id": 14560248179,
@@ -562,7 +652,9 @@
         "season": 6,
         "number": 22
       },
-      "url": "https://trakt.tv/shows/forraeder/seasons/6/episodes/22"
+      "url": "https://trakt.tv/shows/forraeder/seasons/6/episodes/22",
+      "tmdbId": 208458,
+      "poster": "https://image.tmdb.org/t/p/w185/oRpQRfInqVCIHU0r3RTR57nnlBF.jpg"
     },
     {
       "id": 14560248178,
@@ -575,7 +667,9 @@
         "season": 6,
         "number": 21
       },
-      "url": "https://trakt.tv/shows/forraeder/seasons/6/episodes/21"
+      "url": "https://trakt.tv/shows/forraeder/seasons/6/episodes/21",
+      "tmdbId": 208458,
+      "poster": "https://image.tmdb.org/t/p/w185/oRpQRfInqVCIHU0r3RTR57nnlBF.jpg"
     },
     {
       "id": 14560250099,
@@ -588,7 +682,9 @@
         "season": 7,
         "number": 7
       },
-      "url": "https://trakt.tv/shows/ikke-lov-a-le-pa-hytta/seasons/7/episodes/7"
+      "url": "https://trakt.tv/shows/ikke-lov-a-le-pa-hytta/seasons/7/episodes/7",
+      "tmdbId": 118662,
+      "poster": "https://image.tmdb.org/t/p/w185/zdqHoHJ7a16e56UMphgTFXb3uXi.jpg"
     },
     {
       "id": 14560250098,
@@ -601,7 +697,9 @@
         "season": 7,
         "number": 6
       },
-      "url": "https://trakt.tv/shows/ikke-lov-a-le-pa-hytta/seasons/7/episodes/6"
+      "url": "https://trakt.tv/shows/ikke-lov-a-le-pa-hytta/seasons/7/episodes/6",
+      "tmdbId": 118662,
+      "poster": "https://image.tmdb.org/t/p/w185/zdqHoHJ7a16e56UMphgTFXb3uXi.jpg"
     },
     {
       "id": 14560250097,
@@ -614,7 +712,9 @@
         "season": 7,
         "number": 5
       },
-      "url": "https://trakt.tv/shows/ikke-lov-a-le-pa-hytta/seasons/7/episodes/5"
+      "url": "https://trakt.tv/shows/ikke-lov-a-le-pa-hytta/seasons/7/episodes/5",
+      "tmdbId": 118662,
+      "poster": "https://image.tmdb.org/t/p/w185/zdqHoHJ7a16e56UMphgTFXb3uXi.jpg"
     }
   ]
 }
