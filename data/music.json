@@ -1,7 +1,15 @@
 {
-  "at": "2026-11-19T13:24:01.354Z",
+  "at": "2026-11-19T22:41:46.435Z",
   "user": "snowpony69",
   "recent": [
+    {
+      "track": "Ever",
+      "artist": "After",
+      "album": "Ever",
+      "image": "https://lastfm-img.freetls.fastly.net/i/u/300x300/6ac804145cde03ecd4fb10fa9bb67ced.jpg",
+      "url": "https://www.last.fm/music/After/_/Ever",
+      "playedAt": "2026-11-19T07:48:43.000Z"
+    },
     {
       "track": "White Collar",
       "artist": "daine",
@@ -393,14 +401,6 @@
       "image": "https://lastfm-img.freetls.fastly.net/i/u/300x300/0508854a1170f75d4b252491e38c0db2.png",
       "url": "https://www.last.fm/music/Tyla/_/THAT+GIRL",
       "playedAt": "2026-11-18T07:31:04.000Z"
-    },
-    {
-      "track": "You're serious, aren't you ?",
-      "artist": "tsubi club",
-      "album": "trinket",
-      "image": "https://lastfm-img.freetls.fastly.net/i/u/300x300/4e7973bb339d02c603044659d7a56c4d.png",
-      "url": "https://www.last.fm/music/tsubi+club/_/You%27re+serious,+aren%27t+you+%3F",
-      "playedAt": "2026-11-18T07:28:39.000Z"
     }
   ],
   "topArtists": [
@@ -411,7 +411,7 @@
     },
     {
       "name": "Troye Sivan",
-      "plays": 86,
+      "plays": 75,
       "url": "https://www.last.fm/music/Troye+Sivan"
     },
     {
@@ -425,11 +425,6 @@
       "url": "https://www.last.fm/music/SZA"
     },
     {
-      "name": "Ninajirachi",
-      "plays": 36,
-      "url": "https://www.last.fm/music/Ninajirachi"
-    },
-    {
       "name": "Tinashe",
       "plays": 36,
       "url": "https://www.last.fm/music/Tinashe"
@@ -440,14 +435,19 @@
       "url": "https://www.last.fm/music/Rebecca+Black"
     },
     {
-      "name": "underscores",
-      "plays": 35,
-      "url": "https://www.last.fm/music/underscores"
-    },
-    {
       "name": "Orville Peck",
       "plays": 34,
       "url": "https://www.last.fm/music/Orville+Peck"
+    },
+    {
+      "name": "Ninajirachi",
+      "plays": 33,
+      "url": "https://www.last.fm/music/Ninajirachi"
+    },
+    {
+      "name": "underscores",
+      "plays": 31,
+      "url": "https://www.last.fm/music/underscores"
     },
     {
       "name": "horsegiirL",
