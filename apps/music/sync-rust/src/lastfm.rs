@@ -395,7 +395,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    fn page(tracks: serde_json::Value, total_pages: u32) -> String {
+    fn page(tracks: &serde_json::Value, total_pages: u32) -> String {
         json!({ "recenttracks": { "track": tracks, "@attr": { "user": "snowpony69", "page": "1", "perPage": "200", "totalPages": total_pages.to_string(), "total": "3" } } }).to_string()
     }
 
@@ -416,7 +416,7 @@ mod tests {
 
     #[test]
     fn parse_page_reads_the_real_shape() {
-        let parsed = parse_page(&page(json!([track("Song", "Artist", 1_262_347_200)]), 7)).unwrap();
+        let parsed = parse_page(&page(&json!([track("Song", "Artist", 1_262_347_200)]), 7)).unwrap();
 
         assert_eq!(parsed.total_pages, 7);
         assert_eq!(
@@ -435,7 +435,7 @@ mod tests {
 
     #[test]
     fn a_single_track_is_an_object_not_an_array() {
-        let parsed = parse_page(&page(track("Only", "Artist", 1_000_000), 1)).unwrap();
+        let parsed = parse_page(&page(&track("Only", "Artist", 1_000_000), 1)).unwrap();
 
         assert_eq!(parsed.scrobbles.len(), 1);
     }
@@ -443,7 +443,7 @@ mod tests {
     #[test]
     fn a_now_playing_item_is_skipped() {
         let playing = json!({ "artist": { "mbid": "", "#text": "Artist" }, "name": "Now", "mbid": "", "album": { "mbid": "", "#text": "" }, "@attr": { "nowplaying": "true" } });
-        let parsed = parse_page(&page(json!([playing, track("Done", "Artist", 1_000_000)]), 1)).unwrap();
+        let parsed = parse_page(&page(&json!([playing, track("Done", "Artist", 1_000_000)]), 1)).unwrap();
 
         assert_eq!(parsed.scrobbles.iter().map(|s| s.track.as_str()).collect::<Vec<_>>(), vec!["Done"]);
     }
@@ -451,7 +451,7 @@ mod tests {
     #[test]
     fn empty_mbids_and_an_empty_album_become_none() {
         let bare = json!({ "artist": { "mbid": "", "#text": "Artist" }, "name": "Bare", "mbid": "", "album": { "mbid": "", "#text": "" }, "date": { "uts": "1000000", "#text": "" } });
-        let parsed = parse_page(&page(json!([bare]), 1)).unwrap();
+        let parsed = parse_page(&page(&json!([bare]), 1)).unwrap();
 
         let only = &parsed.scrobbles[0];
         assert_eq!((only.album.as_deref(), only.recording_mbid.as_deref(), only.artist_mbid.as_deref(), only.release_mbid.as_deref()), (None, None, None, None));
@@ -467,7 +467,7 @@ mod tests {
     #[test]
     fn api_error_reads_the_error_object() {
         assert_eq!(api_error(&json!({ "error": 29, "message": "Rate Limit Exceeded" }).to_string()), Some((29, "Rate Limit Exceeded".to_string())));
-        assert_eq!(api_error(&page(json!([]), 0)), None);
+        assert_eq!(api_error(&page(&json!([]), 0)), None);
     }
 
     #[test]
@@ -516,7 +516,7 @@ mod tests {
     }
 
     fn stub_pages(total: u32) -> impl FnMut(u32) -> Result<String> {
-        move |number| Ok(page(json!([track(&format!("Song {number}"), "Artist", 1_000_000 + i64::from(number))]), total))
+        move |number| Ok(page(&json!([track(&format!("Song {number}"), "Artist", 1_000_000 + i64::from(number))]), total))
     }
 
     #[test]
@@ -545,7 +545,7 @@ mod tests {
                 if calls == 1 {
                     Ok(json!({ "error": 29, "message": "Rate Limit Exceeded" }).to_string())
                 } else {
-                    Ok(page(json!([track("S", "A", 1_000_000)]), 1))
+                    Ok(page(&json!([track("S", "A", 1_000_000)]), 1))
                 }
             },
             |wait| slept.push(wait),
@@ -569,7 +569,7 @@ mod tests {
             4,
             |number| {
                 asked.push(number);
-                Ok(page(json!([track("S", "A", 1_000_000)]), 6))
+                Ok(page(&json!([track("S", "A", 1_000_000)]), 6))
             },
             |_| {},
             |number, _| {
@@ -607,8 +607,8 @@ mod tests {
         let directory = std::env::temp_dir().join(format!("lastfm-import-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&directory);
         std::fs::create_dir_all(&directory).unwrap();
-        std::fs::write(directory.join("page-00001.json"), page(json!([track("Song", "Artist", 1_262_347_200), track("Older", "Artist", 1_262_340_000)]), 2)).unwrap();
-        std::fs::write(directory.join("page-00002.json"), page(json!([track("Oldest", "Artist", 1_262_330_000)]), 2)).unwrap();
+        std::fs::write(directory.join("page-00001.json"), page(&json!([track("Song", "Artist", 1_262_347_200), track("Older", "Artist", 1_262_340_000)]), 2)).unwrap();
+        std::fs::write(directory.join("page-00002.json"), page(&json!([track("Oldest", "Artist", 1_262_330_000)]), 2)).unwrap();
         std::fs::write(directory.join("notes.txt"), "not a page").unwrap();
         let db = SqliteClient::open(Path::new(":memory:")).unwrap();
         crate::schema::apply(&db).unwrap();
@@ -627,7 +627,7 @@ mod tests {
         let directory = std::env::temp_dir().join(format!("lastfm-dry-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&directory);
         std::fs::create_dir_all(&directory).unwrap();
-        std::fs::write(directory.join("page-00001.json"), page(json!([track("Song", "Artist", 1_262_347_200)]), 1)).unwrap();
+        std::fs::write(directory.join("page-00001.json"), page(&json!([track("Song", "Artist", 1_262_347_200)]), 1)).unwrap();
         let db = SqliteClient::open(Path::new(":memory:")).unwrap();
         crate::schema::apply(&db).unwrap();
 

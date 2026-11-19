@@ -78,8 +78,8 @@ mod tests {
     #[test]
     fn a_game_is_owned_until_it_has_hours_and_its_number_is_steams() {
         let entries = entries_in(&json!({"response": {"games": [
-            {"appid": 1145360, "name": "Hades", "playtime_forever": 1920, "rtime_last_played": 1_700_000_000},
-            {"appid": 504230, "name": "Celeste", "playtime_forever": 0, "rtime_last_played": 0},
+            {"appid": 1_145_360, "name": "Hades", "playtime_forever": 1920, "rtime_last_played": 1_700_000_000},
+            {"appid": 504_230, "name": "Celeste", "playtime_forever": 0, "rtime_last_played": 0},
             {"appid": 5, "playtime_forever": 10}
         ]}}));
         assert_eq!(entries.len(), 2);

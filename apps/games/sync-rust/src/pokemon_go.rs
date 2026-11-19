@@ -261,7 +261,7 @@ mod tests {
     #[test]
     fn the_profile_is_the_level_the_experience_and_the_kilometers() {
         let readings = profile_in("Level: 53\nTotal XP: 17790419\nDistance walked: 4198.167480 km\n");
-        assert_eq!(readings.iter().map(|reading| (reading.key, reading.value as i64)).collect::<Vec<_>>(), vec![("level", 53), ("xp", 17_790_419), ("km", 4198)]);
+        assert_eq!(readings.iter().map(|reading| (reading.key, reading.value.trunc())).collect::<Vec<_>>(), vec![("level", 53.0), ("xp", 17_790_419.0), ("km", 4198.0)]);
         assert!(profile_in("nothing\n").is_empty());
     }
 

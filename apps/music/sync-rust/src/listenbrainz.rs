@@ -25,7 +25,7 @@ pub fn http_client() -> Result<reqwest::blocking::Client> {
     reqwest::blocking::Client::builder()
         .user_agent("music-sync/0.1 (+https://sky.lmfaole.party/apps/medier/musikk)")
         .connect_timeout(Duration::from_secs(15))
-        .timeout(Duration::from_secs(60))
+        .timeout(Duration::from_mins(1))
         .build()
         .context("building HTTP client")
 }

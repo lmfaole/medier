@@ -243,7 +243,7 @@ mod tests {
         json!({ "name": name, "mbid": mbid, "artist": { "name": "PinkPantheress", "mbid": "" }, "date": { "uts": uts.to_string(), "#text": "x" } })
     }
 
-    fn page(tracks: serde_json::Value, total_pages: u32, total: usize) -> String {
+    fn page(tracks: &serde_json::Value, total_pages: u32, total: usize) -> String {
         json!({ "lovedtracks": { "track": tracks, "@attr": { "user": "u", "page": "1", "perPage": "200", "totalPages": total_pages.to_string(), "total": total.to_string() } } }).to_string()
     }
 
@@ -255,8 +255,8 @@ mod tests {
 
     #[test]
     fn parse_page_reads_the_real_shape_and_a_single_track_object() {
-        let many = parse_page(&page(json!([track("Nice to know you", "m1", 100)]), 1, 1)).unwrap();
-        let one = parse_page(&page(track("Nice to know you", "", 100), 1, 1)).unwrap();
+        let many = parse_page(&page(&json!([track("Nice to know you", "m1", 100)]), 1, 1)).unwrap();
+        let one = parse_page(&page(&track("Nice to know you", "", 100), 1, 1)).unwrap();
 
         assert_eq!(many.items, vec![Loved { track: "Nice to know you".into(), artist: "PinkPantheress".into(), recording_mbid: Some("m1".into()), at: 100 }]);
         assert_eq!(one.items[0].recording_mbid, None);
@@ -264,10 +264,10 @@ mod tests {
 
     #[test]
     fn fetch_all_walks_every_page_and_refuses_a_total_that_does_not_add_up() {
-        let two_pages = |number: u32| Ok(page(json!([track(&format!("t{number}"), "", i64::from(number))]), 2, 2));
+        let two_pages = |number: u32| Ok(page(&json!([track(&format!("t{number}"), "", i64::from(number))]), 2, 2));
         assert_eq!(fetch_all(two_pages, |_, _| Ok(())).unwrap().len(), 2);
 
-        let short = |_: u32| Ok(page(json!([track("t", "", 1)]), 1, 3));
+        let short = |_: u32| Ok(page(&json!([track("t", "", 1)]), 1, 3));
         assert!(fetch_all(short, |_, _| Ok(())).is_err());
     }
 

@@ -109,7 +109,7 @@ mod tests {
     #[test]
     fn a_budget_of_nothing_is_spent_at_once() {
         assert!(Budget::new(Duration::ZERO).is_spent());
-        assert!(!Budget::new(Duration::from_secs(60)).is_spent());
+        assert!(!Budget::new(Duration::from_mins(1)).is_spent());
     }
 
     #[test]

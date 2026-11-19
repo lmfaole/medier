@@ -66,6 +66,17 @@ pub fn unsafe_to_repeat(schema: &str) -> Vec<String> {
         .collect()
 }
 
+/// An empty in-memory database with `schema` applied, for the tools' tests.
+///
+/// # Panics
+/// When the schema does not apply: a test cannot go on without it.
+#[must_use]
+pub fn memory_with_schema(schema: &str) -> SqliteClient {
+    let db = SqliteClient::open(Path::new(":memory:")).unwrap_or_else(|error| panic!("{error}"));
+    apply_schema(&db, schema).unwrap_or_else(|error| panic!("{error}"));
+    db
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -122,15 +133,4 @@ mod tests {
         assert_eq!(unsafe_to_repeat("CREATE TABLE b (x INTEGER);"), vec!["CREATE TABLE b (x INTEGER)"]);
         assert!(unsafe_to_repeat(SCHEMA).is_empty());
     }
-}
-
-/// An empty in-memory database with `schema` applied, for the tools' tests.
-///
-/// # Panics
-/// When the schema does not apply: a test cannot go on without it.
-#[must_use]
-pub fn memory_with_schema(schema: &str) -> SqliteClient {
-    let db = SqliteClient::open(Path::new(":memory:")).unwrap_or_else(|error| panic!("{error}"));
-    apply_schema(&db, schema).unwrap_or_else(|error| panic!("{error}"));
-    db
 }

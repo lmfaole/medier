@@ -1,0 +1,5 @@
+# One Rust for the machine and for CI, so a new stable release with new lints never breaks the build by itself: raise it on purpose,
+# with its clippy findings fixed in the same change.
+[toolchain]
+channel = "1.97.0"
+components = ["clippy"]

@@ -75,7 +75,7 @@ impl Client {
         let http = reqwest::blocking::Client::builder()
             .user_agent("work-sync/0.1 (+https://jobb.lmfaole.party)")
             .connect_timeout(Duration::from_secs(15))
-            .timeout(Duration::from_secs(60))
+            .timeout(Duration::from_mins(1))
             .build()
             .context("building the HTTP client")?;
         Ok(Self { http, token: token()? })

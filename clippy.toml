@@ -4,4 +4,4 @@ allow-unwrap-in-tests = true
 allow-expect-in-tests = true
 
 # Product names, not identifiers; `..` keeps clippy's own list.
-doc-valid-idents = ["ListenBrainz", "MusicBrainz", ".."]
+doc-valid-idents = ["ListenBrainz", "MusicBrainz", "SQLite", ".."]

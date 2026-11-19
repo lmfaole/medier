@@ -171,7 +171,7 @@ mod tests {
             "credits": {"cast": [{"id": 1158, "name": "Al Pacino", "character": "Vincent Hanna"}, {"id": 380, "name": "Robert De Niro", "character": "Neil McCauley"}],
                         "crew": [{"id": 1, "name": "Someone", "job": "Gaffer"}, {"id": 1100, "name": "Michael Mann", "job": "Director"}, {"id": 1100, "name": "Michael Mann", "job": "Screenplay"},
                                  {"id": 7, "name": "Elliot Goldenthal", "job": "Original Music Composer"}]},
-            "vote_average": 7.9, "vote_count": 1200, "budget": 60000000, "revenue": 0, "imdb_id": "tt0113277",
+            "vote_average": 7.9, "vote_count": 1200, "budget": 60_000_000, "revenue": 0, "imdb_id": "tt0113277",
             "external_ids": {"wikidata_id": "Q221103"}, "belongs_to_collection": {"id": 5, "name": "Heat-samlingen"},
             "production_companies": [{"name": "Regency", "origin_country": "US"}, {"name": "", "origin_country": ""}],
             "keywords": {"keywords": [{"id": 1, "name": "heist"}, {"id": 2, "name": "  "}]},
@@ -197,7 +197,7 @@ mod tests {
     fn a_title_nobody_matches_gives_the_first_candidates_to_choose_from() {
         match tmdb::pick(&search(), "Heat", 2001, Shape::Film) {
             Found::Candidates(hits) => assert_eq!(hits.iter().map(|hit| hit.id).collect::<Vec<_>>(), vec![1, 2, 3, 4]),
-            other => panic!("{other:?}"),
+            other @ Found::Number(_) => panic!("{other:?}"),
         }
     }
 

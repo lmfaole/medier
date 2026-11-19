@@ -235,7 +235,7 @@ mod tests {
         assert_eq!((repos[1].fork, repos[1].archived, repos[1].pushed_at.clone(), repos[1].description.clone()), (true, true, None, None));
     }
 
-    fn search(items: serde_json::Value, incomplete: bool) -> String {
+    fn search(items: &serde_json::Value, incomplete: bool) -> String {
         json!({ "total_count": 1, "incomplete_results": incomplete, "items": items }).to_string()
     }
 
@@ -250,7 +250,7 @@ mod tests {
               "pull_request": { "merged_at": null } }
         ]);
 
-        let page = parse_search(&search(items, false), Kind::Pr).unwrap();
+        let page = parse_search(&search(&items, false), Kind::Pr).unwrap();
 
         assert_eq!(page.items.iter().map(|item| item.merged).collect::<Vec<_>>(), vec![true, false]);
         assert_eq!((page.items[0].repo.as_str(), page.items[0].number, page.items[0].kind), ("lmfaole/monorepo", 7, Kind::Pr));
@@ -261,16 +261,16 @@ mod tests {
         let items = json!([{ "id": 21, "number": 3, "title": "A bug", "state": "open", "created_at": "2025-06-01T10:00:00Z", "closed_at": null,
             "html_url": "https://github.com/lmfaole/monorepo/issues/3", "repository_url": "https://api.github.com/repos/lmfaole/monorepo" }]);
 
-        let page = parse_search(&search(items, false), Kind::Issue).unwrap();
+        let page = parse_search(&search(&items, false), Kind::Issue).unwrap();
 
         assert_eq!((page.items[0].merged, page.items[0].closed_at.clone(), page.items[0].state.as_str()), (false, None, "open"));
     }
 
     #[test]
     fn an_incomplete_search_is_said_so_and_a_malformed_repository_url_is_an_error() {
-        assert!(parse_search(&search(json!([]), true), Kind::Pr).unwrap().incomplete);
+        assert!(parse_search(&search(&json!([]), true), Kind::Pr).unwrap().incomplete);
         let bad = json!([{ "id": 1, "number": 1, "title": "t", "state": "open", "created_at": "2025-01-01T00:00:00Z", "closed_at": null, "html_url": "u", "repository_url": "https://example.test/nothing" }]);
-        assert!(parse_search(&search(bad, false), Kind::Issue).is_err());
+        assert!(parse_search(&search(&bad, false), Kind::Issue).is_err());
     }
 
     #[test]
