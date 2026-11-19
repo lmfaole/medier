@@ -228,3 +228,13 @@ test("without a gate (a development run) everybody is let in", async () => {
   const origin = await start(undefined)
   assert.equal((await get(`${origin}/apps/film/`)).status, 200)
 })
+
+test("a picture the build does not have comes from the pictures landed on the machine, and the build wins where both have it", async () => {
+  const pictures = join(directory, "landed")
+  mkdirSync(join(pictures, "posters"), { recursive: true })
+  writeFileSync(join(pictures, "posters", "p.jpg"), "landed")
+  writeFileSync(join(pictures, "robots.txt"), "landed")
+  const origin = await start(stubGate("owner"), [app({ pictureDirectory: pictures })])
+  assert.equal(await (await get(`${origin}/apps/film/posters/p.jpg`)).text(), "landed")
+  assert.equal(await (await get(`${origin}/apps/film/robots.txt`)).text(), "no")
+})

@@ -14,6 +14,8 @@
  *   NEXTCLOUD_HOST  its public name, sent as `Host`, and where a visitor is sent to log in; `sky.lmfaole.party`
  *   OWNER_UID       the one Nextcloud account let in; `ole`
  *   APPER_DIR       the exporters' JSON files, read-only, for the home apps; `<DATA_DIR>/apper`
+ *   PICTURES_DIR    a folder like the checkout's `apps/`, whose `<app>/web/public/` has the pictures landed on the machine (covers, posters,
+ *                   artists); served when the build has no such file, since the image is built without them; the checkout's `apps/` by default
  *   MEDIA_ONLY      a comma list of apps to mount (a development run); all seven media apps, the hub, and each home app that has code
  *   MEDIA_LOGIN=off no login at all, on this machine only (page-check, e2e); logs a warning
  */
@@ -39,6 +41,8 @@ export interface MediaServerOptions {
   dataDirectory: string
   /** The exporters' JSON files, mounted read-only; `<dataDirectory>/apper` when left out. */
   apperDirectory?: string
+  /** Where `<app>/web/public/` holds the pictures landed on the machine; the checkout's `apps/` when left out. */
+  picturesDirectory?: string
   nextcloudUrl: string
   nextcloudHost: string
   ownerId: string
@@ -101,6 +105,7 @@ async function mountApp(spec: MediaAppSpec, options: MediaServerOptions): Promis
       base: spec.base,
       moved: spec.moved,
       clientDirectory: build.client,
+      pictureDirectory: join(options.picturesDirectory ?? join(options.rootDirectory, "apps"), spec.name, "web", "public"),
       api: host.fetcher,
       handler: () => (handler ??= import(pathToFileURL(build.server).href).then((module: { handler: AstroHandler }) => module.handler)),
       ...(extra === undefined ? {} : { extra }),
@@ -149,6 +154,7 @@ if (import.meta.filename === process.argv[1]) {
     rootDirectory,
     dataDirectory: resolve(process.env["DATA_DIR"] ?? join(rootDirectory, ".data")),
     ...(process.env["APPER_DIR"] === undefined ? {} : { apperDirectory: resolve(process.env["APPER_DIR"]) }),
+    ...(process.env["PICTURES_DIR"] === undefined ? {} : { picturesDirectory: resolve(process.env["PICTURES_DIR"]) }),
     nextcloudUrl: process.env["NEXTCLOUD_URL"] ?? "http://nextcloud:80",
     nextcloudHost: process.env["NEXTCLOUD_HOST"] ?? "sky.lmfaole.party",
     ownerId: process.env["OWNER_UID"] ?? "ole",

@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert"
 import { test } from "node:test"
 import { DatabaseSync } from "node:sqlite"
 
-import { dumpDatabase, restoreDatabase, rowCounts, shrunkTables, tableNames } from "./data-dump-plan.ts"
+import { changedDomains, commitMessage, dumpDatabase, gitIsBusy, joinTable, restoreDatabase, rowCounts, shrunkTables, tableFiles, tableNames } from "./data-dump-plan.ts"
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS thing (id INTEGER PRIMARY KEY, name TEXT, score REAL, big INTEGER, data BLOB, note TEXT);
@@ -81,4 +81,20 @@ test("a text with a NUL in it survives the dump whole, and two keys that differ 
   const keys = (sqlite: DatabaseSync) => sqlite.prepare("SELECT hex(k) AS k FROM keyed ORDER BY k").all().map((row) => row["k"])
   assert.deepEqual(keys(target), keys(source))
   assert.equal(keys(target).length, 3)
+})
+
+test("a large table is split in files of whole rows that join back to the same text, and a small one stays one file", () => {
+  const text = `${['["id","name"]', ...Array.from({ length: 7 }, (_, index) => `[${index},"row ${index}"]`)].join("\n")}\n`
+  assert.deepEqual(tableFiles("t", text), [["t.jsonl", text]])
+  const files = tableFiles("t", text, 10, 3)
+  assert.deepEqual(files.map(([path]) => path), ["t/0001.jsonl", "t/0002.jsonl", "t/0003.jsonl"])
+  assert.ok(files.every(([, file]) => file.startsWith('["id","name"]\n')))
+  assert.equal(joinTable(files.map(([, file]) => file)), text)
+})
+
+test("the commit names the domains that changed, and waits while git is busy", () => {
+  assert.deepEqual(changedDomains(" M music/listens/0003.jsonl\n?? film/film_viewing.jsonl\n D music/old.jsonl\n"), ["film", "music"])
+  assert.equal(commitMessage("2026-11-19", ["film", "music"]), "Data: dump 2026-11-19 (film, music)")
+  assert.equal(gitIsBusy(["HEAD", "index.lock"]), true)
+  assert.equal(gitIsBusy(["HEAD", "refs"]), false)
 })

@@ -153,3 +153,12 @@ systemctl --user reset-failed
 npm run timers     # the check lists only forside and work now
 ```
 The sync timers (`<app>-sync-*`) stay.
+
+## The image (`ghcr.io/lmfaole/medier`)
+
+`Containerfile` builds the server with the eight media apps in it; `.github/workflows/image.yml` builds it after CI passes on `main`, checks that
+`/healthz` answers, and pushes `latest` and the commit. The image holds no data and no key: the databases are mounted at `DATA_DIR` (`/data`), and
+the pictures landed on the machine (`apps/<app>/web/public/`: covers, posters, artists) at `PICTURES_DIR`, which the server falls back to when
+the build has no such file. `deploy/media.container` is the quadlet that runs it with `AutoUpdate=registry`, so `podman-auto-update.timer`
+deploys a green push to `main`. It replaces the unit of the Nextcloud repository once the home apps have a container of their own; they are not
+in this image.

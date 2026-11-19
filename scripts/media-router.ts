@@ -34,6 +34,8 @@ export interface MountedApp {
   moved: Readonly<Record<string, string>>
   /** The app's `dist/client`. */
   clientDirectory: string
+  /** The pictures landed on the machine (`web/public/` of the app: covers, posters, artists), served when the build does not have one: the image is built without them. */
+  pictureDirectory?: string
   /** `/api/*` of the app; the request is as received, base and all. */
   api: Fetcher
   /** Loads the app's build the first time a page is asked for. */
@@ -125,7 +127,7 @@ export function createMediaRouter({ apps: mountedApps, movedBases = {}, retiredB
 
     if (inside.startsWith("/api/")) return app.api.fetch(request)
 
-    const file = await serveStatic(app.clientDirectory, inside, request)
+    const file = (await serveStatic(app.clientDirectory, inside, request)) ?? (app.pictureDirectory === undefined ? null : await serveStatic(app.pictureDirectory, inside, request))
     if (file !== null) return file
     const extra = await app.extra?.(new URL(`${inside}${url.search}`, url))
     if (extra !== undefined) return extra

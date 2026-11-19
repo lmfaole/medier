@@ -11,7 +11,7 @@ import { join } from "node:path"
 import { DatabaseSync } from "node:sqlite"
 
 import { integrityProblems } from "./data-check-plan.ts"
-import { dumpDirectory, readDump } from "./data-dump-files.ts"
+import { dumpDirectory, dumpRoot, readDump } from "./data-dump-files.ts"
 import { dumpDatabase, rowCounts } from "./data-dump-plan.ts"
 import { DATABASES } from "./data.ts"
 
@@ -32,7 +32,7 @@ function rehearse(): string[] {
   try {
     const restored = spawnSync(process.execPath, ["--no-warnings", join(root, "scripts", "data-dump.ts"), "restore", "--into", into], { encoding: "utf8" })
     if (restored.status !== 0) return [`restore failed: ${(restored.stderr || restored.stdout).split("\n").find((line) => line.startsWith("Error")) ?? "see the output of data:restore"}`]
-    for (const domain of DATABASES.filter((name) => existsSync(dumpDirectory(root, name)))) {
+    for (const domain of DATABASES.filter((name) => existsSync(dumpDirectory(dumpRoot(root), name)))) {
       const file = join(into, `${domain}.db`)
       if (!readdirSync(into).includes(`${domain}.db`)) {
         problems.push(`${domain}: not restored`)
@@ -40,7 +40,7 @@ function rehearse(): string[] {
       }
       const sqlite = new DatabaseSync(file)
       try {
-        const missed = countDifferences(rowCounts(readDump(dumpDirectory(root, domain))), rowCounts(dumpDatabase(sqlite)))
+        const missed = countDifferences(rowCounts(readDump(dumpDirectory(dumpRoot(root), domain))), rowCounts(dumpDatabase(sqlite)))
         problems.push(...[...integrityProblems(sqlite), ...missed].map((line) => `${domain}: ${line}`))
       } finally {
         sqlite.close()

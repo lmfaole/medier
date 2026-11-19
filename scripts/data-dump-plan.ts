@@ -139,3 +139,47 @@ export function shrunkTables(before: ReadonlyMap<string, number>, after: Readonl
   }
   return found
 }
+
+/**
+ * GitHub warns at 50 MB a file and refuses 100 MB, and a diff of a huge file is no use to read. A table whose text is larger than
+ * `CHUNK_BYTES` is written as a folder of files of `CHUNK_ROWS` rows each, every one with the line of columns: the rows are in the table's
+ * order (rowid), so a sync that adds rows changes the last file only, and the files before it keep their bytes and their history.
+ */
+export const CHUNK_BYTES = 16 * 1024 * 1024
+export const CHUNK_ROWS = 25_000
+
+/** The files of one table's text, as paths relative to the domain's folder: `<table>.jsonl`, or `<table>/0001.jsonl` and on. */
+export function tableFiles(table: string, text: string, chunkBytes: number = CHUNK_BYTES, chunkRows: number = CHUNK_ROWS): [string, string][] {
+  if (Buffer.byteLength(text) <= chunkBytes) return [[`${table}.jsonl`, text]]
+  const [header = "[]", ...rows] = text.split("\n").filter((line) => line !== "")
+  const files: [string, string][] = []
+  for (let start = 0; start < rows.length; start += chunkRows) {
+    const number = String(files.length + 1).padStart(4, "0")
+    files.push([`${table}/${number}.jsonl`, `${[header, ...rows.slice(start, start + chunkRows)].join("\n")}\n`])
+  }
+  return files
+}
+
+/** The table's text again from its files (`tableFiles` turned round): the line of columns once, then every file's rows in order. */
+export function joinTable(files: readonly string[]): string {
+  const [first, ...rest] = files
+  if (first === undefined) return ""
+  return [first, ...rest.map((text) => text.slice(text.indexOf("\n") + 1))].join("")
+}
+
+/** The domains a `git status --porcelain` run inside the dump folder shows changed (its first folder), sorted. */
+export function changedDomains(porcelain: string): string[] {
+  const domains = new Set<string>()
+  for (const line of porcelain.split("\n")) {
+    const match = /^.. "?([^/"]+)\//.exec(line)
+    if (match?.[1] !== undefined) domains.add(match[1])
+  }
+  return [...domains].toSorted()
+}
+
+export const commitMessage = (date: string, domains: readonly string[]): string => `Data: dump ${date} (${domains.join(", ")})`
+
+/** Git is in the middle of something a commit from a timer must not meddle with. */
+export function gitIsBusy(entries: readonly string[]): boolean {
+  return entries.some((name) => ["index.lock", "MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply"].includes(name))
+}
