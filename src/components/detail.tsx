@@ -7,6 +7,7 @@ import { Rows } from "@lmfaole/designsystem/components/rows"
 import { Text } from "@lmfaole/designsystem/components/text"
 
 import type { ArtistPage, TitlePage } from "../lib/pages.ts"
+import { sourcesOf } from "../lib/image-sources.ts"
 import { episodesCode } from "../lib/trakt.ts"
 import { shortWhen } from "../lib/when.ts"
 import { PlayRows } from "./sections.tsx"
@@ -19,7 +20,8 @@ export function TitleDetail({ page }: { page: TitlePage }) {
   const episodes = page.viewings.flatMap((watch) => (watch.episode === null ? [] : [watch.episode]))
   const facts = (
     <Stack gap="lg">
-      <Picture src={page.poster} ratio="poster" size="hero" />
+      {/* The picture that leads the page: fetched first, at the width it is drawn. */}
+      <Picture src={null} sources={sourcesOf(page.poster)} priority ratio="poster" size="hero" />
       <FactList
         facts={[
           ["Sist sett", latest === undefined ? null : shortWhen(latest.watchedAt)],

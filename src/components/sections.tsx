@@ -4,6 +4,7 @@ import { Rows } from "@lmfaole/designsystem/components/rows"
 import { Text, TextLink } from "@lmfaole/designsystem/components/text"
 
 import type { Play, TopArtist } from "../lib/lastfm.ts"
+import { sourcesOf } from "../lib/image-sources.ts"
 import { artistHref, titleHref, titlePages } from "../lib/pages.ts"
 import { episodesCode, groupViewings, type Viewing, type Watch } from "../lib/trakt.ts"
 import { shortWhen, when } from "../lib/when.ts"
@@ -17,7 +18,8 @@ export function PlayRows({ plays, base, limit, artistLinks = true }: { plays: re
       ratio="square"
       rows={shown.map((play) => ({
         key: `${play.playedAt}-${play.url}`,
-        picture: play.image,
+        picture: null,
+        sources: sourcesOf(play.image),
         title: play.track,
         detail: details([artistLinks ? <TextLink href={artistHref(base, play.artist)}>{play.artist}</TextLink> : null, play.album]),
         aside: play.playedAt === null ? "nå" : shortWhen(play.playedAt),
@@ -50,7 +52,8 @@ export function WatchRows({ items, base, limit }: { items: readonly Watch[]; bas
       ratio="poster"
       rows={shown.map((viewing) => ({
         key: viewing.key,
-        picture: viewing.poster,
+        picture: null,
+        sources: sourcesOf(viewing.poster),
         title: <TextLink href={titleHref(base, pageOf.get(viewing.key) ?? "")}>{viewing.title}</TextLink>,
         detail: details(viewingDetail(viewing)),
         aside: shortWhen(viewing.watchedAt),
