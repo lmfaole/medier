@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@astrojs/react": "^7.1.2",
-    "@lmfaole/designsystem": "github:lmfaole/designsystem#2f77979194e36a3bdaebfae06d60fe7457c64f49",
+    "@lmfaole/designsystem": "github:lmfaole/designsystem#5315bc7949a6bf91cdfcde4b39cda6bb20b592b0",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.4.5",
     "react": "^19.2.8",
