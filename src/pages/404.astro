@@ -2,7 +2,7 @@
 import '../styles.css'
 import { PageLayout } from '@lmfaole/designsystem/components/page-layout'
 
-import { NotFound } from '../components/not-found'
+import { NotFoundPage } from '@lmfaole/designsystem/components/not-found-page'
 
 const base = import.meta.env.BASE_URL
 ---
@@ -16,7 +16,7 @@ const base = import.meta.env.BASE_URL
   </head>
   <body>
     <PageLayout>
-      <NotFound base={base} />
+      <NotFoundPage home={base} />
     </PageLayout>
   </body>
 </html>
