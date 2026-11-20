@@ -1,16 +1,5 @@
 ---
-import UsernameGate from '../components/UsernameGate.astro'
-import Page from '../layouts/Page.astro'
-import { formError, safeBack } from '../lib/users'
-
-// Where «Bytt» leads: both usernames, filled in with what the visitor has. The form comes back here (`lagret`), so a username that was not found is said here, by its field; when all were found,
-// on to the page the visitor came from. An empty field forgets that username.
-const base = import.meta.env.BASE_URL
-const to = safeBack(Astro.url.searchParams.get('tilbake'), base)
-if (Astro.url.searchParams.has('lagret') && formError(Astro.url.searchParams) === null) return Astro.redirect(to, 303)
-const back = `${base}brukernavn/?${new URLSearchParams({ tilbake: to, lagret: '1' }).toString()}`
+// The old page for the usernames: they are on «Innstillinger» now, with the rest of the visitor's settings.
+const tilbake = Astro.url.searchParams.get('tilbake')
+return Astro.redirect(`${import.meta.env.BASE_URL}innstillinger/${tilbake === null ? '' : `?${new URLSearchParams({ tilbake }).toString()}`}`, 301)
 ---
-
-<Page title="Brukernavn" lead="Hvem siden henter data for. La et felt stå tomt for å glemme det brukernavnet." crumbs={[{ label: 'Medier', href: base }, { label: 'Brukernavn', href: `${base}brukernavn/` }]}>
-  <UsernameGate services={['lastfm', 'trakt']} back={back} title="Bytt brukernavn" />
-</Page>

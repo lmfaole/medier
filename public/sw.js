@@ -2,7 +2,8 @@
 // offline page. The built files (`/_astro/`, the icons) never change under one name: from the cache when there, else fetched and kept. Nothing from another site is touched
 // (the covers and pictures are other sites' own, Spotify's among them, and are not kept). A new worker waits until the app is closed: no `skipWaiting`, so an old page is never
 // served by a new worker. Change `VERSION` and the old caches are deleted when it takes over. A page is made for the visitor's usernames (cookies): the server says whose it is (`X-Medier-Who`),
-// and the pages kept are one visitor's at a time, so a page of the usernames before a change («Bytt») is never shown offline after it.
+// and as what it was drawn (the visitor's theme, effects and sections, and whether the first-run wizard was open), and the pages kept are of one such at a time, so a page from before a change
+// (Innstillinger) is never shown offline after it.
 
 const VERSION = "v2"
 const STATIC = `medier-static-${VERSION}`

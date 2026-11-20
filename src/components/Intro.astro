@@ -3,6 +3,7 @@
 import { IntroCallout } from '@lmfaole/designsystem/components/intro-callout'
 import { isSeen, parseSeen, SEEN_COOKIE } from '@lmfaole/designsystem/lib/onboarding'
 import { type Intro, SEEN_PATH } from '../lib/onboarding'
+import { firstRunOpen } from '../lib/visitor-cookies'
 
 interface Props {
   intro: Intro
@@ -11,7 +12,8 @@ interface Props {
 
 const { intro, action } = Astro.props
 const version = intro.version ?? 1
-const seen = isSeen(parseSeen(Astro.cookies.get(SEEN_COOKIE)?.value), intro.id, version)
+// Not while the first-run wizard is open: one introduction at a time.
+const seen = isSeen(parseSeen(Astro.cookies.get(SEEN_COOKIE)?.value), intro.id, version) || firstRunOpen(Astro.cookies, Astro.url)
 ---
 
 {!seen && <IntroCallout client:idle id={intro.id} version={version} seen={false} title={intro.title} body={intro.body} cookiePath={SEEN_PATH} {...(action === undefined ? {} : { action })} />}

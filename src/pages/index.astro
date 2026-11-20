@@ -1,7 +1,11 @@
 ---
 import { InstallPrompt } from '@lmfaole/designsystem/components/install-prompt'
 import { isSeen, parseSeen, SEEN_COOKIE } from '@lmfaole/designsystem/lib/onboarding'
+import { EmptyState } from '@lmfaole/designsystem/components/empty-state'
+import { parsePrefs, PREFS_COOKIE } from '@lmfaole/designsystem/lib/preferences'
 import { SEEN_PATH } from '../lib/onboarding'
+import { shownSections } from '../lib/settings-form'
+import { firstRunOpen } from '../lib/visitor-cookies'
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
 import { TextLink } from '@lmfaole/designsystem/components/text'
 
@@ -15,6 +19,8 @@ import type { Service } from '../lib/users'
 
 const base = import.meta.env.BASE_URL
 const users = usersOf(Astro.cookies)
+// The sections the visitor has chosen for the front page (Innstillinger); all where nothing is chosen.
+const shown = shownSections(parsePrefs(Astro.cookies.get(PREFS_COOKIE)?.value))
 // The music, and the pictures of the artists in its list: the pictures need the list, so they follow it while the other sources are asked.
 const withPictures = music(users).then(async (found) => ({ listening: found, pictures: await artistPictures((found?.topArtists ?? []).slice(0, 5).map((artist) => artist.name)) }))
 const [{ listening, pictures }, seen] = await Promise.all([withPictures, watched(users)])
@@ -24,16 +30,16 @@ const plays = (listening?.recent ?? []).filter((play) => play.playedAt !== null)
 // The sections of a service with no username are a form asking for it: one form for both when neither is given.
 const missing: Service[] = [...(users.lastfm === null ? (['lastfm'] as const) : []), ...(users.trakt === null ? (['trakt'] as const) : [])]
 // The offer to install the app, once: «Ikke nå» or an install puts it away for good.
-const installSeen = isSeen(parseSeen(Astro.cookies.get(SEEN_COOKIE)?.value), 'install')
+const installSeen = isSeen(parseSeen(Astro.cookies.get(SEEN_COOKIE)?.value), 'install') || firstRunOpen(Astro.cookies, Astro.url)
 const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, source: 'Last.fm' }]), ...(users.trakt === null ? [] : [{ at: seen?.at ?? null, source: 'Trakt' }])]
 ---
 
 <Page current="front" title="Medier" lead="Hva du hører på og ser, hentet fra Last.fm og Trakt.">
   {missing.length === 2 && <UsernameGate services={missing} />}
-  {users.lastfm !== null && <NowPlayingLive client:load initial={now} endpoint={`${base}api/now/`} />}
+  {users.lastfm !== null && shown.has('na') && <NowPlayingLive client:load initial={now} endpoint={`${base}api/now/`} />}
   {
     users.lastfm !== null ? (
-      <PageSection id="musikk" title="Musikk" icon="music" more={{ href: `${base}musikk/`, label: 'Se all musikk' }}>
+      shown.has('musikk') && <PageSection id="musikk" title="Musikk" icon="music" more={{ href: `${base}musikk/`, label: 'Se all musikk' }}>
         <PlayRows plays={plays} base={base} limit={5} />
         <TextLink href={`${base}historikk/`}>Se historikk</TextLink>
       </PageSection>
@@ -43,7 +49,7 @@ const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, 
   }
   {
     users.trakt !== null ? (
-      <PageSection id="film-og-tv" title="Film og TV" icon="film" more={{ href: `${base}film-og-tv/`, label: 'Se all film og TV' }}>
+      shown.has('film-og-tv') && <PageSection id="film-og-tv" title="Film og TV" icon="film" more={{ href: `${base}film-og-tv/`, label: 'Se all film og TV' }}>
         <WatchRows items={seen?.items ?? []} base={base} limit={5} />
         <TextLink href={`${base}historikk/`}>Se historikk</TextLink>
       </PageSection>
@@ -52,12 +58,13 @@ const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, 
     ) : null
   }
   {
-    users.lastfm !== null && (
+    users.lastfm !== null && shown.has('artister') && (
       <PageSection id="artister" title="Mest spilt siste måned" icon="trend-up">
         <TopArtistRows artists={(listening?.topArtists ?? []).slice(0, 5)} base={base} pictures={pictures} />
       </PageSection>
     )
   }
+  {shown.size === 0 && <EmptyState icon="home" title="Forsiden er tom" description="Du har valgt bort alle seksjonene på forsiden. Musikk, Film og TV og Historikk finner du fortsatt i menyen." action={{ href: `${base}innstillinger/#forsiden`, label: 'Velg hva forsiden viser' }} />}
   {!installSeen && <InstallPrompt client:idle appName="Medier" seen={false} cookiePath={SEEN_PATH} />}
   {sources.length > 0 && <Fetched sources={sources} />}
 </Page>

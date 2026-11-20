@@ -98,7 +98,7 @@ const HINT: Record<Service, string> = {
   trakt: "Brukernavnet ditt på trakt.tv. Profilen må være offentlig.",
 }
 
-const NOT_FOUND: Record<Service, (value: string) => string> = {
+export const NOT_FOUND: Record<Service, (value: string) => string> = {
   lastfm: (value) => `Fant ingen bruker som heter «${value}» på Last.fm. Sjekk stavingen.`,
   trakt: (value) => `Fant ingen offentlig profil som heter «${value}» på Trakt. Sjekk stavingen, og at profilen ikke er privat.`,
 }

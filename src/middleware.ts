@@ -1,6 +1,9 @@
 import { defineMiddleware } from 'astro:middleware'
 
+import { parsePrefs, PREFS_COOKIE, serializePrefs } from '@lmfaole/designsystem/lib/preferences'
+
 import { usersOf } from './lib/runtime'
+import { firstRunOpen } from './lib/visitor-cookies'
 import { WHO_HEADER, whoOf } from './lib/users'
 
 /**
@@ -16,7 +19,9 @@ const mark = (headers: Headers, who: string): void => {
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const response = await next()
-  const who = encodeURIComponent(whoOf(usersOf(context.cookies)))
+  // Whose page, and as what it was drawn (the theme, the effects, the sections, the wizard open or not): a change of any of them and the service worker lets go of the pages it kept.
+  const drawn = `${serializePrefs(parsePrefs(context.cookies.get(PREFS_COOKIE)?.value))}|${firstRunOpen(context.cookies, context.url) ? 'first-run' : ''}`
+  const who = encodeURIComponent(`${whoOf(usersOf(context.cookies))}|${drawn}`)
   try {
     // In place: the response carries the cookies the page set, which a copy would lose.
     mark(response.headers, who)

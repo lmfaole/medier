@@ -8,7 +8,14 @@ Hva du hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaol
 - **Whose data.** The visitor's own: they give their Last.fm and Trakt usernames in a form (the design system's `UsernameForm`, in `src/components/UsernameGate.astro`, posted to `src/pages/api/brukernavn.ts`, no JS needed), which checks each with its
   service (Last.fm's `user.getinfo`; Trakt's profile, which must be public) and keeps it in a cookie for a year (`lastfm_user`, `trakt_user`; path `/`, `SameSite=Lax`, `Secure`, `HttpOnly`). An empty field forgets it.
   Without a username a page shows the form instead of data: Musikk and its pages need Last.fm, Film og TV and its pages Trakt, and the front page, Historikk and Wrapped show what has a username and ask for the rest.
-  «Viser data for … · Bytt» at the foot of every page leads to `/brukernavn/`.
+  «Viser data for … · Bytt» at the foot of every page leads to Innstillinger (`/brukernavn/` is a redirect there now).
+- **The first run.** A first visit opens a full-screen wizard over whatever page it landed on (the design system's `FirstRun`, in `src/components/FirstRunWizard.astro` and `src/components/settings-fields.tsx`):
+  welcome · Last.fm · Trakt · the front page's sections · theme · effects and tilt (with live previews) · install. It is drawn open by the server (no flash) until `first-run@1` is in `seen`, and works without JS
+  as one form; with JS (`FirstRunEnhancer`) it is one step at a time, and a username is checked as the step is left (`validate=<step>`, answered with `{ errors }`). It posts to
+  `src/pages/api/innstillinger.ts`, which keeps the usernames (as `/api/brukernavn/` does), the choices in the design system's `prefs` cookie (theme, effects, tilt, sections; not `HttpOnly`) and marks it seen.
+  A username not found sends back to its step (`?forste-gang=<step>` with the error); «Hopp over» (`skip=1`) only marks it seen. It is never drawn on Innstillinger or `/offline/`, and the intros wait until it is done.
+- **Innstillinger** (`/innstillinger/`, in the footer) has the same fields in sections and one «Lagre» to the same endpoint, and «Vis introen igjen» (`rerun=1`), which takes the wizard out of `seen`.
+  The root layout spreads `htmlAttributes(prefs)` on `<html>` (`data-theme`, `data-effects`, `data-tilt`), and the front page shows only the sections chosen (all until some are; none says so).
 - **The first visit.** Historikk, Musikk and Film og TV each have a short intro (`IntroCallout`, the texts in `src/lib/onboarding.ts`), Historikk has «Nytt» in the navigation until
   `NEW_HISTORIKK.until` or until it is opened, and the front page offers to install the app (`InstallPrompt`). What has been dismissed is kept in the design system's `seen` cookie
   (path `/`), read by the server so nothing flashes; an intro is never shown where the page shows the username form instead. An empty list says why and what to do about it (`EmptyState` with one action). Only public data is shown: the site's keys are used, never a sign-in of the visitor's. The Worker has no username of its own.
@@ -74,7 +81,7 @@ are made of; both are tested.
 
 The site installs on a phone or a computer and opens without the browser around it: «Legg til på Hjem-skjerm» on iOS, the install offer in the address bar on Android and desktop Chrome (there is no install button
 of our own). `public/manifest.webmanifest` is the identity (`id` and scope `/`, never changed once installed; dark colours, `any` and `maskable` icons at 192 and 512 drawn by `node scripts/icons.mjs`), and
-`public/sw.js` the service worker: a page from the network first with the last copy of each page when there is no network (the forty last, kept by address with the query, and only the current visitor's: a page for other usernames, by the server's `X-Medier-Who`, drops the ones before), the front page and then `/offline/` when there
+`public/sw.js` the service worker: a page from the network first with the last copy of each page when there is no network (the forty last, kept by address with the query, and only the current visitor's: a page for other usernames or other `prefs` or with the wizard open or closed, by the server's `X-Medier-Who`, drops the ones before), the front page and then `/offline/` when there
 is none; the built files and icons from the cache. Nothing from another site is kept (the covers are Spotify's, Last.fm's and TMDB's own), a redirect or an error is never kept as a page, and a new version waits until the
 app is closed (no `skipWaiting`) and then deletes the old caches: change `VERSION` in `sw.js` to make it. A bar at the foot on a phone, a rail from tablet width, goes between Forside, Musikk, Film, Historikk and Wrapped;
 `ConnectionBanner` says so when the device is offline and the page is the last one fetched. `src/pwa.test.ts` pins the manifest and runs the worker against a cache and a network of its own.
