@@ -5,6 +5,7 @@ import { FilterChips } from "@lmfaole/designsystem/components/filter-chips"
 import { Stack } from "@lmfaole/designsystem/components/layout"
 import { PageSection } from "@lmfaole/designsystem/components/page-section"
 import { details, PictureRows } from "@lmfaole/designsystem/components/picture-rows"
+import { RankedRows } from "@lmfaole/designsystem/components/ranked-rows"
 import { Rows } from "@lmfaole/designsystem/components/rows"
 import { Sparkline } from "@lmfaole/designsystem/components/sparkline"
 import { Text, TextLink } from "@lmfaole/designsystem/components/text"
@@ -16,7 +17,7 @@ import { SHAPES } from "../lib/shapes.ts"
 import type { SpotifyArtist } from "../lib/spotify.ts"
 import type { PeriodData } from "../lib/week-source.ts"
 import { WEEKDAY_NAMES } from "../lib/weeks.ts"
-import { changeText, hourText, longLength, playsChange, signed, type TopArtist, type WatchStats, type WeekStats } from "../lib/wrapped.ts"
+import { hourText, rankChange, longLength, playsChange, signed, type TopArtist, type WatchStats, type WeekStats } from "../lib/wrapped.ts"
 import { FromSpotify } from "./credits.tsx"
 
 /** What has a page of its own to link to: the slugs of the artists, albums and songs among the recent plays, and the address of each title among the films and shows seen. */
@@ -60,17 +61,18 @@ function Numbers({ stats, previousTotal, previous, truncated }: { stats: WeekSta
 /** The top artists, each with its picture (Spotify's, by name), how many plays, and how its place moved since the week before. */
 function ArtistRows({ artists, pictures, links, base }: { artists: readonly TopArtist[]; pictures: ReadonlyMap<string, SpotifyArtist>; links: Linkable; base: string }) {
   const list = (
-    <PictureRows
+    <RankedRows
       {...SHAPES.artist}
       rows={artists.map((artist) => {
         const found = pictures.get(artist.name)
         return {
           key: artist.name,
-          picture: null,
           sources: found?.images ?? [],
           title: links.artists.has(artist.name) ? <TextLink href={artistHref(base, artist.name)}>{artist.name}</TextLink> : artist.name,
-          detail: details([count(artist.plays, "avspilling", "avspillinger"), artist.change === null ? null : changeText(artist.change), found === undefined ? null : <ExternalLink href={found.url}>Åpne i Spotify</ExternalLink>]),
-          aside: `Nr. ${artist.rank}`,
+          detail: found === undefined ? null : <ExternalLink href={found.url}>Åpne i Spotify</ExternalLink>,
+          value: count(artist.plays, "avspilling", "avspillinger"),
+          amount: artist.plays,
+          change: artist.change === null ? null : rankChange(artist.change),
         }
       })}
     />
@@ -88,29 +90,29 @@ function Tops({ stats, pictures, links, base }: { stats: WeekStats; pictures: Re
       </PageSection>
       {stats.topAlbums.length === 0 ? null : (
         <PageSection id="toppalbum" title="Toppalbum" icon="music">
-          <PictureRows
+          <RankedRows
             {...SHAPES.album}
-            rows={stats.topAlbums.map((album, index) => ({
+            rows={stats.topAlbums.map((album) => ({
               key: `${album.artist}-${album.title}`,
-              picture: null,
               sources: sourcesOf(album.image),
               title: links.albums.has(albumSlug(album.artist, album.title)) ? <TextLink href={albumHref(base, album.artist, album.title)}>{album.title}</TextLink> : album.title,
-              detail: details([album.artist, count(album.plays, "avspilling", "avspillinger")]),
-              aside: `Nr. ${index + 1}`,
+              detail: album.artist,
+              value: count(album.plays, "avspilling", "avspillinger"),
+              amount: album.plays,
             }))}
           />
         </PageSection>
       )}
       <PageSection id="topplater" title="Topplåter" icon="play">
-        <PictureRows
+        <RankedRows
           {...SHAPES.track}
-          rows={stats.topTracks.map((track, index) => ({
+          rows={stats.topTracks.map((track) => ({
             key: `${track.artist}-${track.title}`,
-            picture: null,
             sources: sourcesOf(track.image),
             title: links.tracks.has(trackSlug(track.artist, track.title)) ? <TextLink href={trackHref(base, track.artist, track.title)}>{track.title}</TextLink> : track.title,
-            detail: details([track.artist, count(track.plays, "avspilling", "avspillinger")]),
-            aside: `Nr. ${index + 1}`,
+            detail: track.artist,
+            value: count(track.plays, "avspilling", "avspillinger"),
+            amount: track.plays,
           }))}
         />
       </PageSection>

@@ -3,7 +3,7 @@ import { test } from "node:test"
 
 import type { Play } from "./lastfm.ts"
 import type { Watch } from "./trakt.ts"
-import { artistsByPlays, BINGE, changeOf, changeText, hourText, signed, listeningTime, longLength, playsChange, TOP, TYPICAL_SECONDS, trackKey, tracksByPlays, watchStats, weekStats } from "./wrapped.ts"
+import { artistsByPlays, BINGE, changeOf, hourText, signed, listeningTime, longLength, playsChange, rankChange, TOP, TYPICAL_SECONDS, trackKey, tracksByPlays, watchStats, weekStats } from "./wrapped.ts"
 
 const play = (track: string, artist: string, album: string, at: string, image: string | null = null): Play => ({ track, artist, album, image, url: `https://last.fm/${artist}/${track}`, playedAt: at })
 
@@ -124,8 +124,9 @@ test("a change in plays is written with its sign, the minus sign and not a hyphe
   assert.equal(signed(1234), "+1\u00a0234")
 })
 
-test("a place that moved is told in a few words, and an hour as the hour it is, the last one wrapping to midnight", () => {
-  assert.deepEqual([{ kind: "up", by: 2 }, { kind: "down", by: 3 }, { kind: "same" }, { kind: "entered" }].map((change) => changeText(change as Parameters<typeof changeText>[0])), ["opp 2", "ned 3", "uendret", "ny på listen"])
+test("a place that entered the list is new, and an hour is told as the hour it is, the last one wrapping to midnight", () => {
+  assert.deepEqual(rankChange({ kind: "entered" }), { kind: "new" })
+  assert.deepEqual(rankChange({ kind: "up", by: 2 }), { kind: "up", by: 2 })
   assert.equal(hourText(9), "kl. 09–10")
   assert.equal(hourText(23), "kl. 23–00")
 })

@@ -203,11 +203,9 @@ export function watchStats(items: readonly Watch[]): WatchStats {
 /** A change in plays as «+12», «−8» (the minus sign, not a hyphen) or «±0». */
 export const signed = (change: number): string => (change > 0 ? `+${change.toLocaleString("nb-NO")}` : change < 0 ? `−${Math.abs(change).toLocaleString("nb-NO")}` : "±0")
 
-/** How an artist's place moved, in a few words for the line under its name. */
-export function changeText(change: Change): string {
-  if (change.kind === "up") return `opp ${change.by}`
-  if (change.kind === "down") return `ned ${change.by}`
-  return change.kind === "same" ? "uendret" : "ny på listen"
+/** A place's change as the design system's `RankedRows` takes it (`entered` is `new` there). */
+export function rankChange(change: Change): { kind: "up" | "down"; by: number } | { kind: "same" } | { kind: "new" } {
+  return change.kind === "entered" ? { kind: "new" } : change
 }
 
 /** An hour of the day as the hour it is: «kl. 21–22». */
