@@ -34,7 +34,7 @@ export function HistoryTimeline({ medium, plays = [], watches = [], now, playing
       ? [...(playing === null ? [] : [playingEvent(playing, now)]), ...playsTimeline(plays, { href: (play) => trackHref(base, play.artist, play.track) })]
       : watchesTimeline(watches, { href: (watch) => pageOf.get(watch.id) })
   if (events.length === 0) {
-    const back = `${base}innstillinger/?tilbake=${encodeURIComponent(mediumHref(base, medium, "historikk/"))}`
+    const back = `${base}innstillinger/kontoer/?tilbake=${encodeURIComponent(mediumHref(base, medium, "historikk/"))}`
     return medium === "music" ? (
       <EmptyState icon="history" title="Ingen avspillinger ennå" description="Tidslinjen fylles med det Last.fm fører opp at du hører på. Er den tom, kan det være feil brukernavn, eller at Last.fm ikke svarte akkurat nå." action={{ href: back, label: "Sjekk brukernavnet" }} />
     ) : (

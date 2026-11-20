@@ -1,0 +1,22 @@
+---
+// The app: the offer to install (where the browser has one), the way by hand where it has not, and «Vis introen igjen».
+import { Button } from '@lmfaole/designsystem/components/button'
+import { InstallPrompt } from '@lmfaole/designsystem/components/install-prompt'
+import { SettingsSection } from '@lmfaole/designsystem/components/settings-section'
+import SettingsPage from '../../components/SettingsPage.astro'
+import { SEEN_PATH } from '../../lib/onboarding'
+
+const base = import.meta.env.BASE_URL
+---
+
+<SettingsPage page="app">
+  <SettingsSection id="installer" title="Ha Medier på hjem-skjermen" body="Medier kan installeres som en app og åpnes i et eget vindu, også uten nett. I Chrome og Edge finner du det i adressefeltet, på iPhone under Del og Legg til på Hjem-skjerm.">
+    <InstallPrompt client:idle appName="Medier" seen={false} cookiePath={SEEN_PATH} />
+  </SettingsSection>
+  <SettingsSection id="introen" title="Introen" body="Introen du fikk første gang, med de samme valgene ett og ett. Den åpner seg på forsiden.">
+    <form method="post" action={`${base}api/innstillinger/`}>
+      <input type="hidden" name="back" value={base} />
+      <Button type="submit" name="rerun" value="1" variant="outline">Vis introen igjen</Button>
+    </form>
+  </SettingsSection>
+</SettingsPage>

@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { formPrefs, planUsernames, settingsRedirect, shownSections, stepErrors, withoutSeen } from "./settings-form.ts"
+import { formPrefs, frontSections, type Ordering, planUsernames, settingsPageBack, settingsRedirect, settingsSummary, shownSections, stepErrors, withoutSeen } from "./settings-form.ts"
 
 const form = (entries: [string, string][]): FormData => {
   const data = new FormData()
@@ -56,4 +56,49 @@ test("«Vis introen igjen» takes the wizard out of seen, and nothing else", () 
   assert.equal(withoutSeen("intro-musikk@1,first-run@1,install@1", "first-run"), "intro-musikk@1,install@1")
   assert.equal(withoutSeen(encodeURIComponent("first-run@2"), "first-run"), "")
   assert.equal(withoutSeen(undefined, "first-run"), "")
+})
+
+// Stand-ins for the design system's `orderSections` and `applyMove` (which `node --test` cannot load), recording what the form handed them.
+const calls: unknown[][] = []
+const ordering: Ordering = {
+  orderSections: (ids, order = []) => {
+    calls.push(["orderSections", [...ids], [...order]])
+    return [...order.filter((id) => ids.includes(id)), ...ids.filter((id) => !order.includes(id))]
+  },
+  applyMove: (order, move) => {
+    calls.push(["applyMove", [...order], move])
+    return move === "tv:up" ? ["na", "musikk", "tv", "film", "artister"] : [...order]
+  },
+}
+const sorted = <T extends string>(ids: readonly T[], order?: readonly string[]): T[] => (order === undefined ? [...ids] : [...ids].sort((a, b) => order.indexOf(a) - order.indexOf(b)))
+
+test("the order comes from the list's hidden field, with a no-JS move applied to it; a form without it leaves the order be", () => {
+  calls.length = 0
+  const next = formPrefs({ ...current, order: ["artister"] }, form([["order", "tv, film,reklame"], ["move", "tv:up"]]), ordering)
+  assert.deepEqual(next.order, ["na", "musikk", "tv", "film", "artister"])
+  assert.deepEqual(calls[0], ["orderSections", ["na", "musikk", "film", "tv", "artister"], ["tv", "film", "reklame"]])
+  assert.deepEqual(calls[1], ["applyMove", ["tv", "film", "na", "musikk", "artister"], "tv:up"])
+  assert.deepEqual(formPrefs({ ...current, order: ["artister"] }, form([["theme", "dark"]]), ordering).order, ["artister"])
+  assert.deepEqual(formPrefs(current, form([["order", "tv"]]), ordering).order?.[0], "tv")
+})
+
+test("the front page has the chosen sections in the visitor's order", () => {
+  assert.deepEqual(frontSections({ sections: ["musikk", "tv", "artister"], order: ["artister", "tv", "na", "musikk", "film"] }, sorted), ["artister", "tv", "musikk"])
+  assert.deepEqual(frontSections({}, sorted), ["na", "musikk", "film", "tv", "artister"])
+})
+
+test("the overview says what is chosen on each subpage", () => {
+  assert.deepEqual(settingsSummary({ theme: "dark", effects: "off", tilt: "on" }, ["tv", "musikk"], { lastfm: "snowpony69", trakt: "lmfaole" }), {
+    kontoer: "snowpony69 og lmfaole",
+    forside: "TV, Musikk",
+    utseende: "Mørkt · effekter av · lyset følger telefonen",
+  })
+  assert.deepEqual(settingsSummary(current, [], { lastfm: null, trakt: null }).kontoer, "Ingen brukernavn ennå")
+  assert.deepEqual(settingsSummary(current, [], { lastfm: "Ole", trakt: "ole" }).forside, "Ingen seksjoner")
+  assert.deepEqual(settingsSummary(current, [], { lastfm: "Ole", trakt: "ole" }).kontoer, "Ole")
+})
+
+test("a subpage's form comes back to it saved, and keeps the page the visitor came from", () => {
+  assert.equal(settingsPageBack("/", "forside", null), "/innstillinger/forside/?lagret=1")
+  assert.equal(settingsPageBack("/", "kontoer", "/musikk/?uke=1"), "/innstillinger/kontoer/?tilbake=%2Fmusikk%2F%3Fuke%3D1&lagret=1")
 })

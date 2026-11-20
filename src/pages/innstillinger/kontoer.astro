@@ -1,0 +1,25 @@
+---
+// The usernames: whose data the site shows. «Bytt» by the usernames at the foot of every page leads here.
+import SettingsPage from '../../components/SettingsPage.astro'
+import { SettingsForm, UsernameInput } from '../../components/settings-fields'
+import { usersOf } from '../../lib/runtime'
+import { settingsPageBack } from '../../lib/settings-form'
+import { formError, safeBack, usernameFields } from '../../lib/users'
+
+const base = import.meta.env.BASE_URL
+const tilbake = Astro.url.searchParams.get('tilbake')
+const [lastfm, trakt] = usernameFields(['lastfm', 'trakt'], usersOf(Astro.cookies), formError(Astro.url.searchParams))
+const back = settingsPageBack(base, 'kontoer', tilbake === null ? null : safeBack(tilbake, base))
+---
+
+<SettingsPage page="kontoer">
+  {
+    lastfm !== undefined && trakt !== undefined && (
+      <SettingsForm action={`${base}api/innstillinger/`} back={back}>
+        <p>La et felt stå tomt for å glemme brukernavnet.</p>
+        <UsernameInput field={lastfm} />
+        <UsernameInput field={trakt} />
+      </SettingsForm>
+    )
+  }
+</SettingsPage>

@@ -27,15 +27,17 @@ export const STEP_OF: Record<Service, Step> = { lastfm: "lastfm", trakt: "trakt"
 
 /** The front page's sections a visitor can leave out, in the order they stand. */
 export const FRONT_SECTIONS = [
-  { value: "na", label: "Spilles nå", description: "Låten du hører på akkurat nå, fra Last.fm." },
-  { value: "musikk", label: "Musikk", description: "De siste avspillingene." },
-  { value: "film", label: "Film", description: "Filmene du har sett sist." },
-  { value: "tv", label: "TV", description: "Episodene du har sett sist." },
-  { value: "artister", label: "Mest spilt siste måned", description: "Artistene du har spilt mest." },
+  { value: "na", label: "Spilles nå", description: "Låten du hører på akkurat nå, fra Last.fm.", icon: "listen" },
+  { value: "musikk", label: "Musikk", description: "De siste avspillingene.", icon: "music" },
+  { value: "film", label: "Film", description: "Filmene du har sett sist.", icon: "film" },
+  { value: "tv", label: "TV", description: "Episodene du har sett sist.", icon: "tv" },
+  { value: "artister", label: "Mest spilt siste måned", description: "Artistene du har spilt mest.", icon: "trend-up" },
 ] as const
 export type FrontSection = (typeof FRONT_SECTIONS)[number]["value"]
 
-const SECTION_IDS: readonly string[] = FRONT_SECTIONS.map((section) => section.value)
+/** The sections' ids in the app's own order, which the visitor's `order` rearranges (`orderSections` in the design system's `lib/preferences`). */
+export const FRONT_SECTION_IDS: readonly FrontSection[] = FRONT_SECTIONS.map((section) => section.value)
+const SECTION_IDS: readonly string[] = FRONT_SECTION_IDS
 const isSection = (value: string): value is FrontSection => SECTION_IDS.includes(value)
 
 /** Sections of before that are more than one now: «film-og-tv» was film and TV together, so a choice of it is both. */
@@ -53,10 +55,20 @@ const isTheme = (value: unknown): value is Theme => typeof value === "string" &&
 const isOnOff = (value: unknown): value is OnOff => value === "on" || value === "off"
 
 /**
- * The prefs after a form: each choice the form has (a valid one), the others as they were. `sections` is a set of checkboxes, so the form also sends an empty `sections` to say the field was there:
- * with none ticked, the front page has none of them; without the field at all, they are left as they were.
+ * The design system's ordering (`orderSections` from `lib/preferences`, `applyMove` from `lib/reorder`), passed in by the endpoint: this module is run by `node --test`, which cannot load the
+ * design system's TypeScript.
  */
-export function formPrefs(current: Prefs, form: FormData): Prefs {
+export interface Ordering {
+  orderSections: (ids: readonly string[], order?: readonly string[]) => string[]
+  applyMove: (order: readonly string[], move: string | null | undefined) => string[]
+}
+
+/**
+ * The prefs after a form: each choice the form has (a valid one), the others as they were. `sections` is a set of checkboxes, so the form also sends an empty `sections` to say the field was there:
+ * with none ticked, the front page has none of them; without the field at all, they are left as they were. `order` is the `ReorderList`'s hidden field (comma ids), every section in it whatever is
+ * missing or unknown, with a no-JS «Flytt opp» / «Flytt ned» (`move=<id>:up|down`) applied to it.
+ */
+export function formPrefs(current: Prefs, form: FormData, ordering?: Ordering): Prefs {
   const theme = form.get("theme")
   const effects = form.get("effects")
   const tilt = form.get("tilt")
@@ -65,7 +77,31 @@ export function formPrefs(current: Prefs, form: FormData): Prefs {
     const chosen = new Set(form.getAll("sections").filter((value): value is string => typeof value === "string" && isSection(value)))
     next.sections = FRONT_SECTIONS.map((section) => section.value).filter((section) => chosen.has(section))
   } else if (current.sections !== undefined) next.sections = current.sections
+  const order = form.get("order")
+  if (typeof order === "string" && ordering !== undefined) {
+    const move = form.get("move")
+    next.order = ordering.applyMove(ordering.orderSections(SECTION_IDS, order.split(",").map((id) => id.trim())), typeof move === "string" ? move : null)
+  } else if (current.order !== undefined) next.order = current.order
   return next
+}
+
+/** The front page's sections as the visitor has them: in their order (`orderSections`), the chosen ones only. */
+export const frontSections = (prefs: Pick<Prefs, "sections" | "order">, orderSections: <T extends string>(ids: readonly T[], order?: readonly string[]) => T[]): FrontSection[] => {
+  const shown = shownSections(prefs)
+  return orderSections(FRONT_SECTION_IDS, prefs.order).filter((id) => shown.has(id))
+}
+
+const LABEL: Record<FrontSection, string> = Object.fromEntries(FRONT_SECTIONS.map((section) => [section.value, section.label])) as Record<FrontSection, string>
+const THEME_WORD: Record<Theme, string> = { system: "Som enheten", light: "Lyst", dark: "Mørkt" }
+
+/** What «Innstillinger» says is chosen under each of its subpages. */
+export function settingsSummary(prefs: Prefs, shown: readonly FrontSection[], users: { lastfm: string | null; trakt: string | null }): { kontoer: string; forside: string; utseende: string } {
+  const names = [users.lastfm, users.trakt].filter((name): name is string => name !== null)
+  return {
+    kontoer: names.length === 0 ? "Ingen brukernavn ennå" : names.length === 2 && names[0]?.toLowerCase() === names[1]?.toLowerCase() ? (names[0] ?? "") : names.join(" og "),
+    forside: shown.length === 0 ? "Ingen seksjoner" : shown.map((id) => LABEL[id]).join(", "),
+    utseende: `${THEME_WORD[prefs.theme]} · effekter ${prefs.effects === "on" ? "på" : "av"} · ${prefs.tilt === "on" ? "lyset følger telefonen" : "fast lys"}`,
+  }
 }
 
 /** What to do with the usernames of a form: the ones to keep (found), the ones to forget (empty), and the ones not found, with what was typed. A field that is not in the form is left be. */
@@ -132,3 +168,22 @@ export function withoutSeen(value: string | undefined, id: string): string {
     .filter((part) => part !== "" && part.split("@")[0] !== id)
     .join(",")
 }
+
+/** The subpages of «Innstillinger» (`/innstillinger/<slug>/`), in the overview's order. */
+export const SETTINGS_PAGES = {
+  kontoer: { label: "Kontoer", icon: "person", lead: "Hvem siden henter data for: brukernavnet ditt på Last.fm og på Trakt. Vi viser bare det som er offentlig på profilen." },
+  forside: { label: "Forside", icon: "home", lead: "Hvilke seksjoner forsiden viser, og i hvilken rekkefølge." },
+  utseende: { label: "Utseende", icon: "moon", lead: "Lyst eller mørkt, effekter i 3D, og lys som følger telefonen." },
+  app: { label: "App", icon: "phone", lead: "Ha Medier på hjem-skjermen, og se introen igjen." },
+} as const
+export type SettingsPage = keyof typeof SETTINGS_PAGES
+
+/** Where a subpage's form comes back to: the subpage with `lagret=1` (the «Lagret» it shows), and the page the visitor came from (`tilbake`) when there is one. */
+export function settingsPageBack(base: string, page: SettingsPage, tilbake: string | null): string {
+  const params = new URLSearchParams(tilbake === null ? {} : { tilbake })
+  params.set("lagret", "1")
+  return `${base}innstillinger/${page}/?${params.toString()}`
+}
+
+/** Where the sections of the one long «Innstillinger» of before are now: its anchors (`/innstillinger/#tema`) lead to the subpage. */
+export const OLD_ANCHORS: Readonly<Record<string, SettingsPage>> = { brukernavn: "kontoer", forsiden: "forside", rekkefolge: "forside", tema: "utseende", effekter: "utseende", lys: "utseende", introen: "app" }

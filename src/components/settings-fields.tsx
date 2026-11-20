@@ -3,7 +3,6 @@ import { CheckboxList } from "@lmfaole/designsystem/components/checkbox-list"
 import { ChoiceCards } from "@lmfaole/designsystem/components/choice-cards"
 import { FirstRun } from "@lmfaole/designsystem/components/first-run"
 import { Stack } from "@lmfaole/designsystem/components/layout"
-import { SettingsSection } from "@lmfaole/designsystem/components/settings-section"
 import { TextField } from "@lmfaole/designsystem/components/text-field"
 import { ThemeSample } from "@lmfaole/designsystem/components/theme-sample"
 import type { Prefs } from "@lmfaole/designsystem/lib/preferences"
@@ -13,16 +12,16 @@ import { FROM_FIRST_RUN, FRONT_SECTIONS, shownSections, SOURCE_FIELD, type Step 
 import type { UsernameField } from "../lib/users"
 
 /*
- * The fields of a visitor's settings, the same in the first-run wizard (`MedierFirstRun`) and on «Innstillinger» (`SettingsForm`): native, so both work without JavaScript, and posted to
+ * The fields of a visitor's settings, the same in the first-run wizard (`MedierFirstRun`) and on the subpages of «Innstillinger» (`SettingsForm`, `src/pages/innstillinger/`): native, so both work without JavaScript, and posted to
  * `/api/innstillinger/`. The effects and the tilt are chosen by their live examples, client components, so those two fields are islands that come in from the Astro page as slots
  * (`effectsField`, `tiltField`, see `effect-choices.tsx`), as does the offer to install. Each wizard step asks one thing.
  */
 
-function UsernameInput({ field }: { field: UsernameField }) {
+export function UsernameInput({ field }: { field: UsernameField }) {
   return <TextField name={field.name} label={field.label} optional verbatim autoComplete="off" {...(field.hint === undefined ? {} : { hint: field.hint })} {...(field.value === undefined ? {} : { defaultValue: field.value })} {...(field.error === undefined ? {} : { error: field.error })} />
 }
 
-function SectionsField({ prefs }: { prefs: Prefs }) {
+export function SectionsField({ prefs }: { prefs: Prefs }) {
   const shown = shownSections(prefs)
   return (
     <>
@@ -33,7 +32,7 @@ function SectionsField({ prefs }: { prefs: Prefs }) {
   )
 }
 
-function ThemeField({ prefs }: { prefs: Prefs }) {
+export function ThemeField({ prefs }: { prefs: Prefs }) {
   return (
     <ChoiceCards
       name="theme"
@@ -90,28 +89,19 @@ export function MedierFirstRun({ open, action, back, validateUrl, initialStep, i
   return <FirstRun open={open} title="Kom i gang med Medier" action={action} back={back} validateUrl={validateUrl} steps={steps} {...(initialStep === undefined ? {} : { initialStep })} />
 }
 
-/** «Innstillinger»: the same fields in sections on one page, and one «Lagre». */
-export function SettingsForm({ action, back, ...fields }: FieldsProps & { action: string; back: string }) {
+/**
+ * One subpage of «Innstillinger»: its own small form to `/api/innstillinger/`, back to the subpage (`?lagret=1`), and «Lagre» at the foot. Enter in a field submits the form's first submit button, so a
+ * hidden «Lagre» stands first: never the «Flytt opp» of an order further down (disabled on the first section, which would make Enter do nothing).
+ */
+export function SettingsForm({ action, back, children }: { action: string; back: string; children?: ReactNode }) {
   return (
     <form method="post" action={action}>
       <input type="hidden" name="back" value={back} />
+      <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true">
+        Lagre
+      </button>
       <Stack gap="xl">
-        <SettingsSection id="brukernavn" title="Brukernavn" body="Hvem siden henter data for. Vi viser bare det som er offentlig på profilen. La et felt stå tomt for å glemme brukernavnet.">
-          <UsernameInput field={fields.lastfm} />
-          <UsernameInput field={fields.trakt} />
-        </SettingsSection>
-        <SettingsSection id="forsiden" title="Forsiden">
-          <SectionsField prefs={fields.prefs} />
-        </SettingsSection>
-        <SettingsSection id="tema" title="Tema">
-          <ThemeField prefs={fields.prefs} />
-        </SettingsSection>
-        <SettingsSection id="effekter" title="Effekter" body="Plater og bakgrunner i 3D.">
-          {fields.effectsField}
-        </SettingsSection>
-        <SettingsSection id="lys" title="Lys" body="Lys som følger hvordan du holder telefonen.">
-          {fields.tiltField}
-        </SettingsSection>
+        {children}
         <div>
           <Button type="submit" size="lg">
             Lagre
@@ -121,4 +111,3 @@ export function SettingsForm({ action, back, ...fields }: FieldsProps & { action
     </form>
   )
 }
-

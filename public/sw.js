@@ -5,7 +5,7 @@
 // and as what it was drawn (the visitor's theme, effects and sections, and whether the first-run wizard was open), and the pages kept are of one such at a time, so a page from before a change
 // (Innstillinger) is never shown offline after it.
 
-const VERSION = "v4"
+const VERSION = "v5"
 const STATIC = `medier-static-${VERSION}`
 const PAGES = `medier-pages-${VERSION}`
 const OFFLINE = "/offline/"
