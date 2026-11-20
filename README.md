@@ -31,6 +31,12 @@ is none; the built files and icons from the cache. Nothing from another site is 
 app is closed (no `skipWaiting`) and then deletes the old caches: change `VERSION` in `sw.js` to make it. A bar at the foot on a phone, a rail from tablet width, goes between Forside, Musikk and Film;
 `ConnectionBanner` says so when the device is offline and the page is the last one fetched. `src/pwa.test.ts` pins the manifest and runs the worker against a cache and a network of its own.
 
+## Shape language
+
+A picture's shape tells what kind of thing it is of, the same in a list and on the thing's own page (`src/lib/shapes.ts`, pinned by a test that no two kinds share one): **a circle** is a person or a band (artists, cast and crew), **a
+tall frame** is a film or a show, **a square with sharp corners** is a record (an album's cover), **a square tile with soft corners** is a single song. Spotify's own covers keep the small corners its guidelines ask of cover art, whatever the
+row. The artists' pictures are Spotify's and are cropped to the circle, which its terms probably do not allow: change `SHAPES.artist` to `album`'s shape in one line if that is a risk not worth taking.
+
 ## Set up once
 
 1. **Cloudflare.** A Cloudflare API token that may edit Workers, and the account id, as GitHub Actions secrets of this repository: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`

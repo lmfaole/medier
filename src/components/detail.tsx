@@ -12,6 +12,7 @@ import { firstSentences } from "../lib/lastfm.ts"
 import { type AlbumPage, type Appearance, type ArtistPage, artistHref, albumHref, personHref, titleHref, type TitlePage, type TrackPage, trackSlug, trackHref } from "../lib/pages.ts"
 import type { SpotifyAlbum, SpotifyArtist, SpotifyTrack } from "../lib/spotify.ts"
 import { sourcesOf } from "../lib/image-sources.ts"
+import { SHAPES, type Shape } from "../lib/shapes.ts"
 import { type Person, profileSources } from "../lib/tmdb.ts"
 import { episodesCode } from "../lib/trakt.ts"
 import { ageOn, lengthText, longDay, releaseText } from "../lib/days.ts"
@@ -55,7 +56,7 @@ export function TitleDetail({ page, base }: { page: TitlePage; base: string }) {
       )}
       {cast.length === 0 ? null : (
         <PageSection id="rolleliste" title="Rolleliste">
-          <PictureRows ratio="poster" rows={cast.map((one, index) => ({ key: `${one.id}`, picture: null, sources: profileSources(one.profile), title: <TextLink href={personHref(base, one.id, one.name)}>{one.name}</TextLink>, detail: details([one.role]), aside: `Nr. ${index + 1}` }))} />
+          <PictureRows {...SHAPES.person} rows={cast.map((one, index) => ({ key: `${one.id}`, picture: null, sources: profileSources(one.profile), title: <TextLink href={personHref(base, one.id, one.name)}>{one.name}</TextLink>, detail: details([one.role]), aside: `Nr. ${index + 1}` }))} />
         </PageSection>
       )}
       {crew.length === 0 ? null : (
@@ -89,7 +90,7 @@ export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: str
     <Stack gap="lg">
       {spotify === null || spotify.images.length === 0 ? null : (
         <Stack gap="sm">
-          <Picture src={null} sources={spotify.images} priority ratio="square" size="hero" />
+          <Picture src={null} sources={spotify.images} priority size="hero" {...SHAPES.artist} />
           <FromSpotify />
         </Stack>
       )}
@@ -138,7 +139,7 @@ export function PersonDetail({ id, person, found, base }: { id: number; person: 
   const rail = (
     <Stack gap="lg">
       {/* The picture that leads the page: fetched first, at the width it is drawn. */}
-      <Picture src={null} sources={profileSources(profile)} priority ratio="poster" size="hero" />
+      <Picture src={null} sources={profileSources(profile)} priority size="hero" {...SHAPES.person} />
       <FactList
         facts={[
           ["Født", person?.birthday == null ? null : `${longDay(person.birthday)}${person.deathday == null && age !== null ? ` (${age} år)` : ""}`],
@@ -168,9 +169,9 @@ export function PersonDetail({ id, person, found, base }: { id: number; person: 
 }
 
 /** The facts the pages of an album and of a track share: their cover leads, and the facts follow. `cover` is Last.fm's, so no attribution is needed for it. */
-function Cover({ image }: { image: string | null }) {
-  // The picture that leads the page: fetched first, at the width it is drawn.
-  return <Picture src={null} sources={sourcesOf(image)} priority ratio="square" size="hero" />
+function Cover({ image, shape }: { image: string | null; shape: Shape }) {
+  // The picture that leads the page: fetched first, at the width it is drawn. The shape is the kind of thing the page is of: a record's sleeve, or a single's tile.
+  return <Picture src={null} sources={sourcesOf(image)} priority size="hero" {...shape} />
 }
 
 const tagsText = (tags: readonly string[]): string | null => (tags.length === 0 ? null : tags.join(", "))
@@ -194,7 +195,7 @@ export function TrackDetail({ page, base, info }: { page: TrackPage; base: strin
   const { lastfm, spotify } = info
   const rail = (
     <Stack gap="lg">
-      <Cover image={page.image} />
+      <Cover image={page.image} shape={SHAPES.track} />
       <FactList
         facts={[
           ["Artist", <TextLink href={artistHref(base, page.artist)}>{page.artist}</TextLink>],
@@ -237,7 +238,7 @@ export function AlbumDetail({ page, base, info, played }: { page: AlbumPage; bas
   const fromSpotify = released !== null || spotify?.tracks != null
   const rail = (
     <Stack gap="lg">
-      <Cover image={page.image} />
+      <Cover image={page.image} shape={SHAPES.album} />
       <FactList
         facts={[
           ["Artist", <TextLink href={artistHref(base, page.artist)}>{page.artist}</TextLink>],

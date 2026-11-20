@@ -9,6 +9,7 @@ import type { Playing } from "../lib/now.ts"
 import type { SpotifyArtist } from "../lib/spotify.ts"
 import { FromSpotify } from "./credits.tsx"
 import { sourcesOf } from "../lib/image-sources.ts"
+import { SHAPES, SPOTIFY_COVER } from "../lib/shapes.ts"
 import { albumHref, artistHref, titleHref, titlePages, trackHref } from "../lib/pages.ts"
 import { episodesCode, groupViewings, type Viewing, type Watch } from "../lib/trakt.ts"
 import { shortWhen, when } from "../lib/when.ts"
@@ -29,11 +30,12 @@ export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = 
   const fromSpotify = shown.some((row) => row.link !== null)
   const list = (
     <PictureRows
-      ratio="square"
+      {...SHAPES.track}
       rows={shown.map((row) => ({
         key: row.key,
         picture: null,
         sources: sourcesOf(row.image),
+        ...(row.link === null ? {} : { corners: SPOTIFY_COVER.corners }),
         // A song that is playing now has no page of its own (it is not among the finished plays the pages are made of); one from Spotify links back to Spotify.
         title: row.link !== null ? <ExternalLink href={row.link}>{row.track}</ExternalLink> : trackLinks && row.played ? <TextLink href={trackHref(base, row.artist, row.track)}>{row.track}</TextLink> : row.track,
         detail: details([
@@ -62,7 +64,7 @@ export function TopArtistRows({ artists, base, pictures }: { artists: readonly T
   if (artists.length === 0) return <Text tone="muted">Ingen artister ennå.</Text>
   const list = (
     <PictureRows
-      ratio="square"
+      {...SHAPES.artist}
       rows={artists.map((artist, index) => {
         const found = pictures.get(artist.name)
         return {
