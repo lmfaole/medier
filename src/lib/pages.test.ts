@@ -62,6 +62,7 @@ test("a person is found among the films seen, with the part and the jobs they ha
 
 test("a person's address has TMDB's id first, and the id is read back from it and from nothing else", () => {
   assert.equal(personHref("/", 1158, "Al Pacino"), "/personer/1158-al-pacino/")
+  assert.equal(personHref("/", 225730, "神木隆之介"), "/personer/225730/")
   assert.equal(personId("1158-al-pacino"), 1158)
   assert.equal(personId("1158"), 1158)
   assert.equal(personId("al-pacino"), null)

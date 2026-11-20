@@ -87,7 +87,11 @@ export const titleHref = (base: string, slug: string): string => `${base}film-og
 export const artistHref = (base: string, name: string): string => `${base}musikk/${slugify(name)}/`
 
 /** A person's page, `/personer/<id>-<name>/`: TMDB's id first, so two with the same name are two pages and a changed spelling of a name is the same page. */
-export const personHref = (base: string, id: number, name: string): string => `${base}personer/${id}-${slugify(name)}/`
+export function personHref(base: string, id: number, name: string): string {
+  const slug = slugify(name)
+  // A name with no Latin letters (Japanese, Korean) has no slug: the id alone is the address, not «225730-uten-navn».
+  return `${base}personer/${slug === "uten-navn" ? id : `${id}-${slug}`}/`
+}
 
 /** The id in a person's address, or `null` where it is not one. */
 export function personId(slug: string): number | null {
