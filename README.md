@@ -1,6 +1,6 @@
 # medier
 
-Hva jeg hører på og ser: en statisk side på GitHub Pages, <https://lmfaole.github.io/medier/>, laget med designsystemet
+Hva jeg hører på og ser: en statisk side på GitHub Pages, <https://medier.lmfaole.party/>, laget med designsystemet
 [`@lmfaole/designsystem`](https://github.com/lmfaole/designsystem).
 
 ## How it works
@@ -33,6 +33,6 @@ The list is `src/lib/settings.ts`; the workflow checks it before every fetch (`n
 npm install
 npm test && npm run typecheck   # the parsers' tests and the types
 LASTFM_API_KEY=… TRAKT_CLIENT_ID=… npm run fetch   # fresh data locally (a key not set is skipped here, an error in CI)
-npm run dev                      # http://localhost:4321/medier/
+npm run dev                      # http://localhost:4321/
 npm run ds:bump                  # a newer design system and its skills
 ```
