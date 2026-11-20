@@ -4,7 +4,7 @@
  * first, and the rest are filled in by the next pages. Pure but for `get`, which is passed in, so a test hands it a fake one.
  */
 
-import { type ChartArtist, artistChartUrl, artistPlaysBeforeUrl, type Play, parseArtistChart, parseArtistPlays, parseRecentPage, parseTrackInfo, playsInRangeUrl, trackInfoUrl } from "./lastfm.ts"
+import { type ChartArtist, artistChartUrl, artistInfoUrl, type Play, parseArtistChart, parseArtistInfo, parseRecentPage, parseTrackInfo, playsInRangeUrl, trackInfoUrl } from "./lastfm.ts"
 import { type Env, type Get, lastfmBase, setting, settle, TTL, withPosters } from "./sources.ts"
 import { mergeHistory, parseHistory, type Watch } from "./trakt.ts"
 import { isComplete, previousWeek, type Week } from "./weeks.ts"
@@ -15,11 +15,14 @@ export const MAX_PLAY_PAGES = 8
 /** The most questions about a song's length, and about an artist being new, a page asks that are not kept already. */
 export const MAX_LENGTH_LOOKUPS = 10
 export const MAX_FIRSTS_LOOKUPS = 8
-/** The songs whose length is wanted, the most played first: the rest are counted at the average. */
-const LENGTH_CANDIDATES = 30
+/** The songs whose length is wanted, the most played first: the rest are counted at the average of those. A dozen or two is a fair sample of what a week is. */
+const LENGTH_CANDIDATES = 20
 /** The artists that are checked for being new, the most played first. */
 const FIRSTS_CANDIDATES = 10
-const BATCH = 6
+/** Last.fm answers a rate limit as an error when an IP asks too fast: a few at a time. */
+const BATCH = 3
+/** How many artists a chart of Last.fm's has at most: a chart that long may have left some out. */
+const CHART_CAP = 1000
 
 export interface MusicWeek {
   stats: WeekStats
@@ -82,19 +85,38 @@ async function readLengths(env: Env, base: string, plays: readonly Play[], get: 
   return lengths
 }
 
-/** Of the most played artists, those with no plays at all before the week began. `null` when not a single one could be asked about. */
-async function readNewArtists(base: string, plays: readonly Play[], week: Week, get: Get): Promise<{ name: string; plays: number }[] | null> {
+const same = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase()
+
+/**
+ * Of the most played artists, those with no plays at all before the week began. Last.fm's chart of everything before the week (from the beginning of time to its start) has the artists played, up to a thousand of them:
+ * an artist that is on it is not new; one that is not is new if the chart is whole, and if the chart is cut (a library of more than a thousand artists) it is asked about by the owner's total for it, less the plays in the week
+ * and after it (`user.getartisttracks`, which would say it directly, is gone from Last.fm). `null` when it could not be told.
+ */
+async function readNewArtists(env: Env, base: string, plays: readonly Play[], week: Week, nowMs: number, get: Get): Promise<{ name: string; plays: number }[] | null> {
   const candidates = artistsByPlays(plays).slice(0, FIRSTS_CANDIDATES)
-  const answered = await within(candidates, MAX_FIRSTS_LOOKUPS, async (artist) => {
-    const answer = await get(artistPlaysBeforeUrl(base, artist.name, week.start), { ttl: TTL.firsts })
-    return { value: { artist, before: parseArtistPlays(answer.data) }, hit: answer.hit }
+  if (candidates.length === 0) return []
+  const answer = await settle(get(artistChartUrl(base, 0, week.start), { ttl: TTL.firsts }))
+  if (answer === null) return null
+  const before = parseArtistChart(answer.data)
+  const absent = candidates.filter((artist) => !before.some((one) => same(one.name, artist.name)))
+  if (before.length < CHART_CAP) return absent
+  // The chart is cut: what is not on it may have been played a few times before. Ask the totals, and what came after the week.
+  const afterChart = isComplete(week, nowMs) ? await settle(get(artistChartUrl(base, week.end, Math.floor(nowMs / 1000)), { ttl: TTL.weekLive })) : { data: null }
+  if (afterChart === null) return null
+  const after = parseArtistChart(afterChart.data)
+  const afterCut = after.length >= CHART_CAP
+  const user = setting(env, "LASTFM_USER")
+  const asked = await within(absent, MAX_FIRSTS_LOOKUPS, async (artist) => {
+    const info = await get(artistInfoUrl(base, artist.name, user), { ttl: TTL.weekLive })
+    const afterPlays = after.find((one) => same(one.name, artist.name))?.plays ?? (afterCut ? null : 0)
+    const total = parseArtistInfo(info.data).userPlays
+    return { value: { artist, earlier: total === null || afterPlays === null ? null : total - artist.plays - afterPlays }, hit: info.hit }
   })
-  const known = answered.filter((one) => one.before !== null)
-  if (known.length === 0) return null
-  return known.filter((one) => one.before === 0).map((one) => one.artist)
+  const known = asked.filter((one) => one.earlier !== null)
+  return known.length === 0 && absent.length > 0 ? null : known.filter((one) => (one.earlier ?? 1) <= 0).map((one) => one.artist)
 }
 
-async function musicWeek(env: Env, get: Get, week: Week, ttl: number): Promise<MusicWeek | null> {
+async function musicWeek(env: Env, get: Get, week: Week, ttl: number, nowMs: number): Promise<MusicWeek | null> {
   const base = lastfmBase(env)
   if (base === null) return null
   const previous = previousWeek(week)
@@ -102,7 +124,7 @@ async function musicWeek(env: Env, get: Get, week: Week, ttl: number): Promise<M
     readPlays(base, week, get, ttl),
     settle(get(artistChartUrl(base, previous.start, previous.end), { ttl: TTL.weekDone })).then((answer): ChartArtist[] | null => (answer === null ? null : parseArtistChart(answer.data))),
   ])
-  const [lengths, newArtists] = await Promise.all([readLengths(env, base, plays, get), readNewArtists(base, plays, week, get)])
+  const [lengths, newArtists] = await Promise.all([readLengths(env, base, plays, get), readNewArtists(env, base, plays, week, nowMs, get)])
   return { stats: weekStats(plays, chart, lengths), truncated, previousTotal: chart === null ? null : chart.reduce((sum, artist) => sum + artist.plays, 0), newArtists }
 }
 
@@ -122,6 +144,6 @@ async function watchedWeek(env: Env, get: Get, week: Week, ttl: number): Promise
 export async function loadWeek(env: Env, get: Get, week: Week, nowMs: number): Promise<WeekData> {
   const complete = isComplete(week, nowMs)
   const ttl = complete ? TTL.weekDone : TTL.weekLive
-  const [music, watched] = await Promise.all([settle(musicWeek(env, get, week, ttl)), settle(watchedWeek(env, get, week, ttl))])
+  const [music, watched] = await Promise.all([settle(musicWeek(env, get, week, ttl, nowMs)), settle(watchedWeek(env, get, week, ttl))])
   return { week, complete, music, watched }
 }

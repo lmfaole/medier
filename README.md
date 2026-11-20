@@ -28,11 +28,16 @@ The place **Uke** in the bar opens the last week that is over, `/uke/<year>-<wee
 Only numbers and lists: **Tall** (plays, how many different artists and songs, listening time, the busiest day and hour, the shape of the days), **top artists, albums and songs** in the shapes of what they are, with how each artist's place
 moved since the week before, **new artists** (those among the ten most played that had no plays at all before the week) and **film og TV** (films, episodes, the shows most watched, and runs of three episodes or more of one show on a day).
 
-Nothing is stored: every week is made when it is asked for, from Last.fm (`user.getrecenttracks` with the week's range, read page by page up to 1 600 plays; the week before's `getweeklyartistchart`; `getartisttracks` before the
-week for who is new; `track.getinfo` for the length of the most played songs) and Trakt (the history in the range), and kept for a day when the week is over and for five minutes when it is not. A page may ask a Worker's limit of
-questions, so the lengths of songs and the new artists come in turns (at most 10 and 8 new questions on a page, the most played first, what is kept is free) and fill in over the next visits. The listening time is an **estimate**: the known lengths,
-and the plays whose length is not known counted at their average (a typical 3½ minutes where none is known), with how many of the plays the length is known of. No Spotify data is in it except the pictures of the artists. `src/lib/wrapped.ts`
-makes the numbers, `src/lib/week-source.ts` fetches what they are made of; both are tested.
+Nothing is stored: every week is made when it is asked for, from Last.fm (`user.getrecenttracks` with the week's range, read page by page up to 1 600 plays; the week before's `getweeklyartistchart`; the chart of everything before the
+week, from the beginning of time to its start, for who is new; `track.getinfo` for the length of a sample of the most played songs) and Trakt (the history in the range), and kept for a day when the week is over and for five minutes when
+it is not. A page may ask a Worker's limit of questions, so the lengths of songs come in turns (at most 10 new questions on a page, the most played first; what is kept is free) and fill in over the next visits, a few at a time because
+Last.fm answers a rate limit as an error. An artist is new when it is not on the chart of everything before the week; Last.fm cuts that chart at a thousand artists, and then what is not on it is asked about by the owner's total for it,
+less the plays in the week and after it (`user.getartisttracks`, which would say it directly, is gone from Last.fm). The listening time is an **estimate**: the known lengths, and the plays whose length is not known counted at their average
+(a typical 3½ minutes where none is known), with how many of the plays the length is known of. No Spotify data is in it except the pictures of the artists. `src/lib/wrapped.ts` makes the numbers, `src/lib/week-source.ts` fetches what they
+are made of; both are tested.
+
+**Last.fm's errors are never kept.** Last.fm answers an error («Rate Limit Exceeded», «Deprecated») with HTTP 200, so a cache that trusts the status kept them for as long as it kept an answer, and a song's length stayed unknown for a week.
+`lastfmError` (`sources.ts`) names them; `runtime.ts` refuses to keep one and asks again where one was kept before.
 
 ## Installed app (PWA)
 

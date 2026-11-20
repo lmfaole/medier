@@ -201,14 +201,6 @@ export function parseArtistChart(answer: unknown): ChartArtist[] {
   })
 }
 
-/** How many plays of an artist the owner has had in a range (`user.getartisttracks`): its total, or `null` where Last.fm did not say. */
-export function parseArtistPlays(answer: unknown): number | null {
-  const total = Number(text(object(object(object(answer)["artisttracks"])["@attr"])["total"]))
-  return Number.isFinite(total) && total >= 0 && text(object(object(object(answer)["artisttracks"])["@attr"])["total"]) !== "" ? total : null
-}
-
 /** The addresses of the weekly wrapped's questions to Last.fm: `base` is the one with the key and the user (`sources.ts`); times are unix seconds, and `to` is not included. */
 export const playsInRangeUrl = (base: string, from: number, to: number, page: number): string => `${base}&method=user.getrecenttracks&from=${from}&to=${to - 1}&limit=200&page=${page}`
 export const artistChartUrl = (base: string, from: number, to: number): string => `${base}&method=user.getweeklyartistchart&from=${from}&to=${to}`
-/** The plays of one artist before a moment: asked for with a limit of one, since only the total is wanted. */
-export const artistPlaysBeforeUrl = (base: string, artist: string, before: number): string => `${base}&method=user.getartisttracks&artist=${encodeURIComponent(artist)}&endTimestamp=${before - 1}&limit=1`

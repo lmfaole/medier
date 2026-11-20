@@ -31,6 +31,16 @@ export const TTL = { nowPlaying: 15, token: 3000, recent: 60, topArtists: 3600, 
 export const MAX_POSTER_LOOKUPS = 12
 const POSTER_BATCH = 6
 
+/**
+ * Last.fm answers an error with HTTP 200 and a body of `{ "error": 29, "message": "…" }` (a rate limit, a method that is gone, an artist it does not know), so «ok» does not say the answer is one. The message of such an error, or `null` for
+ * an answer that is not one. An error is never kept: the next ask may be right, and one that was kept would be shown for as long as it is kept.
+ */
+export function lastfmError(data: unknown): string | null {
+  if (typeof data !== "object" || data === null || Array.isArray(data)) return null
+  const body = data as Record<string, unknown>
+  return typeof body["error"] === "number" && typeof body["message"] === "string" ? body["message"] : null
+}
+
 export const setting = (env: Env, name: string): string => env[name] ?? ""
 
 /** The music, and the song Last.fm says is playing now (a scrobble of whatever plays, Spotify included), which is not a finished play and so not in `recent`. */

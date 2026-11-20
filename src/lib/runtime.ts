@@ -5,7 +5,7 @@
 
 import { env } from "cloudflare:workers"
 
-import { type Env, type Get, type Listening, loadAlbum, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, loadPerson, loadTrack, loadWatched, settle } from "./sources.ts"
+import { type Env, type Get, lastfmError, type Listening, loadAlbum, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, loadPerson, loadTrack, loadWatched, settle } from "./sources.ts"
 import { loadWeek } from "./week-source.ts"
 import type { Week } from "./weeks.ts"
 import type { NowPlaying } from "./spotify.ts"
@@ -38,11 +38,17 @@ export const get: Get = async (url, request) => {
   const cache = caches.default
   const kept = new Request(request.key === undefined ? url : `${KEY_HOST}${encodeURIComponent(request.key)}`)
   const found = await cache.match(kept)
-  if (found !== undefined) return { data: await found.json(), hit: true }
+  if (found !== undefined) {
+    const data: unknown = await found.json()
+    // An error of Last.fm's that was kept before errors were refused is not an answer: ask again, and the right one takes its place.
+    if (lastfmError(data) === null) return { data, hit: true }
+  }
   const response = await ask(url, request)
   if (!response.ok) throw new Error(`${new URL(url).host}: ${response.status}`)
   // 204 is «nothing» (nothing is playing): kept as that, so a quiet moment is not asked about again for its whole length either.
   const data: unknown = response.status === 204 ? null : await response.json()
+  const refused = lastfmError(data)
+  if (refused !== null) throw new Error(`${new URL(url).host}: ${refused}`)
   await cache.put(kept, new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json", "Cache-Control": `max-age=${request.ttl}` } }))
   return { data, hit: false }
 }

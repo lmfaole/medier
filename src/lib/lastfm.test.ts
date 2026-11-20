@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { albumInfoUrl, artistChartUrl, artistInfoUrl, artistPlaysBeforeUrl, parseArtistChart, parseArtistPlays, parseRecentPage, playsInRangeUrl, firstSentences, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopArtists, parseTrackInfo, trackInfoUrl } from "./lastfm.ts"
+import { albumInfoUrl, artistChartUrl, artistInfoUrl, parseArtistChart, parseRecentPage, playsInRangeUrl, firstSentences, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopArtists, parseTrackInfo, trackInfoUrl } from "./lastfm.ts"
 
 test("recent tracks: a played one has its time, the one playing now has none, an empty cover is null and a broken row is left out", () => {
   const plays = parseRecentTracks({
@@ -95,15 +95,7 @@ test("a week's chart has each artist's plays and place; one with no name or no c
   assert.deepEqual(parseArtistChart(null), [])
 })
 
-test("the plays of an artist before a moment are its total, nothing is zero, and an answer without one is not known", () => {
-  assert.equal(parseArtistPlays({ artisttracks: { "@attr": { total: "12" } } }), 12)
-  assert.equal(parseArtistPlays({ artisttracks: { "@attr": { total: "0" } } }), 0)
-  assert.equal(parseArtistPlays({ error: 6 }), null)
-  assert.equal(parseArtistPlays({ artisttracks: { "@attr": {} } }), null)
-})
-
-test("a range is asked for by unix seconds with the end left out, a chart by both ends, and the plays before a moment by the second before it", () => {
+test("a range is asked for by unix seconds with the end left out, and a chart by both ends", () => {
   assert.equal(playsInRangeUrl("https://x/?k=1", 100, 200, 3), "https://x/?k=1&method=user.getrecenttracks&from=100&to=199&limit=200&page=3")
   assert.equal(artistChartUrl("https://x/?k=1", 100, 200), "https://x/?k=1&method=user.getweeklyartistchart&from=100&to=200")
-  assert.equal(artistPlaysBeforeUrl("https://x/?k=1", "Beyoncé", 100), "https://x/?k=1&method=user.getartisttracks&artist=Beyonc%C3%A9&endTimestamp=99&limit=1")
 })

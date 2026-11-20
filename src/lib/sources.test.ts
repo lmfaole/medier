@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { type Env, type Get, loadAlbum, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, loadPerson, loadTrack, loadWatched, MAX_POSTER_LOOKUPS, settle, TTL } from "./sources.ts"
+import { type Env, type Get, loadAlbum, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, lastfmError, loadPerson, loadTrack, loadWatched, MAX_POSTER_LOOKUPS, settle, TTL } from "./sources.ts"
 
 /** A `get` that answers from a table by the start of the address and remembers what was asked. */
 function fake(answers: Record<string, unknown>, hits = new Set<string>()): { get: Get; asked: { url: string; ttl: number; method: string | undefined }[] } {
@@ -203,4 +203,12 @@ test("an album or a track Spotify does not know, or with Spotify not set up, has
   assert.equal(noSpotify.spotify, null)
   assert.equal(noSpotify.lastfm?.userPlays, 4)
   assert.deepEqual(await loadAlbum({}, musicGet().get, "Band", "LP"), { lastfm: null, spotify: null })
+})
+
+test("an answer of Last.fm's that is an error says so, though its status was ok, and nothing else is taken for one", () => {
+  assert.equal(lastfmError({ error: 29, message: "Rate Limit Exceeded" }), "Rate Limit Exceeded")
+  assert.equal(lastfmError({ error: 27, message: "Deprecated - This type of request is no longer supported" }), "Deprecated - This type of request is no longer supported")
+  assert.equal(lastfmError({ track: { name: "x" } }), null)
+  assert.equal(lastfmError({ error: "x", message: "y" }), null)
+  for (const other of [null, "text", [], 3, undefined]) assert.equal(lastfmError(other), null)
 })

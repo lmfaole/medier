@@ -18,8 +18,14 @@ interface Options {
   /** The plays of each page, by number. */
   pages?: unknown[][]
   totalPages?: number
-  /** The plays an artist had before the week, by name; an artist not here fails. */
+  /** The artists on the chart of everything before the week (those with plays), by name. */
   before?: Record<string, number>
+  /** The chart before the week is cut at a thousand artists, so what is not on it may still have been played; `totals` is then each artist's total plays, and `after` its plays after the week. */
+  cut?: boolean
+  totals?: Record<string, number>
+  after?: Record<string, number>
+  /** The chart of everything before the week fails. */
+  beforeDown?: boolean
   hits?: boolean
   down?: ("lastfm" | "trakt")[]
 }
@@ -37,13 +43,22 @@ function fake(options: Options = {}): { get: Get; asked: { url: string; ttl: num
         const page = Number(new URL(url).searchParams.get("page"))
         return { data: { recenttracks: { "@attr": { page: String(page), totalPages: String(options.totalPages ?? pages.length), total: "99" }, track: pages[page - 1] ?? [] } }, hit }
       }
-      if (method === "user.getweeklyartistchart") return { data: { weeklyartistchart: { artist: [{ name: "Alpha", playcount: "7", "@attr": { rank: "2" } }, { name: "Gamma", playcount: "3", "@attr": { rank: "5" } }] } }, hit }
+      if (method === "user.getweeklyartistchart") {
+        const from = Number(new URL(url).searchParams.get("from"))
+        const chart = (counts: Record<string, number>, filler = 0) => ({ weeklyartistchart: { artist: [...Object.entries(counts).filter(([, plays]) => plays > 0).map(([name, plays], index) => ({ name, playcount: String(plays), "@attr": { rank: String(index + 1) } })), ...Array.from({ length: filler }, (_, index) => ({ name: `Filler ${index}`, playcount: "1", "@attr": { rank: String(index + 100) } }))] } })
+        if (from === 0) {
+          if (options.beforeDown === true) throw new Error("chart down")
+          const counts = options.before ?? {}
+          return { data: chart(counts, options.cut === true ? 1000 - Object.values(counts).filter((plays) => plays > 0).length : 0), hit }
+        }
+        if (from === WEEK.end) return { data: chart(options.after ?? {}), hit }
+        return { data: { weeklyartistchart: { artist: [{ name: "Alpha", playcount: "7", "@attr": { rank: "2" } }, { name: "Gamma", playcount: "3", "@attr": { rank: "5" } }] } }, hit }
+      }
       if (method === "track.getinfo") return { data: { track: { duration: "200000" } }, hit }
-      if (method === "user.getartisttracks") {
-        const artist = new URL(url).searchParams.get("artist") ?? ""
-        const before = options.before?.[artist]
-        if (before === undefined) throw new Error("no answer")
-        return { data: { artisttracks: { "@attr": { total: String(before) } } }, hit }
+      if (method === "artist.getinfo") {
+        const total = options.totals?.[new URL(url).searchParams.get("artist") ?? ""]
+        if (total === undefined) throw new Error("no answer")
+        return { data: { artist: { stats: { userplaycount: String(total) } } }, hit }
       }
     }
     if (url.startsWith("https://api.trakt.tv/")) {
@@ -57,7 +72,7 @@ function fake(options: Options = {}): { get: Get; asked: { url: string; ttl: num
 
 test("every page of the week's plays is read, and the stats are made from all of them, with the week before's chart for the change", async () => {
   const pages = [[scrobble("A1", "Alpha", WEEK.start + 100), scrobble("A2", "Alpha", WEEK.start + 200)], [scrobble("B1", "Beta", WEEK.start + 300)], [scrobble("A3", "Alpha", WEEK.start + 400)]]
-  const { get, asked } = fake({ pages, before: { Alpha: 5, Beta: 0 } })
+  const { get, asked } = fake({ pages, before: { Alpha: 5 } })
   const data = await loadWeek(ENV, get, WEEK, AFTER)
   assert.equal(data.music?.stats.total, 4)
   assert.equal(data.music?.truncated, false)
@@ -75,25 +90,43 @@ test("a week of more plays than the pages that are read is cut, and says so", as
   assert.equal(asked.filter((one) => one.url.includes("getrecenttracks")).length, MAX_PLAY_PAGES)
 })
 
-test("an artist is new when it had no plays before the week, and what could not be asked is not told: no answers at all is not known", async () => {
+test("an artist is new when it is not on the chart of everything before the week, and the chart failing is not knowing", async () => {
   const pages = [[scrobble("A1", "Alpha", WEEK.start + 1), scrobble("B1", "Beta", WEEK.start + 2), scrobble("C1", "Gamma", WEEK.start + 3)]]
-  const some = await loadWeek(ENV, fake({ pages, before: { Alpha: 12, Beta: 0 } }).get, WEEK, AFTER)
-  assert.deepEqual(some.music?.newArtists?.map((artist) => artist.name), ["Beta"])
-  const none = await loadWeek(ENV, fake({ pages, before: {} }).get, WEEK, AFTER)
-  assert.equal(none.music?.newArtists, null)
+  const some = await loadWeek(ENV, fake({ pages, before: { Alpha: 12 } }).get, WEEK, AFTER)
+  assert.deepEqual(some.music?.newArtists?.map((artist) => artist.name), ["Beta", "Gamma"])
+  assert.deepEqual((await loadWeek(ENV, fake({ pages, before: { alpha: 12, BETA: 3, Gamma: 1 } }).get, WEEK, AFTER)).music?.newArtists, [])
+  const unknown = await loadWeek(ENV, fake({ pages, beforeDown: true }).get, WEEK, AFTER)
+  assert.equal(unknown.music?.newArtists, null)
 })
 
-test("a page asks about no more songs and artists than the limits that were not kept; what is kept is free, so all are had", async () => {
+test("when the chart is cut at a thousand, what is not on it is asked about by the owner's total less the plays in the week and after it", async () => {
+  const pages = [[scrobble("A1", "Alpha", WEEK.start + 1), scrobble("B1", "Beta", WEEK.start + 2), scrobble("B2", "Beta", WEEK.start + 3), scrobble("C1", "Gamma", WEEK.start + 4)]]
+  const run = fake({ pages, cut: true, before: { Alpha: 12 }, totals: { Beta: 6, Gamma: 1 }, after: { Beta: 3 } })
+  const got = await loadWeek(ENV, run.get, WEEK, AFTER)
+  // Beta: 6 in all, 2 in the week, 3 after it: one before, so not new. Gamma: 1 in all, 1 in the week: new.
+  assert.deepEqual(got.music?.newArtists?.map((artist) => artist.name), ["Gamma"])
+  assert.equal(run.asked.filter((one) => one.url.includes("getartisttracks")).length, 0)
+  const unknown = await loadWeek(ENV, fake({ pages, cut: true, before: { Alpha: 12 } }).get, WEEK, AFTER)
+  assert.equal(unknown.music?.newArtists, null)
+})
+
+test("a page asks about no more song lengths than the limit that were not kept, and what is kept is free, so all of the sample are had", async () => {
   const many = Array.from({ length: 30 }, (_, index) => scrobble(`T${index}`, `Artist ${index}`, WEEK.start + index))
-  const cold = fake({ pages: [many], before: Object.fromEntries(many.map((_, index) => [`Artist ${index}`, 0])) })
+  const cold = fake({ pages: [many] })
   await loadWeek(ENV, cold.get, WEEK, AFTER)
-  const lookups = (name: string) => cold.asked.filter((one) => one.url.includes(name)).length
-  assert.ok(lookups("track.getinfo") >= MAX_LENGTH_LOOKUPS && lookups("track.getinfo") < MAX_LENGTH_LOOKUPS + 6, `lengths ${lookups("track.getinfo")}`)
-  assert.ok(lookups("getartisttracks") >= MAX_FIRSTS_LOOKUPS && lookups("getartisttracks") < MAX_FIRSTS_LOOKUPS + 6, `firsts ${lookups("getartisttracks")}`)
-  const warm = fake({ pages: [many], before: Object.fromEntries(many.map((_, index) => [`Artist ${index}`, 0])), hits: true })
+  const lengths = cold.asked.filter((one) => one.url.includes("track.getinfo")).length
+  assert.ok(lengths >= MAX_LENGTH_LOOKUPS && lengths < MAX_LENGTH_LOOKUPS + 3, `lengths ${lengths}`)
+  const warm = fake({ pages: [many], hits: true })
   await loadWeek(ENV, warm.get, WEEK, AFTER)
-  assert.equal(warm.asked.filter((one) => one.url.includes("track.getinfo")).length, 30)
-  assert.equal(warm.asked.filter((one) => one.url.includes("getartisttracks")).length, 10)
+  assert.equal(warm.asked.filter((one) => one.url.includes("track.getinfo")).length, 20)
+})
+
+test("a cut chart asks about no more artists than the limit that were not kept", async () => {
+  const many = Array.from({ length: 12 }, (_, index) => scrobble(`T${index}`, `Artist ${index}`, WEEK.start + index))
+  const run = fake({ pages: [many], cut: true, totals: Object.fromEntries(many.map((_, index) => [`Artist ${index}`, 1])) })
+  await loadWeek(ENV, run.get, WEEK, AFTER)
+  const asked = run.asked.filter((one) => one.url.includes("artist.getinfo")).length
+  assert.ok(asked >= MAX_FIRSTS_LOOKUPS && asked < MAX_FIRSTS_LOOKUPS + 3, `artists ${asked}`)
 })
 
 test("a week that is over is kept for a day and the one going on for minutes", async () => {
