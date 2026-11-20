@@ -14,8 +14,8 @@ const episode = {
 
 test("a film and an episode are read with their links to Trakt, and anything else is left out", () => {
   assert.deepEqual(parseHistory([movie, episode, { id: 3, type: "movie" }, "junk"]), [
-    { id: 1, watchedAt: "2026-11-18T20:00:00.000Z", kind: "film", title: "Heat", year: 1995, episode: null, url: "https://trakt.tv/movies/heat-1995", tmdbId: 949, poster: null },
-    { id: 2, watchedAt: "2026-11-19T19:00:00.000Z", kind: "episode", title: "Andor", year: 2022, episode: { title: "Rubicon", season: 2, number: 5 }, url: "https://trakt.tv/shows/andor/seasons/2/episodes/5", tmdbId: 83867, poster: null },
+    { id: 1, watchedAt: "2026-11-18T20:00:00.000Z", kind: "film", title: "Heat", year: 1995, episode: null, url: "https://trakt.tv/movies/heat-1995", tmdbId: 949, poster: null, info: null },
+    { id: 2, watchedAt: "2026-11-19T19:00:00.000Z", kind: "episode", title: "Andor", year: 2022, episode: { title: "Rubicon", season: 2, number: 5 }, url: "https://trakt.tv/shows/andor/seasons/2/episodes/5", tmdbId: 83867, poster: null, info: null },
   ])
   assert.deepEqual(parseHistory({ error: "x" }), [])
 })
@@ -28,7 +28,7 @@ test("the films and the episodes are one list, newest first, each viewing once",
 })
 
 const watch = (id: number, at: string, title: string, episode: { season: number; number: number } | null) => ({
-  id, watchedAt: at, kind: episode === null ? ("film" as const) : ("episode" as const), title, year: 2023, url: "u", tmdbId: null, poster: id === 1 ? null : `p${id}`,
+  id, watchedAt: at, kind: episode === null ? ("film" as const) : ("episode" as const), title, year: 2023, url: "u", tmdbId: null, poster: id === 1 ? null : `p${id}`, info: null,
   episode: episode === null ? null : { title: `T${episode.number}`, ...episode },
 })
 

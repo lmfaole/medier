@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { authorizeUrl, codeRequest, parseNowPlaying, parseRefreshToken, parseToken, refreshRequest, SCOPE, TOKEN_URL } from "./spotify.ts"
+import { authorizeUrl, codeRequest, parseArtistMatch, parseNowPlaying, parseRefreshToken, parseToken, plain, refreshRequest, SCOPE, searchArtistUrl, TOKEN_URL } from "./spotify.ts"
 
 const PLAYING = {
   is_playing: true,
@@ -57,4 +57,26 @@ test("the code is swapped for the refresh token, and an answer without one gives
   assert.equal(request.body, "grant_type=authorization_code&code=the-code&redirect_uri=http%3A%2F%2F127.0.0.1%3A8888%2Fcallback")
   assert.equal(parseRefreshToken({ access_token: "a", refresh_token: "r" }), "r")
   assert.equal(parseRefreshToken({ access_token: "a" }), null)
+})
+
+const ARTIST = (name: string, id = "1") => ({ name, genres: ["pop", "dance pop"], external_urls: { spotify: `https://open.spotify.com/artist/${id}` }, images: [{ url: "big", width: 640 }, { url: "small", width: 160 }, { url: "mid", width: 320 }] })
+
+test("an artist is the one named the same as the one asked for, however it is spelled, and its pictures come smallest first", () => {
+  const found = parseArtistMatch({ artists: { items: [ARTIST("After Life", "9"), ARTIST("Beyoncé", "2")] } }, "BEYONCE")
+  assert.equal(found?.url, "https://open.spotify.com/artist/2")
+  assert.deepEqual(found?.images.map((image) => image.width), [160, 320, 640])
+  assert.deepEqual(found?.genres, ["pop", "dance pop"])
+})
+
+test("a search that only finds other artists gives no picture rather than the wrong one", () => {
+  assert.equal(parseArtistMatch({ artists: { items: [ARTIST("After Life"), ARTIST("Afterhours")] } }, "After"), null)
+  assert.equal(parseArtistMatch({ artists: { items: [{ ...ARTIST("After"), external_urls: { spotify: "https://x.com" } }] } }, "After"), null)
+  assert.equal(parseArtistMatch(null, "After"), null)
+  assert.equal(parseArtistMatch({ artists: { items: [ARTIST("!!!")] } }, "!!!"), null)
+})
+
+test("names are compared without case, accents or marks, and searched for by their own name in quotes", () => {
+  assert.equal(plain("Beyoncé"), "beyonce")
+  assert.equal(plain("The Sewing Club"), "thesewingclub")
+  assert.equal(searchArtistUrl("Dev Lemons"), "https://api.spotify.com/v1/search?type=artist&limit=5&q=artist%3A%22Dev%20Lemons%22")
 })

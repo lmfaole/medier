@@ -7,6 +7,8 @@ export const TOKEN_URL = "https://accounts.spotify.com/api/token"
 export const AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
 /** The one permission the site asks for: to see what plays. It cannot change anything in the account. */
 export const SCOPE = "user-read-currently-playing"
+/** The search for one artist by name: a few hits, because the first is not always the one (`parseArtistMatch` takes the one that is named the same). */
+export const searchArtistUrl = (name: string): string => `https://api.spotify.com/v1/search?type=artist&limit=5&q=${encodeURIComponent(`artist:"${name}"`)}`
 export const NOW_PLAYING_URL = "https://api.spotify.com/v1/me/player/currently-playing"
 
 export interface NowPlaying {
@@ -21,6 +23,8 @@ export interface NowPlaying {
 type Json = Record<string, unknown>
 const object = (value: unknown): Json => (typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Json) : {})
 const text = (value: unknown): string => (typeof value === "string" ? value : "")
+const list = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
+const SPOTIFY_URL = "https://open.spotify.com/"
 
 /** The request that swaps the refresh token for an access token (one hour): the client signs in with its id and secret, the user's token is the grant. */
 export function refreshRequest(clientId: string, clientSecret: string, refreshToken: string): { url: string; method: "POST"; headers: Record<string, string>; body: string } {
@@ -71,4 +75,34 @@ export function codeRequest(clientId: string, clientSecret: string, code: string
 export function parseRefreshToken(answer: unknown): string | null {
   const token = text(object(answer)["refresh_token"])
   return token === "" ? null : token
+}
+
+/** An artist on Spotify: where to open it, its picture in the widths Spotify has (for `Picture`'s `sources`), and what Spotify calls its genres. */
+export interface SpotifyArtist {
+  url: string
+  images: { src: string; width: number }[]
+  genres: string[]
+}
+
+/** A name as a person compares it: no case, no accents, nothing but letters and digits («Beyoncé» is «beyonce»). */
+export const plain = (name: string): string => name.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^\p{L}\p{N}]+/gu, "")
+
+/**
+ * The artist the search found that is named the same as the one asked for, or `null`: a search for «After» finds a dozen artists, and the first is not always the
+ * one played, so a picture of the wrong artist is worse than none. The pictures come smallest first.
+ */
+export function parseArtistMatch(answer: unknown, name: string): SpotifyArtist | null {
+  const wanted = plain(name)
+  if (wanted === "") return null
+  for (const value of list(object(object(answer)["artists"])["items"])) {
+    const artist = object(value)
+    const url = text(object(artist["external_urls"])["spotify"])
+    if (plain(text(artist["name"])) !== wanted || !url.startsWith(SPOTIFY_URL)) continue
+    const images = list(artist["images"]).flatMap((image) => {
+      const found = object(image)
+      return text(found["url"]) !== "" && typeof found["width"] === "number" ? [{ src: text(found["url"]), width: found["width"] }] : []
+    })
+    return { url, images: images.toSorted((a, b) => a.width - b.width), genres: list(artist["genres"]).flatMap((genre) => (typeof genre === "string" ? [genre] : [])).slice(0, 4) }
+  }
+  return null
 }

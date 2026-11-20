@@ -5,6 +5,8 @@ import { PageHeader } from '@lmfaole/designsystem/components/page-header'
 import { PageLayout } from '@lmfaole/designsystem/components/page-layout'
 import { Stack } from '@lmfaole/designsystem/components/layout'
 
+import { Credits } from '../components/credits'
+
 interface Props {
   title: string
   lead: string
@@ -30,6 +32,7 @@ const { title, lead, crumbs, width = 'reading' } = Astro.props
         {crumbs === undefined ? null : <Breadcrumbs items={crumbs} />}
         <PageHeader title={title} lead={lead} />
         <slot />
+        <Credits />
       </Stack>
     </PageLayout>
   </body>

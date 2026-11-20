@@ -3,11 +3,13 @@ import { PageSection } from '@lmfaole/designsystem/components/page-section'
 
 import { Fetched, PlayRows, TopArtistRows } from '../../components/sections'
 import Page from '../../layouts/Page.astro'
-import { music, spotifyNow } from '../../lib/runtime'
+import { playingNow } from '../../lib/now'
+import { artistPictures, music, spotifyNow } from '../../lib/runtime'
 
 const base = import.meta.env.BASE_URL
-const [listening, spotify] = await Promise.all([music(), spotifyNow()])
-const now = spotify ?? listening?.now ?? null
+const withPictures = music().then(async (found) => ({ listening: found, pictures: await artistPictures((found?.topArtists ?? []).map((artist) => artist.name)) }))
+const [{ listening, pictures }, spotify] = await Promise.all([withPictures, spotifyNow()])
+const now = playingNow(spotify, listening?.now ?? null)
 ---
 
 <Page title="Musikk" lead="De siste avspillingene og de mest spilte artistene siste måned, fra Last.fm og Spotify." crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }]}>
@@ -15,7 +17,7 @@ const now = spotify ?? listening?.now ?? null
     <PlayRows plays={listening?.recent ?? []} now={now} base={base} />
   </PageSection>
   <PageSection id="artister" title="Mest spilt siste måned">
-    <TopArtistRows artists={listening?.topArtists ?? []} base={base} />
+    <TopArtistRows artists={listening?.topArtists ?? []} base={base} pictures={pictures} />
   </PageSection>
   <Fetched sources={[{ at: listening?.at ?? null, source: 'Last.fm' }]} />
 </Page>

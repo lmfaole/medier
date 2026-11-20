@@ -5,7 +5,7 @@ import { artistHref, artistPages, slugify, titlePages } from "./pages.ts"
 import type { Watch } from "./trakt.ts"
 
 const watch = (id: number, url: string, title: string, kind: "film" | "episode", poster: string | null = null): Watch => ({
-  id, watchedAt: `2026-11-${String(20 - id).padStart(2, "0")}T20:00:00Z`, kind, title, year: 2023, url, tmdbId: null, poster,
+  id, watchedAt: `2026-11-${String(20 - id).padStart(2, "0")}T20:00:00Z`, kind, title, year: 2023, url, tmdbId: null, poster, info: null,
   episode: kind === "film" ? null : { title: "E", season: 1, number: id },
 })
 

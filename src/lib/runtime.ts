@@ -5,7 +5,7 @@
 
 import { env } from "cloudflare:workers"
 
-import { type Env, type Get, type Listening, loadMusic, loadNowPlaying, loadWatched, settle } from "./sources.ts"
+import { type Env, type Get, type Listening, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, loadWatched, settle } from "./sources.ts"
 import type { NowPlaying } from "./spotify.ts"
 import type { Watched } from "./trakt.ts"
 
@@ -49,3 +49,5 @@ export const get: Get = async (url, request) => {
 export const music = (): Promise<Listening | null> => settle(loadMusic(settings(), get))
 export const watched = (): Promise<Watched | null> => settle(loadWatched(settings(), get))
 export const spotifyNow = (): Promise<NowPlaying | null> => settle(loadNowPlaying(settings(), get))
+export const artist = (name: string) => loadArtist(settings(), get, name)
+export const artistPictures = (names: readonly string[]) => loadArtistPictures(settings(), get, names)

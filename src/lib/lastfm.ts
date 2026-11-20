@@ -65,3 +65,40 @@ export function parseTopArtists(answer: unknown): TopArtist[] {
     })
     .filter((artist) => artist.name !== "")
 }
+
+/** What Last.fm says of an artist beyond its plays here: what it is tagged as, how many listen, and a few lines about it. */
+export interface ArtistInfo {
+  tags: string[]
+  listeners: number | null
+  /** The start of Last.fm's text about it, as plain text (their text is the users', CC BY-SA, with a link back where it is shown). */
+  bio: string | null
+}
+
+const ENTITIES: Record<string, string> = { "&amp;": "&", "&quot;": '"', "&#39;": "'", "&lt;": "<", "&gt;": ">", "&nbsp;": " " }
+
+/** At most `limit` characters of the text, cut at the end of a sentence where there is one, so it never ends in the middle of a word. */
+export function firstSentences(text: string, limit: number): string {
+  if (text.length <= limit) return text
+  const head = text.slice(0, limit)
+  const end = Math.max(head.lastIndexOf(". "), head.lastIndexOf("! "), head.lastIndexOf("? "))
+  return end > limit / 3 ? head.slice(0, end + 1) : `${head.slice(0, head.lastIndexOf(" "))}…`
+}
+
+/** The address that tells Last.fm about an artist: `base` is the one with the key and the user (`sources.ts`). */
+export const artistInfoUrl = (base: string, artist: string): string => `${base}&method=artist.getinfo&autocorrect=1&artist=${encodeURIComponent(artist)}`
+
+export function parseArtistInfo(answer: unknown): ArtistInfo {
+  const artist = (typeof answer === "object" && answer !== null ? (answer as Record<string, unknown>)["artist"] : null) ?? {}
+  const object = (value: unknown): Record<string, unknown> => (typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : {})
+  const info = object(artist)
+  const tags = (Array.isArray(object(info["tags"])["tag"]) ? (object(info["tags"])["tag"] as unknown[]) : []).flatMap((tag) => {
+    const name = object(tag)["name"]
+    return typeof name === "string" && name !== "" ? [name] : []
+  })
+  const listeners = Number(object(info["stats"])["listeners"])
+  const summary = object(info["bio"])["summary"]
+  // The summary ends with a link to Last.fm («Read more on Last.fm») and a licence line: only the text before them is the text.
+  const raw = typeof summary === "string" ? summary.split(/<a\s/i)[0] ?? "" : ""
+  const bio = raw.replace(/<[^>]+>/g, "").replace(/&(?:amp|quot|#39|lt|gt|nbsp);/g, (entity) => ENTITIES[entity] ?? entity).replace(/\s+/g, " ").trim()
+  return { tags: tags.slice(0, 4), listeners: Number.isFinite(listeners) && listeners > 0 ? listeners : null, bio: bio.length < 40 ? null : firstSentences(bio, 420) }
+}

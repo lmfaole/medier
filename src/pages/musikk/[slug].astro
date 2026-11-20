@@ -2,14 +2,15 @@
 import { ArtistDetail } from '../../components/detail'
 import Page from '../../layouts/Page.astro'
 import { artistPages } from '../../lib/pages'
-import { music } from '../../lib/runtime'
+import { artist, music } from '../../lib/runtime'
 
 const listening = await music()
 const page = listening === null ? undefined : artistPages(listening).find((one) => one.slug === Astro.params.slug)
 if (page === undefined) return Astro.rewrite('/404/')
+const info = await artist(page.name)
 const base = import.meta.env.BASE_URL
 ---
 
 <Page width="pane" title={page.name} lead="Artist" crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.name, href: `${base}musikk/${page.slug}/` }]}>
-  <ArtistDetail page={page} base={base} />
+  <ArtistDetail page={page} base={base} info={info} />
 </Page>

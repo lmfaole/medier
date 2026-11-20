@@ -3,9 +3,9 @@
  * is quick and the sources are asked little. Pure: the asking is done by the `get` that is passed in (`runtime.ts`), so a test hands it a fake one.
  */
 
-import { type Music, parseRecentTracks, parseTopArtists } from "./lastfm.ts"
-import { type NowPlaying, NOW_PLAYING_URL, parseNowPlaying, parseToken, refreshRequest } from "./spotify.ts"
-import { authorize, detailsUrl, parsePoster } from "./tmdb.ts"
+import { type ArtistInfo, artistInfoUrl, type Music, parseArtistInfo, parseRecentTracks, parseTopArtists } from "./lastfm.ts"
+import { type NowPlaying, NOW_PLAYING_URL, parseArtistMatch, parseNowPlaying, parseToken, refreshRequest, searchArtistUrl, type SpotifyArtist } from "./spotify.ts"
+import { authorize, detailsUrl, parseInfo, parsePoster, type TitleInfo } from "./tmdb.ts"
 import { mergeHistory, parseHistory, type Watch, type Watched } from "./trakt.ts"
 
 /** The settings a Worker has: its secrets and its variables (`settings.ts`). A source whose key is not set is left out, not an error. */
@@ -25,7 +25,7 @@ export interface Request {
 export type Get = (url: string, request: Request) => Promise<{ data: unknown; hit: boolean }>
 
 /** How long each kind of answer is kept, in seconds. A poster does not change; what is playing now does, quickly. */
-export const TTL = { nowPlaying: 15, token: 3000, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600 } as const
+export const TTL = { nowPlaying: 15, token: 3000, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600, artist: 24 * 3600 } as const
 
 /** Most of a page's asks that are not kept already: a cold page must stay well under a Worker's limit on what it may ask for. */
 export const MAX_POSTER_LOOKUPS = 12
@@ -38,11 +38,17 @@ export interface Listening extends Music {
   now: NowPlaying | null
 }
 
-export async function loadMusic(env: Env, get: Get): Promise<Listening | null> {
+/** The start of every Last.fm address: the key and the user, or `null` where there is no key. */
+function lastfmBase(env: Env): string | null {
   const key = setting(env, "LASTFM_API_KEY")
   if (key === "") return null
+  return `https://ws.audioscrobbler.com/2.0/?format=json&api_key=${encodeURIComponent(key)}&user=${encodeURIComponent(setting(env, "LASTFM_USER"))}`
+}
+
+export async function loadMusic(env: Env, get: Get): Promise<Listening | null> {
+  const base = lastfmBase(env)
+  if (base === null) return null
   const user = setting(env, "LASTFM_USER")
-  const base = `https://ws.audioscrobbler.com/2.0/?format=json&api_key=${encodeURIComponent(key)}&user=${encodeURIComponent(user)}`
   const [recent, top] = await Promise.all([
     get(`${base}&method=user.getrecenttracks&limit=50`, { ttl: TTL.recent }),
     get(`${base}&method=user.gettopartists&period=1month&limit=10`, { ttl: TTL.topArtists }),
@@ -54,11 +60,12 @@ export async function loadMusic(env: Env, get: Get): Promise<Listening | null> {
 }
 
 /**
- * Each film and show asks TMDB for its poster once (kept for a month); at most `MAX_POSTER_LOOKUPS` that were not kept are asked in one page, newest first,
- * so the rest are filled in by the next pages. A poster that cannot be fetched is left out: the row shows an empty frame.
+ * Each film and show asks TMDB once (kept for a month) for its poster and a few lines to know it by (plot, genres, length, vote), both from the one answer; at most
+ * `MAX_POSTER_LOOKUPS` that were not kept are asked in one page, newest first, so the rest are filled in by the next pages. What cannot be fetched is left out: the row
+ * shows an empty frame, the page no plot.
  */
 export async function withPosters(items: readonly Watch[], tmdbKey: string, get: Get): Promise<Watch[]> {
-  const posters = new Map<string, string | null>()
+  const posters = new Map<string, { poster: string | null; info: TitleInfo }>()
   if (tmdbKey !== "") {
     const wanted = [...new Map(items.filter((watch) => watch.tmdbId !== null).map((watch) => [`${watch.kind}:${watch.tmdbId}`, watch])).entries()]
     let asked = 0
@@ -69,7 +76,7 @@ export async function withPosters(items: readonly Watch[], tmdbKey: string, get:
             const request = authorize(tmdbKey, detailsUrl(watch.kind, watch.tmdbId ?? 0))
             const answer = await get(request.url, { headers: request.headers, ttl: TTL.poster })
             if (!answer.hit) asked += 1
-            posters.set(key, parsePoster(answer.data))
+            posters.set(key, { poster: parsePoster(answer.data), info: parseInfo(answer.data) })
           } catch {
             // Left out: the row has an empty frame until a later page has it. A failure is an ask too, or a key TMDB refuses would be asked for every film.
             asked += 1
@@ -78,7 +85,10 @@ export async function withPosters(items: readonly Watch[], tmdbKey: string, get:
       )
     }
   }
-  return items.map((watch) => ({ ...watch, poster: posters.get(`${watch.kind}:${watch.tmdbId}`) ?? null }))
+  return items.map((watch) => {
+    const found = posters.get(`${watch.kind}:${watch.tmdbId}`)
+    return { ...watch, poster: found?.poster ?? null, info: found?.info ?? null }
+  })
 }
 
 export async function loadWatched(env: Env, get: Get): Promise<Watched | null> {
@@ -94,13 +104,57 @@ export async function loadWatched(env: Env, get: Get): Promise<Watched | null> {
 
 /** The song playing now on Spotify, or `null` (nothing plays, Spotify is not set up, or its token has run out: the page simply shows nothing). */
 export async function loadNowPlaying(env: Env, get: Get): Promise<NowPlaying | null> {
+  const token = await spotifyToken(env, get)
+  if (token === null) return null
+  const playing = await get(NOW_PLAYING_URL, { headers: { Authorization: `Bearer ${token}` }, ttl: TTL.nowPlaying, key: "spotify:now-playing" })
+  return parseNowPlaying(playing.data)
+}
+
+/** The access token (an hour), made from the refresh token and kept for 50 minutes under its own key; `null` where Spotify is not set up or its sign-in has run out. */
+async function spotifyToken(env: Env, get: Get): Promise<string | null> {
   const [clientId, secret, refresh] = [setting(env, "SPOTIFY_CLIENT_ID"), setting(env, "SPOTIFY_CLIENT_SECRET"), setting(env, "SPOTIFY_REFRESH_TOKEN")]
   if (clientId === "" || secret === "" || refresh === "") return null
   const request = refreshRequest(clientId, secret, refresh)
-  const token = parseToken((await get(request.url, { method: request.method, headers: request.headers, body: request.body, ttl: TTL.token, key: "spotify:token" })).data)
-  if (token === null) return null
-  const playing = await get(NOW_PLAYING_URL, { headers: { Authorization: `Bearer ${token.accessToken}` }, ttl: TTL.nowPlaying, key: "spotify:now-playing" })
-  return parseNowPlaying(playing.data)
+  return parseToken((await get(request.url, { method: request.method, headers: request.headers, body: request.body, ttl: TTL.token, key: "spotify:token" })).data)?.accessToken ?? null
+}
+
+/** An artist on Spotify by name, or `null` (not set up, not found under that name, or Spotify did not answer: a page without a picture is a page). */
+async function spotifyArtist(token: string, name: string, get: Get): Promise<{ artist: SpotifyArtist | null; hit: boolean }> {
+  try {
+    const answer = await get(searchArtistUrl(name), { headers: { Authorization: `Bearer ${token}` }, ttl: TTL.artist })
+    return { artist: parseArtistMatch(answer.data, name), hit: answer.hit }
+  } catch {
+    return { artist: null, hit: false }
+  }
+}
+
+/** What an artist's page shows beyond its plays: Last.fm's tags, listeners and text, and Spotify's picture; each leaves out only itself when it fails. */
+export async function loadArtist(env: Env, get: Get, name: string): Promise<{ lastfm: ArtistInfo | null; spotify: SpotifyArtist | null }> {
+  const base = lastfmBase(env)
+  const [lastfm, spotify] = await Promise.all([
+    base === null ? null : settle(get(artistInfoUrl(base, name), { ttl: TTL.artist })).then((answer) => (answer === null ? null : parseArtistInfo(answer.data))),
+    spotifyToken(env, get).then((token) => (token === null ? null : spotifyArtist(token, name, get).then((found) => found.artist))).catch(() => null),
+  ])
+  return { lastfm, spotify }
+}
+
+/** Spotify's picture of each artist in a list, asked for in the order of the list and no more than `MAX_POSTER_LOOKUPS` that were not kept in one page (the rest come with the next pages). */
+export async function loadArtistPictures(env: Env, get: Get, names: readonly string[]): Promise<Map<string, SpotifyArtist>> {
+  const found = new Map<string, SpotifyArtist>()
+  const token = await spotifyToken(env, get).catch(() => null)
+  if (token === null) return found
+  const wanted = [...new Set(names)]
+  let asked = 0
+  for (let start = 0; start < wanted.length && asked < MAX_POSTER_LOOKUPS; start += POSTER_BATCH) {
+    await Promise.all(
+      wanted.slice(start, start + POSTER_BATCH).map(async (name) => {
+        const result = await spotifyArtist(token, name, get)
+        if (!result.hit) asked += 1
+        if (result.artist !== null) found.set(name, result.artist)
+      }),
+    )
+  }
+  return found
 }
 
 /** What a page shows when a source is down: the others still show. */

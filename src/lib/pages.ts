@@ -4,6 +4,7 @@
  */
 
 import type { Music, Play } from "./lastfm.ts"
+import type { TitleInfo } from "./tmdb.ts"
 import type { Watch } from "./trakt.ts"
 
 /** A name as a part of an address: lower case, Norwegian letters spelled out, anything else a dash. */
@@ -18,6 +19,8 @@ export interface TitlePage {
   title: string
   year: number | null
   poster: string | null
+  /** What TMDB says of it: plot, genres, length, vote; `null` until it has been asked. */
+  info: TitleInfo | null
   /** The film's or the show's page on Trakt (not an episode's). */
   traktUrl: string
   /** Every viewing of it in the history, newest first. */
@@ -38,12 +41,13 @@ export function titlePages(items: readonly Watch[]): TitlePage[] {
     if (found !== undefined) {
       found.viewings.push(watch)
       found.poster ??= watch.poster
+      found.info ??= watch.info
       continue
     }
     const slug = slugs.has(base) ? `${base}-${watch.kind === "film" ? "film" : "serie"}` : base
     slugs.add(slug)
     const traktUrl = match === null ? "https://trakt.tv" : `https://trakt.tv/${match[1]}/${base}`
-    byKey.set(key, { slug, kind: watch.kind, title: watch.title, year: watch.year, poster: watch.poster, traktUrl, viewings: [watch] })
+    byKey.set(key, { slug, kind: watch.kind, title: watch.title, year: watch.year, poster: watch.poster, info: watch.info, traktUrl, viewings: [watch] })
   }
   return [...byKey.values()]
 }

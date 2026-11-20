@@ -1,5 +1,7 @@
 /** What the site keeps of Trakt's public history (`/users/<user>/history`), and how it is read from the answer. Pure, so a test pins it. */
 
+import type { TitleInfo } from "./tmdb.ts"
+
 export interface Watch {
   /** Trakt's id of the history entry: the same viewing keeps it. */
   id: number
@@ -15,6 +17,8 @@ export interface Watch {
   tmdbId: number | null
   /** The poster's address (TMDB), `null` where there is none or it has not been fetched. */
   poster: string | null
+  /** The plot, genres and so on (TMDB), `null` where it has not been fetched. */
+  info: TitleInfo | null
 }
 
 export interface Watched {
@@ -39,7 +43,7 @@ export function parseHistory(answer: unknown): Watch[] {
       const movie = object(item["movie"])
       const ids = object(movie["ids"])
       const slug = text(ids["slug"])
-      return [{ id, watchedAt, kind: "film", title: text(movie["title"]), year: whole(movie["year"]), episode: null, url: slug === "" ? "https://trakt.tv" : `https://trakt.tv/movies/${slug}`, tmdbId: whole(ids["tmdb"]), poster: null }]
+      return [{ id, watchedAt, kind: "film", title: text(movie["title"]), year: whole(movie["year"]), episode: null, url: slug === "" ? "https://trakt.tv" : `https://trakt.tv/movies/${slug}`, tmdbId: whole(ids["tmdb"]), poster: null, info: null }]
     }
     if (item["type"] === "episode") {
       const show = object(item["show"])
@@ -49,7 +53,7 @@ export function parseHistory(answer: unknown): Watch[] {
       const ids = object(show["ids"])
       const slug = text(ids["slug"])
       const url = slug === "" ? "https://trakt.tv" : `https://trakt.tv/shows/${slug}/seasons/${season}/episodes/${number}`
-      return [{ id, watchedAt, kind: "episode", title: text(show["title"]), year: whole(show["year"]), episode: { title: text(episode["title"]), season, number }, url, tmdbId: whole(ids["tmdb"]), poster: null }]
+      return [{ id, watchedAt, kind: "episode", title: text(show["title"]), year: whole(show["year"]), episode: { title: text(episode["title"]), season, number }, url, tmdbId: whole(ids["tmdb"]), poster: null, info: null }]
     }
     return []
   })
