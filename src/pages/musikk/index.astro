@@ -12,7 +12,7 @@ const [{ listening, pictures }, spotify] = await Promise.all([withPictures, spot
 const now = playingNow(spotify, listening?.now ?? null)
 ---
 
-<Page title="Musikk" lead="De siste avspillingene og de mest spilte artistene siste måned, fra Last.fm og Spotify." crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }]}>
+<Page current="music" title="Musikk" lead="De siste avspillingene og de mest spilte artistene siste måned, fra Last.fm og Spotify." crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }]}>
   <PageSection id="siste" title="Siste avspillinger">
     <PlayRows plays={listening?.recent ?? []} now={now} base={base} />
   </PageSection>

@@ -11,6 +11,6 @@ const info = await artist(page.name)
 const base = import.meta.env.BASE_URL
 ---
 
-<Page width="pane" title={page.name} lead="Artist" crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.name, href: `${base}musikk/${page.slug}/` }]}>
+<Page current="music" width="pane" title={page.name} lead="Artist" crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.name, href: `${base}musikk/${page.slug}/` }]}>
   <ArtistDetail page={page} base={base} info={info} />
 </Page>
