@@ -32,6 +32,7 @@ moved since the week before, **new artists** (those among the ten most played th
 lists, the change is from the month before, up to 2 800 plays are read (14 pages) and Trakt's history up to three pages of a hundred for films and for episodes. Both are made by one loader (`loadPeriod` in `week-source.ts`) over any range of time.
 **Charts of change over time** (`src/components/trend.tsx`, the trend as a server island that asks for its own page, so it has a budget of questions of its own, the design system's column chart, drawn in the browser): the page of a week shows plays per week for the twelve weeks up to it, and the page of a month shows plays per month for the twelve months up to it and plays per day in the month.
 The totals cost one small question to Last.fm each (a page of one play, whose `total` is the count, `loadTrend`), kept a day once the period is over; a period that could not be told is a gap, never a zero. The days come from plays already read.
+What is playing now is a disc: its cover is round with a hole and spins three times, slowing to a stop (under five seconds, the design system's `Picture disc`), and the row says «● Spilles nå» in words.
 There are no notifications: the site is public, so there is nobody to notify but whoever happens to open it.
 
 Nothing is stored: every week is made when it is asked for, from Last.fm (`user.getrecenttracks` with the week's range, read page by page up to 1 600 plays; the week before's `getweeklyartistchart`; the chart of everything before the

@@ -20,8 +20,8 @@ import { shortWhen, when } from "../lib/when.ts"
  */
 export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = true, albumLinks = true, now = null }: { plays: readonly Play[]; base: string; limit?: number; artistLinks?: boolean; trackLinks?: boolean; albumLinks?: boolean; now?: Playing | null }) {
   const rows = [
-    ...(now === null ? [] : [{ key: `now-${now.url}`, artist: now.artist, track: now.track, album: now.album, image: now.image, aside: "nå", link: now.from === "spotify" ? now.url : null, played: false }]),
-    ...plays.map((play) => ({ key: `${play.playedAt}-${play.url}`, artist: play.artist, track: play.track, album: play.album, image: play.image, aside: play.playedAt === null ? "nå" : shortWhen(play.playedAt), link: null, played: play.playedAt !== null })),
+    ...(now === null ? [] : [{ key: `now-${now.url}`, artist: now.artist, track: now.track, album: now.album, image: now.image, aside: "Spilles nå", live: true, link: now.from === "spotify" ? now.url : null, played: false }]),
+    ...plays.map((play) => ({ key: `${play.playedAt}-${play.url}`, artist: play.artist, track: play.track, album: play.album, image: play.image, aside: play.playedAt === null ? "Spilles nå" : shortWhen(play.playedAt), live: play.playedAt === null, link: null, played: play.playedAt !== null })),
   ]
   const shown = limit === undefined ? rows : rows.slice(0, limit)
   if (shown.length === 0) return <EmptyState icon="music" title="Ingen avspillinger å vise" description="Last.fm svarte ikke, eller har ingen avspillinger ennå." />
@@ -43,6 +43,7 @@ export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = 
           albumLinks && row.played && row.album !== "" ? <TextLink href={albumHref(base, row.artist, row.album)}>{row.album}</TextLink> : row.album,
         ]),
         aside: row.aside,
+        live: row.live,
       }))}
     />
   )
