@@ -2,7 +2,8 @@ import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
 import { type Env, type Get } from "./sources.ts"
-import { loadWeek, MAX_FIRSTS_LOOKUPS, MAX_LENGTH_LOOKUPS, MAX_PLAY_PAGES } from "./week-source.ts"
+import { loadMonth, loadWeek, MAX_FIRSTS_LOOKUPS, MAX_LENGTH_LOOKUPS, MAX_PLAY_PAGES } from "./week-source.ts"
+import { parseMonth } from "./months.ts"
 import { parseWeek, type Week } from "./weeks.ts"
 
 const found = parseWeek("2026-47")
@@ -160,4 +161,38 @@ test("a source that is not set up or is down leaves out only its own part", asyn
   assert.equal(lastfmDown.music, null)
   assert.equal(lastfmDown.watched?.stats.films, 1)
   assert.deepEqual(await loadWeek({}, fake().get, WEEK, AFTER), { week: WEEK, complete: true, music: null, watched: null })
+})
+
+const MONTH = parseMonth("2026-10")
+if (MONTH === null) throw new Error("the month")
+
+test("a month is read by its own range, the month before is the chart for the change, and a month of more pages than a week is read to its limit", async () => {
+  const run = fake({ totalPages: 20 })
+  const got = await loadMonth(ENV, run.get, MONTH, Date.parse("2026-11-02T08:00:00+01:00"))
+  assert.equal(got.month, MONTH)
+  assert.equal(got.complete, true)
+  assert.equal(got.music?.truncated, true)
+  const pages = run.asked.filter((one) => one.url.includes("getrecenttracks"))
+  assert.equal(pages.length, 14)
+  assert.ok(pages[0]?.url.includes(`from=${MONTH.start}&to=${MONTH.end - 1}`))
+  const chart = run.asked.find((one) => one.url.includes("getweeklyartistchart") && !one.url.includes("from=0"))?.url ?? ""
+  const before = parseMonth("2026-09")
+  assert.ok(before !== null && chart.includes(`from=${before.start}&to=${before.end}`), chart)
+  assert.equal((await loadMonth(ENV, fake().get, MONTH, Date.parse("2026-10-20T08:00:00+01:00"))).complete, false)
+})
+
+test("the history of a month is read by pages of a hundred, as long as a page is full", async () => {
+  const hundred = Array.from({ length: 100 }, (_, index) => ({ id: index + 1, watched_at: "2026-10-18T20:00:00.000Z", type: "movie", movie: { title: `Film ${index}`, year: 2020, ids: { slug: `f-${index}`, tmdb: 1000 + index } } }))
+  const asked: string[] = []
+  const get: Get = async (url, request) => {
+    asked.push(url)
+    if (url.includes("/history/movies")) return { data: url.includes("page=1") ? hundred : [hundred[0]], hit: false }
+    if (url.startsWith("https://ws.audioscrobbler.com/")) return { data: { recenttracks: { "@attr": { page: "1", totalPages: "1", total: "0" }, track: [] } }, hit: false }
+    void request
+    return { data: url.includes("/history/") ? [] : {}, hit: false }
+  }
+  const got = await loadMonth({ TRAKT_CLIENT_ID: "c", TRAKT_USER: "me" }, get, MONTH, Date.parse("2026-11-02T08:00:00+01:00"))
+  assert.equal(got.watched?.stats.films, 100)
+  assert.equal(asked.filter((url) => url.includes("/history/movies")).length, 2)
+  assert.equal(asked.filter((url) => url.includes("/history/episodes")).length, 1)
 })

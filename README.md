@@ -22,11 +22,15 @@ Hva jeg hører på og ser: en side på Cloudflare Workers, <https://medier.lmfao
 - Spotify asks one permission, to see what plays (`user-read-currently-playing`). The song shows first on the front page and on Musikk, marked «nå». Where Spotify is not set up, Last.fm's
   own «now playing» (a scrobble of the same song) is shown instead.
 
-## Weekly wrapped
+## Weekly and monthly wrapped
 
-The place **Uke** in the bar opens the last week that is over, `/uke/<year>-<week>/` (ISO weeks, Monday to Sunday in Oslo time, `src/lib/weeks.ts`); this week so far and the twelve before it are listed on the page.
+The place **Wrapped** in the bar opens the last week that is over, `/uke/<year>-<week>/` (ISO weeks, Monday to Sunday in Oslo time, `src/lib/weeks.ts`); this week so far and the twelve before it are listed on the page.
 Only numbers and lists: **Tall** (plays, how many different artists and songs, listening time, the busiest day and hour, the shape of the days), **top artists, albums and songs** in the shapes of what they are, with how each artist's place
 moved since the week before, **new artists** (those among the ten most played that had no plays at all before the week) and **film og TV** (films, episodes, the shows most watched, and runs of three episodes or more of one show on a day).
+
+**The month** is the same, `/maned/<year>-<month>/` (calendar months in Oslo time, `src/lib/months.ts`), reached from the wrapped of a week by the chips Uke and Måned, with this month so far and the twelve before it listed on its page. It has the same numbers and
+lists, the change is from the month before, up to 2 800 plays are read (14 pages) and Trakt's history up to three pages of a hundred for films and for episodes. Both are made by one loader (`loadPeriod` in `week-source.ts`) over any range of time.
+There are no notifications: the site is public, so there is nobody to notify but whoever happens to open it.
 
 Nothing is stored: every week is made when it is asked for, from Last.fm (`user.getrecenttracks` with the week's range, read page by page up to 1 600 plays; the week before's `getweeklyartistchart`; the chart of everything before the
 week, from the beginning of time to its start, for who is new; `track.getinfo` for the length of a sample of the most played songs) and Trakt (the history in the range), and kept for a day when the week is over and for five minutes when

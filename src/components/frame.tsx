@@ -13,7 +13,7 @@ export function Frame({ base, current, width, children }: { base: string; curren
     { key: "front", label: "Forside", href: base, icon: "home" },
     { key: "music", label: "Musikk", href: `${base}musikk/`, icon: "music" },
     { key: "film", label: "Film", href: `${base}film-og-tv/`, icon: "film" },
-    { key: "week", label: "Uke", href: `${base}uke/`, icon: "calendar" },
+    { key: "week", label: "Wrapped", href: `${base}uke/`, icon: "calendar" },
   ] as const
   return (
     <PageLayout width={width} nav={<NavBar label="Hovedmeny" title="Medier" items={places.map((place) => ({ ...place, current: place.key === current }))} />}>

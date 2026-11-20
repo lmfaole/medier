@@ -47,7 +47,7 @@ function offset(ms: number): number {
 }
 
 /** The moment, in unix seconds, that a calendar date begins in Oslo. Midnight is never in the hour that summer time skips or repeats, so the guess is corrected once. */
-function osloMidnight(year: number, month: number, day: number): number {
+export function osloMidnight(year: number, month: number, day: number): number {
   const utc = Date.UTC(year, month - 1, day)
   return (utc - offset(utc - offset(utc))) / 1000
 }
@@ -82,6 +82,12 @@ export function parseWeek(id: string): Week | null {
   if (match === null) return null
   const week = build(Number(match[1]), Number(match[2]))
   return week.number >= 1 && weekOfDate(...(week.monday.split("-").map(Number) as [number, number, number])).id === week.id ? week : null
+}
+
+/** The calendar date a moment is on in Oslo. */
+export function dateAt(ms: number): { year: number; month: number; day: number } {
+  const w = wall(ms)
+  return { year: w.year, month: w.month, day: w.day }
 }
 
 /** The week a moment is in, by the calendar of Oslo. */

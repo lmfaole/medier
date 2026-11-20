@@ -1,6 +1,7 @@
 import { EmptyState } from "@lmfaole/designsystem/components/empty-state"
 import { ExternalLink } from "@lmfaole/designsystem/components/external-link"
 import { FactList } from "@lmfaole/designsystem/components/fact-list"
+import { FilterChips } from "@lmfaole/designsystem/components/filter-chips"
 import { Stack } from "@lmfaole/designsystem/components/layout"
 import { PageSection } from "@lmfaole/designsystem/components/page-section"
 import { details, PictureRows } from "@lmfaole/designsystem/components/picture-rows"
@@ -13,8 +14,8 @@ import { shortWhen } from "../lib/when.ts"
 import { albumHref, albumSlug, artistHref, titleHref, trackHref, trackSlug } from "../lib/pages.ts"
 import { SHAPES } from "../lib/shapes.ts"
 import type { SpotifyArtist } from "../lib/spotify.ts"
-import type { WeekData } from "../lib/week-source.ts"
-import { type Week, rangeText, WEEKDAY_NAMES } from "../lib/weeks.ts"
+import type { PeriodData } from "../lib/week-source.ts"
+import { WEEKDAY_NAMES } from "../lib/weeks.ts"
 import { changeText, hourText, longLength, playsChange, signed, type TopArtist, type WatchStats, type WeekStats } from "../lib/wrapped.ts"
 import { FromSpotify } from "./credits.tsx"
 
@@ -32,7 +33,7 @@ const count = (n: number, one: string, many: string): string => `${number(n)} ${
 const capital = (word: string): string => word.slice(0, 1).toUpperCase() + word.slice(1)
 
 /** The numbers of the week: how much, how long (an estimate, and how much of it is known), and when. */
-function Numbers({ stats, previousTotal, truncated }: { stats: WeekStats; previousTotal: number | null; truncated: boolean }) {
+function Numbers({ stats, previousTotal, previous, truncated }: { stats: WeekStats; previousTotal: number | null; /** What the change is from: «uken før», «måneden før». */ previous: string; truncated: boolean }) {
   const change = playsChange(stats.total, previousTotal)
   const { listening } = stats
   return (
@@ -40,7 +41,7 @@ function Numbers({ stats, previousTotal, truncated }: { stats: WeekStats; previo
       <Stack gap="md">
         <FactList
           facts={[
-            ["Avspillinger", `${number(stats.total)}${change === null ? "" : ` (${signed(change)} fra uken før)`}`],
+            ["Avspillinger", `${number(stats.total)}${change === null ? "" : ` (${signed(change)} fra ${previous})`}`],
             ["Ulike artister", number(stats.artists)],
             ["Ulike låter", number(stats.tracks)],
             ["Lyttetid, anslag", stats.total === 0 ? null : `≈ ${longLength(listening.seconds)}`],
@@ -50,7 +51,7 @@ function Numbers({ stats, previousTotal, truncated }: { stats: WeekStats; previo
             ["Per dag, mandag til søndag", stats.total === 0 ? null : <Sparkline values={stats.byDay} label={`Avspillinger per dag, mandag til søndag: ${stats.byDay.join(", ")}`} />],
           ]}
         />
-        {truncated ? <Text size="sm" tone="muted">Uken hadde flere avspillinger enn det som leses: tallene gjelder de nyeste.</Text> : null}
+        {truncated ? <Text size="sm" tone="muted">Perioden hadde flere avspillinger enn det som leses: tallene gjelder de nyeste.</Text> : null}
       </Stack>
     </PageSection>
   )
@@ -148,7 +149,7 @@ function Watched({ stats, links, base }: { stats: WatchStats; links: Linkable; b
   return (
     <PageSection id="film-og-tv" title="Film og TV" icon="film">
       {nothing ? (
-        <EmptyState title="Ingenting sett denne uken" />
+        <EmptyState title="Ingenting sett i perioden" />
       ) : (
         <Stack gap="lg">
           <FactList facts={[["Filmer", number(stats.films)], ["Episoder", number(stats.episodes)]]} />
@@ -185,36 +186,45 @@ function Watched({ stats, links, base }: { stats: WatchStats; links: Linkable; b
   )
 }
 
-/** The weeks to go to: this one so far, and the ones before it, newest first. */
-export function OtherWeeks({ weeks, current, base }: { weeks: readonly { week: Week; now: boolean }[]; current: string; base: string }) {
+/** The weeks or the months to go to: this one so far, and the ones before it, newest first. `rows` have their name, the days they cover and where they are. */
+export function OtherPeriods({ id, title, name, rows, current }: { id: string; title: string; /** What the first column is called: «Uke», «Måned». */ name: string; rows: readonly { key: string; label: string; range: string; href: string }[]; current: string }) {
   return (
-    <PageSection id="uker" title="Andre uker" icon="calendar">
+    <PageSection id={id} title={title} icon="calendar">
       <Rows
-        columns={{ name: "Uke", value: "Dager" }}
-        rows={weeks
-          .filter((one) => one.week.id !== current)
-          .map(({ week, now }) => ({
-            key: week.id,
-            body: <TextLink href={`${base}uke/${week.id}/`}>{`Uke ${week.number}${now ? " (så langt)" : ""}`}</TextLink>,
-            trailing: <Text as="span" size="sm" tone="muted">{rangeText(week)}</Text>,
-          }))}
+        columns={{ name, value: "Dager" }}
+        rows={rows
+          .filter((one) => one.key !== current)
+          .map((one) => ({ key: one.key, body: <TextLink href={one.href}>{one.label}</TextLink>, trailing: <Text as="span" size="sm" tone="muted">{one.range}</Text> }))}
       />
     </PageSection>
   )
 }
 
-/** A week's wrapped: the numbers, the top lists, who is new, and what was watched. A source that gave nothing leaves out only its own part. */
-export function WeekView({ data, pictures, links, base }: { data: WeekData; pictures: ReadonlyMap<string, SpotifyArtist>; links: Linkable; base: string }) {
+/** The way between the wrapped of a week and of a month: two links, the one you are on marked. */
+export function PeriodChips({ current, weekHref, monthHref }: { current: "week" | "month"; weekHref: string; monthHref: string }) {
+  return (
+    <FilterChips
+      label="Periode"
+      chips={[
+        { key: "week", label: "Uke", href: weekHref, current: current === "week" },
+        { key: "month", label: "Måned", href: monthHref, current: current === "month" },
+      ]}
+    />
+  )
+}
+
+/** A week's or a month's wrapped: the numbers, the top lists, who is new, and what was watched. A source that gave nothing leaves out only its own part. `previous` is what the change is from. */
+export function PeriodView({ data, pictures, links, base, previous }: { data: PeriodData; pictures: ReadonlyMap<string, SpotifyArtist>; links: Linkable; base: string; previous: string }) {
   const { music, watched } = data
   return (
     <>
       {music === null ? null : music.stats.total === 0 ? (
         <PageSection id="tall" title="Tall" icon="chart">
-          <EmptyState icon="music" title="Ingen avspillinger denne uken" />
+          <EmptyState icon="music" title="Ingen avspillinger i perioden" />
         </PageSection>
       ) : (
         <>
-          <Numbers stats={music.stats} previousTotal={music.previousTotal} truncated={music.truncated} />
+          <Numbers stats={music.stats} previousTotal={music.previousTotal} previous={previous} truncated={music.truncated} />
           <Tops stats={music.stats} pictures={pictures} links={links} base={base} />
           <NewArtists names={music.newArtists} links={links} base={base} />
         </>

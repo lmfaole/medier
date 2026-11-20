@@ -1,0 +1,32 @@
+---
+import { OtherPeriods, PeriodChips, PeriodView } from '../../components/wrapped'
+import Page from '../../layouts/Page.astro'
+import { monthAt, monthRange, monthText, monthTitle, parseMonth, recentMonths } from '../../lib/months'
+import { albumPages, artistPages, titlePages, trackPages } from '../../lib/pages'
+import { artistPictures, month as loadMonth, music, watched } from '../../lib/runtime'
+
+const base = import.meta.env.BASE_URL
+const now = Date.now()
+const month = parseMonth(Astro.params.month ?? '')
+// A month that has not begun has nothing to tell, and an address that is no month is no page.
+if (month === null || month.start * 1000 > now) return Astro.rewrite('/404/')
+const [data, listening, seen] = await Promise.all([loadMonth(month), music(), watched()])
+if (data === null) return Astro.rewrite('/404/')
+// What has a page of its own to link to: among the recent plays (artists, albums, songs) and the films and shows seen.
+const links = {
+  artists: new Set(listening === null ? [] : artistPages(listening).map((page) => page.name)),
+  albums: new Set(listening === null ? [] : albumPages(listening).map((page) => page.slug)),
+  tracks: new Set(listening === null ? [] : trackPages(listening).map((page) => page.slug)),
+  titles: new Map(seen === null ? [] : titlePages(seen.items).map((page) => [page.title, page.slug] as const)),
+}
+const pictures = await artistPictures((data.music?.stats.topArtists ?? []).map((artist) => artist.name))
+const current = monthAt(now).id
+const months = recentMonths(now, 12).map((one) => ({ key: one.id, label: `${monthTitle(one)}${one.id === current ? ' (så langt)' : ''}`, range: monthRange(one), href: `${base}maned/${one.id}/` }))
+const complete = now >= month.end * 1000
+---
+
+<Page current="week" width="reading" title={monthTitle(month)} lead={`${monthRange(month)}${complete ? '' : ' · så langt'}`} crumbs={[{ label: 'Medier', href: base }, { label: monthTitle(month), href: `${base}maned/${month.id}/` }]}>
+  <PeriodChips current="month" weekHref={`${base}uke/`} monthHref={`${base}maned/`} />
+  <PeriodView data={data} pictures={pictures} links={links} base={base} previous="måneden før" />
+  <OtherPeriods id="maneder" title="Andre måneder" name="Måned" rows={months} current={month.id} />
+</Page>

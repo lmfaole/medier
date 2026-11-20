@@ -7,7 +7,8 @@
 import { type ChartArtist, artistChartUrl, artistInfoUrl, type Play, parseArtistChart, parseArtistInfo, parseRecentPage, parseTrackInfo, playsInRangeUrl, trackInfoUrl } from "./lastfm.ts"
 import { type Env, type Get, lastfmBase, setting, settle, TTL, withPosters } from "./sources.ts"
 import { mergeHistory, parseHistory, type Watch } from "./trakt.ts"
-import { isComplete, previousWeek, type Week } from "./weeks.ts"
+import { type Month, previousMonth } from "./months.ts"
+import { previousWeek, type Week } from "./weeks.ts"
 import { artistsByPlays, trackKey, tracksByPlays, type WatchStats, type WeekStats, watchStats, weekStats } from "./wrapped.ts"
 
 /** The most pages of plays (200 each) a week is read from: a week of more than this is cut, and says so. */
@@ -34,13 +35,32 @@ export interface MusicWeek {
   newArtists: { name: string; plays: number }[] | null
 }
 
-export interface WeekData {
-  week: Week
-  /** The week is over: its numbers are final. */
+/** A stretch of time to sum up, in unix seconds: a week or a month. `end` is not part of it. */
+export interface Range {
+  start: number
+  end: number
+}
+
+/** What a stretch of time has to tell: the music and what was watched, each `null` where its source is not set up or fails. */
+export interface PeriodData {
+  /** The time is over: its numbers are final. */
   complete: boolean
   music: MusicWeek | null
   watched: { items: Watch[]; stats: WatchStats } | null
 }
+
+export interface WeekData extends PeriodData {
+  week: Week
+}
+
+export interface MonthData extends PeriodData {
+  month: Month
+}
+
+/** How many pages of plays a stretch of time is read from: a month is some four weeks, so it may have the pages of four. */
+const PAGES = { week: MAX_PLAY_PAGES, month: 14 } as const
+/** How many pages of Trakt's history (100 each, for films and for episodes) are read. */
+const HISTORY_PAGES = 3
 
 /** Runs `ask` over the items in batches, until `maxMisses` answers that were not kept have been had: what is kept costs nothing, so a page with most things kept finishes them all. */
 async function within<T, R>(items: readonly T[], maxMisses: number, ask: (item: T) => Promise<{ value: R; hit: boolean }>): Promise<R[]> {
@@ -61,16 +81,16 @@ async function within<T, R>(items: readonly T[], maxMisses: number, ask: (item: 
 }
 
 /** Every finished play of the week, newest first, from the first page and as many of the others as the limit allows. */
-async function readPlays(base: string, week: Week, get: Get, ttl: number): Promise<{ plays: Play[]; truncated: boolean }> {
+async function readPlays(base: string, week: Range, get: Get, ttl: number, maxPages: number): Promise<{ plays: Play[]; truncated: boolean }> {
   const first = parseRecentPage((await get(playsInRangeUrl(base, week.start, week.end, 1), { ttl })).data)
-  const last = Math.min(first.totalPages, MAX_PLAY_PAGES)
+  const last = Math.min(first.totalPages, maxPages)
   const rest = Array.from({ length: Math.max(0, last - 1) }, (_, index) => index + 2)
   const pages: Play[][] = []
   for (let start = 0; start < rest.length; start += BATCH) {
     const answers = await Promise.all(rest.slice(start, start + BATCH).map((page) => settle(get(playsInRangeUrl(base, week.start, week.end, page), { ttl }))))
     pages.push(...answers.map((answer) => (answer === null ? [] : parseRecentPage(answer.data).plays)))
   }
-  return { plays: [...first.plays, ...pages.flat()], truncated: first.totalPages > MAX_PLAY_PAGES }
+  return { plays: [...first.plays, ...pages.flat()], truncated: first.totalPages > maxPages }
 }
 
 /** The lengths in seconds of the most played songs, as far as the limit on new questions goes. */
@@ -92,7 +112,7 @@ const same = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCas
  * an artist that is on it is not new; one that is not is new if the chart is whole, and if the chart is cut (a library of more than a thousand artists) it is asked about by the owner's total for it, less the plays in the week
  * and after it (`user.getartisttracks`, which would say it directly, is gone from Last.fm). `null` when it could not be told.
  */
-async function readNewArtists(env: Env, base: string, plays: readonly Play[], week: Week, nowMs: number, get: Get): Promise<{ name: string; plays: number }[] | null> {
+async function readNewArtists(env: Env, base: string, plays: readonly Play[], week: Range, nowMs: number, get: Get): Promise<{ name: string; plays: number }[] | null> {
   const candidates = artistsByPlays(plays).slice(0, FIRSTS_CANDIDATES)
   if (candidates.length === 0) return []
   const answer = await settle(get(artistChartUrl(base, 0, week.start), { ttl: TTL.firsts }))
@@ -101,7 +121,7 @@ async function readNewArtists(env: Env, base: string, plays: readonly Play[], we
   const absent = candidates.filter((artist) => !before.some((one) => same(one.name, artist.name)))
   if (before.length < CHART_CAP) return absent
   // The chart is cut: what is not on it may have been played a few times before. Ask the totals, and what came after the week.
-  const afterChart = isComplete(week, nowMs) ? await settle(get(artistChartUrl(base, week.end, Math.floor(nowMs / 1000)), { ttl: TTL.weekLive })) : { data: null }
+  const afterChart = nowMs >= week.end * 1000 ? await settle(get(artistChartUrl(base, week.end, Math.floor(nowMs / 1000)), { ttl: TTL.weekLive })) : { data: null }
   if (afterChart === null) return null
   const after = parseArtistChart(afterChart.data)
   const afterCut = after.length >= CHART_CAP
@@ -116,34 +136,52 @@ async function readNewArtists(env: Env, base: string, plays: readonly Play[], we
   return known.length === 0 && absent.length > 0 ? null : known.filter((one) => (one.earlier ?? 1) <= 0).map((one) => one.artist)
 }
 
-async function musicWeek(env: Env, get: Get, week: Week, ttl: number, nowMs: number): Promise<MusicWeek | null> {
+async function musicWeek(env: Env, get: Get, week: Range, previous: Range, ttl: number, nowMs: number, maxPages: number): Promise<MusicWeek | null> {
   const base = lastfmBase(env)
   if (base === null) return null
-  const previous = previousWeek(week)
   const [{ plays, truncated }, chart] = await Promise.all([
-    readPlays(base, week, get, ttl),
+    readPlays(base, week, get, ttl, maxPages),
     settle(get(artistChartUrl(base, previous.start, previous.end), { ttl: TTL.weekDone })).then((answer): ChartArtist[] | null => (answer === null ? null : parseArtistChart(answer.data))),
   ])
   const [lengths, newArtists] = await Promise.all([readLengths(env, base, plays, get), readNewArtists(env, base, plays, week, nowMs, get)])
   return { stats: weekStats(plays, chart, lengths), truncated, previousTotal: chart === null ? null : chart.reduce((sum, artist) => sum + artist.plays, 0), newArtists }
 }
 
-async function watchedWeek(env: Env, get: Get, week: Week, ttl: number): Promise<WeekData["watched"]> {
+async function watchedWeek(env: Env, get: Get, week: Range, ttl: number): Promise<PeriodData["watched"]> {
   const clientId = setting(env, "TRAKT_CLIENT_ID")
   if (clientId === "") return null
   const user = encodeURIComponent(setting(env, "TRAKT_USER"))
   const range = `start_at=${encodeURIComponent(new Date(week.start * 1000).toISOString())}&end_at=${encodeURIComponent(new Date((week.end - 1) * 1000).toISOString())}&limit=100`
   const headers = { "trakt-api-version": "2", "trakt-api-key": clientId }
-  const page = async (kind: string) => parseHistory((await get(`https://api.trakt.tv/users/${user}/history/${kind}?${range}`, { headers, ttl })).data)
-  const [movies, episodes] = await Promise.all([page("movies"), page("episodes")])
+  // Up to a few pages of a hundred: a month of episodes can be more than one. A page that is not full is the last.
+  const pages = async (kind: string): Promise<Watch[]> => {
+    const found: Watch[] = []
+    for (let page = 1; page <= HISTORY_PAGES; page += 1) {
+      const items = parseHistory((await get(`https://api.trakt.tv/users/${user}/history/${kind}?${range}&page=${page}`, { headers, ttl })).data)
+      found.push(...items)
+      if (items.length < 100) break
+    }
+    return found
+  }
+  const [movies, episodes] = await Promise.all([pages("movies"), pages("episodes")])
   const items = await withPosters(mergeHistory(movies, episodes), setting(env, "TMDB_API_KEY"), get)
   return { items, stats: watchStats(items) }
 }
 
-/** A week's wrapped from Last.fm and Trakt. Each part leaves out only itself when its source is not set up or fails. */
-export async function loadWeek(env: Env, get: Get, week: Week, nowMs: number): Promise<WeekData> {
-  const complete = isComplete(week, nowMs)
+/** The sum of a stretch of time from Last.fm and Trakt. Each part leaves out only itself when its source is not set up or fails. */
+async function loadPeriod(env: Env, get: Get, range: Range, previous: Range, nowMs: number, maxPages: number): Promise<PeriodData> {
+  const complete = nowMs >= range.end * 1000
   const ttl = complete ? TTL.weekDone : TTL.weekLive
-  const [music, watched] = await Promise.all([settle(musicWeek(env, get, week, ttl, nowMs)), settle(watchedWeek(env, get, week, ttl))])
-  return { week, complete, music, watched }
+  const [music, watched] = await Promise.all([settle(musicWeek(env, get, range, previous, ttl, nowMs, maxPages)), settle(watchedWeek(env, get, range, ttl))])
+  return { complete, music, watched }
+}
+
+/** A week's wrapped. */
+export async function loadWeek(env: Env, get: Get, week: Week, nowMs: number): Promise<WeekData> {
+  return { week, ...(await loadPeriod(env, get, week, previousWeek(week), nowMs, PAGES.week)) }
+}
+
+/** A month's wrapped. */
+export async function loadMonth(env: Env, get: Get, month: Month, nowMs: number): Promise<MonthData> {
+  return { month, ...(await loadPeriod(env, get, month, previousMonth(month), nowMs, PAGES.month)) }
 }
