@@ -97,6 +97,15 @@ row. The artists' pictures are Spotify's and are cropped to the circle, which it
 
    `-- … --dry-run` says what it would set. Signed in to Cloudflare with `CLOUDFLARE_API_TOKEN` in the environment, or `npx wrangler login`.
 
+## Made-up data (no keys, no network)
+
+`MOCK_DATA=1` in `.dev.vars` (see `.dev.vars.example`; it is a local setting, never one of `settings.ts`'s and never pushed) answers every source from `src/lib/mock.ts` instead of fetching: Last.fm, Trakt, TMDB and Spotify,
+shaped as the real ones are, from **real metadata**: albums, tracklists, films, shows and people in `src/lib/mock-data.json` (committed), with plays and viewings laid out relative to now, so every recent week and month has some and a couple of artists are new.
+It sits in `ask()` in `runtime.ts`, so the loaders and parsers run as they do for real; made-up answers are cached under their own keys. Unset, nothing changes. Restart `npm run dev` after changing `.dev.vars`.
+
+The JSON and the pictures in `public/mock/` were fetched once by `node scripts/fetch-mock-data.mjs` from Deezer (albums, covers, artist pictures) and Wikipedia and Wikidata (texts, posters, portraits, dates); the texts are Wikipedia's (CC BY-SA).
+**The pictures are third-party artwork for local development only**: `public/mock/` is in `.gitignore`, so they are not committed (or deployed from a clean checkout), and `node scripts/fetch-mock-data.mjs --images` fetches the missing ones again from the addresses in the JSON. The same script without `--images` rewrites the JSON.
+
 ## Work on it
 
 ```sh

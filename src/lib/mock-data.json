@@ -1,0 +1,1319 @@
+{
+  "generated": "2026-11-20T16:57:56.942Z",
+  "artists": [
+    {
+      "name": "a-ha",
+      "tags": [
+        "Pop",
+        "norwegian"
+      ],
+      "weight": 10,
+      "since": 300,
+      "bio": "a-ha er en norsk pop-/rockgruppe dannet i 1982 med Magne Furuholmen, Paul Waaktaar-Savoy og Morten Harket (sang).",
+      "image": {
+        "file": "/mock/artist-0.jpg",
+        "source": "https://cdn-images.dzcdn.net/images/artist/5b66e3647ecffe097744e2479c689c41/500x500-000000-80-0-0.jpg"
+      },
+      "albums": [
+        {
+          "title": "Hunting High and Low",
+          "year": 1985,
+          "cover": {
+            "file": "/mock/cover-0-0.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/e0ce8977ab98d73bcea00fc838ece034/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "Take on Me",
+              "seconds": 227
+            },
+            {
+              "title": "Train of Thought",
+              "seconds": 254
+            },
+            {
+              "title": "Hunting High and Low",
+              "seconds": 228
+            },
+            {
+              "title": "The Blue Sky",
+              "seconds": 156
+            },
+            {
+              "title": "Living a Boy's Adventure Tale",
+              "seconds": 302
+            },
+            {
+              "title": "The Sun Always Shines on T.V.",
+              "seconds": 302
+            },
+            {
+              "title": "And You Tell Me",
+              "seconds": 112
+            },
+            {
+              "title": "Love Is Reason",
+              "seconds": 187
+            },
+            {
+              "title": "I Dream Myself Alive",
+              "seconds": 190
+            },
+            {
+              "title": "Here I Stand and Face the Rain",
+              "seconds": 270
+            }
+          ]
+        },
+        {
+          "title": "Scoundrel Days",
+          "year": 1986,
+          "cover": {
+            "file": "/mock/cover-0-1.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/f6d991f5995f07ea993d89fffeb78804/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "Scoundrel Days",
+              "seconds": 242
+            },
+            {
+              "title": "The Swing of Things",
+              "seconds": 254
+            },
+            {
+              "title": "I've Been Losing You",
+              "seconds": 266
+            },
+            {
+              "title": "October",
+              "seconds": 235
+            },
+            {
+              "title": "Manhattan Skyline",
+              "seconds": 290
+            },
+            {
+              "title": "Cry Wolf",
+              "seconds": 247
+            },
+            {
+              "title": "We're Looking for the Whales",
+              "seconds": 223
+            },
+            {
+              "title": "The Weight of the Wind",
+              "seconds": 239
+            },
+            {
+              "title": "Maybe, Maybe",
+              "seconds": 156
+            },
+            {
+              "title": "Soft Rains of April",
+              "seconds": 192
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Röyksopp",
+      "tags": [
+        "Dance",
+        "norwegian"
+      ],
+      "weight": 8,
+      "since": 300,
+      "bio": "Röyksopp er en norsk musikkgruppe som spiller elektronisk musikk. Röyksopp består av duoen Svein Berge og Torbjørn Brundtland som begge kommer fra Tromsø, og gruppen ble offisielt dannet i 1998. Året etter debuterte de med singelen «So Easy». Röyksopp har vunnet Spellemann seks ganger, Alarmprisen fire ganger og ble innlemmet i Rockheim Hall of Fame i 2024. I tillegg har de vunnet og blitt nominert til flere internasjonale priser.",
+      "image": {
+        "file": "/mock/artist-1.jpg",
+        "source": "https://cdn-images.dzcdn.net/images/artist/41923b4d4a4a58dbb316eb335b6c6cb0/500x500-000000-80-0-0.jpg"
+      },
+      "albums": [
+        {
+          "title": "Melody A.M.",
+          "year": 2001,
+          "cover": {
+            "file": "/mock/cover-1-0.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/ecef0bb59ddb6af8ba8fe938647ba94e/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "So Easy",
+              "seconds": 249
+            },
+            {
+              "title": "Eple",
+              "seconds": 218
+            },
+            {
+              "title": "Sparks",
+              "seconds": 324
+            },
+            {
+              "title": "In Space",
+              "seconds": 210
+            },
+            {
+              "title": "Poor Leno",
+              "seconds": 235
+            },
+            {
+              "title": "A Higher Place",
+              "seconds": 271
+            },
+            {
+              "title": "Röyksopp's Night Out",
+              "seconds": 490
+            },
+            {
+              "title": "Remind Me",
+              "seconds": 219
+            },
+            {
+              "title": "She's So",
+              "seconds": 323
+            },
+            {
+              "title": "40 Years Back \\ Come",
+              "seconds": 285
+            }
+          ]
+        },
+        {
+          "title": "Junior",
+          "year": 2009,
+          "cover": {
+            "file": "/mock/cover-1-1.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/920d5d7f64d1ceab94d1670f72f1bc0b/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "Happy Up Here",
+              "seconds": 163
+            },
+            {
+              "title": "The Girl and the Robot",
+              "seconds": 268
+            },
+            {
+              "title": "Vision One",
+              "seconds": 299
+            },
+            {
+              "title": "This Must Be It",
+              "seconds": 281
+            },
+            {
+              "title": "Röyksopp Forever",
+              "seconds": 299
+            },
+            {
+              "title": "Miss It So Much",
+              "seconds": 301
+            },
+            {
+              "title": "Tricky Tricky",
+              "seconds": 359
+            },
+            {
+              "title": "You Don't Have a Clue",
+              "seconds": 273
+            },
+            {
+              "title": "Silver Cruiser",
+              "seconds": 276
+            },
+            {
+              "title": "True to Life",
+              "seconds": 350
+            },
+            {
+              "title": "It's What I Want",
+              "seconds": 186
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Kings of Convenience",
+      "tags": [
+        "Alternative",
+        "Rock",
+        "norwegian"
+      ],
+      "weight": 7,
+      "since": 300,
+      "bio": "Kings of Convenience er en norsk indie og indie folk-duo bestående av Erlend Øye og Eirik Glambek Bøe fra Bergen.",
+      "image": {
+        "file": "/mock/artist-2.jpg",
+        "source": "https://cdn-images.dzcdn.net/images/artist/22a982e025b2f51b5cde2c4f6c1fee26/500x500-000000-80-0-0.jpg"
+      },
+      "albums": [
+        {
+          "title": "Riot On An Empty Street",
+          "year": 2004,
+          "cover": {
+            "file": "/mock/cover-2-0.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/491c3bfe669f6c7214478a87e3584a8a/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "Homesick",
+              "seconds": 193
+            },
+            {
+              "title": "Misread",
+              "seconds": 188
+            },
+            {
+              "title": "Cayman Islands",
+              "seconds": 182
+            },
+            {
+              "title": "Stay Out Of Trouble",
+              "seconds": 304
+            },
+            {
+              "title": "Know How",
+              "seconds": 238
+            },
+            {
+              "title": "Sorry Or Please",
+              "seconds": 227
+            },
+            {
+              "title": "Love Is No Big Truth",
+              "seconds": 228
+            },
+            {
+              "title": "I'd Rather Dance With You",
+              "seconds": 209
+            },
+            {
+              "title": "Live Long",
+              "seconds": 177
+            },
+            {
+              "title": "Surprise Ice",
+              "seconds": 263
+            },
+            {
+              "title": "Gold In The Air Of Summer",
+              "seconds": 213
+            },
+            {
+              "title": "The Build Up",
+              "seconds": 245
+            }
+          ]
+        },
+        {
+          "title": "Quiet Is The New Loud",
+          "year": 2001,
+          "cover": {
+            "file": "/mock/cover-2-1.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/0cf352f82b88e924a3e4d2a361f5a29e/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "Winning A Battle, Losing The War",
+              "seconds": 234
+            },
+            {
+              "title": "Toxic Girl",
+              "seconds": 189
+            },
+            {
+              "title": "Singing Softly To Me",
+              "seconds": 189
+            },
+            {
+              "title": "I Don't Know What I Can Save You From",
+              "seconds": 277
+            },
+            {
+              "title": "Failure",
+              "seconds": 213
+            },
+            {
+              "title": "The Weight Of My Words",
+              "seconds": 247
+            },
+            {
+              "title": "The Girl From Back Then",
+              "seconds": 149
+            },
+            {
+              "title": "Leaning Against The Wall",
+              "seconds": 198
+            },
+            {
+              "title": "Little Kids",
+              "seconds": 226
+            },
+            {
+              "title": "Summer On The West Hill",
+              "seconds": 273
+            },
+            {
+              "title": "The Passenger",
+              "seconds": 193
+            },
+            {
+              "title": "Parallel Lines",
+              "seconds": 311
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sigrid",
+      "tags": [
+        "Pop",
+        "norwegian"
+      ],
+      "weight": 6,
+      "since": 300,
+      "bio": "Sigrid Solbakk Raabe, known mononymously as Sigrid, is a Norwegian singer and songwriter. She has released three studio albums, Sucker Punch (2019), How to Let Go (2022), and There's Always More That I Could Say (2025). Both her debut and second album reached the top of the charts in Norway as well as reaching the top 5 in the United Kingdom. She has also released three EPs.",
+      "image": {
+        "file": "/mock/artist-3.jpg",
+        "source": "https://cdn-images.dzcdn.net/images/artist/355b28ac9e0388c53c43001bf755f4d1/500x500-000000-80-0-0.jpg"
+      },
+      "albums": [
+        {
+          "title": "Sucker Punch",
+          "year": 2018,
+          "cover": {
+            "file": "/mock/cover-3-0.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/d5d0b23fd0250959f4280462fe10e8c8/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "Sucker Punch",
+              "seconds": 194
+            }
+          ]
+        },
+        {
+          "title": "How To Let Go (Special Edition)",
+          "year": 2022,
+          "cover": {
+            "file": "/mock/cover-3-1.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/152ba7254d243dc01a775afa1b8a1f84/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "It Gets Dark",
+              "seconds": 203
+            },
+            {
+              "title": "Burning Bridges",
+              "seconds": 172
+            },
+            {
+              "title": "Risk of Getting Hurt",
+              "seconds": 180
+            },
+            {
+              "title": "Thank Me Later",
+              "seconds": 211
+            },
+            {
+              "title": "Mirror",
+              "seconds": 156
+            },
+            {
+              "title": "Last To Know",
+              "seconds": 192
+            },
+            {
+              "title": "Dancer",
+              "seconds": 165
+            },
+            {
+              "title": "Everybody Says They're Fine",
+              "seconds": 151
+            },
+            {
+              "title": "A Driver Saved My Night",
+              "seconds": 167
+            },
+            {
+              "title": "Mistake Like You",
+              "seconds": 211
+            },
+            {
+              "title": "Bad Life",
+              "seconds": 226
+            },
+            {
+              "title": "Grow",
+              "seconds": 196
+            },
+            {
+              "title": "High Note",
+              "seconds": 174
+            },
+            {
+              "title": "It Gets Dark (Out in Space Acoustic)",
+              "seconds": 176
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Aurora",
+      "tags": [
+        "Pop",
+        "norwegian"
+      ],
+      "weight": 5,
+      "since": 300,
+      "bio": "Aurora Aksnes, known mononymously as AURORA, is a Norwegian singer, songwriter and record producer. Known for blending electropop, folk, and art pop, she has been described as a pioneer of the Norwegian art pop scene and dubbed the \"Fairy of Pop\". She started writing songs and learning dance at age six, and gained recognition as a teenager after a classmate posted her music online without her knowledge. Initially trained on the piano, she later learned percussion and production.",
+      "image": {
+        "file": "/mock/artist-4.jpg",
+        "source": "https://cdn-images.dzcdn.net/images/artist/1fb1c4bd2ed19d4f21a2976ee0335c60/500x500-000000-80-0-0.jpg"
+      },
+      "albums": [
+        {
+          "title": "All My Demons Greeting Me As A Friend",
+          "year": 2016,
+          "cover": {
+            "file": "/mock/cover-4-0.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/d446d6efd4de7fd4abf27e1ca1c1cf98/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "Runaway",
+              "seconds": 250
+            },
+            {
+              "title": "Conqueror",
+              "seconds": 207
+            },
+            {
+              "title": "Running with the Wolves",
+              "seconds": 192
+            },
+            {
+              "title": "Lucky",
+              "seconds": 254
+            },
+            {
+              "title": "Winter Bird",
+              "seconds": 242
+            },
+            {
+              "title": "I Went Too Far",
+              "seconds": 205
+            },
+            {
+              "title": "Through The Eyes Of A Child",
+              "seconds": 274
+            },
+            {
+              "title": "Warrior",
+              "seconds": 220
+            },
+            {
+              "title": "Murder Song (5, 4, 3, 2, 1)",
+              "seconds": 200
+            },
+            {
+              "title": "Home",
+              "seconds": 215
+            },
+            {
+              "title": "Under The Water",
+              "seconds": 265
+            },
+            {
+              "title": "Black Water Lilies",
+              "seconds": 283
+            }
+          ]
+        },
+        {
+          "title": "A Different Kind Of Human - Step 2",
+          "year": 2019,
+          "cover": {
+            "file": "/mock/cover-4-1.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/555d5aa86ad45eff65fae0a99721a9c9/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "The River",
+              "seconds": 217
+            },
+            {
+              "title": "Animal",
+              "seconds": 214
+            },
+            {
+              "title": "Dance On The Moon",
+              "seconds": 216
+            },
+            {
+              "title": "Daydreamer",
+              "seconds": 219
+            },
+            {
+              "title": "Hunger",
+              "seconds": 166
+            },
+            {
+              "title": "Soulless Creatures",
+              "seconds": 302
+            },
+            {
+              "title": "In Bottles",
+              "seconds": 238
+            },
+            {
+              "title": "A Different Kind Of Human",
+              "seconds": 241
+            },
+            {
+              "title": "Apple Tree",
+              "seconds": 188
+            },
+            {
+              "title": "The Seed",
+              "seconds": 266
+            },
+            {
+              "title": "Mothership",
+              "seconds": 136
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Susanne Sundfør",
+      "tags": [
+        "Pop",
+        "norwegian"
+      ],
+      "weight": 4,
+      "since": 300,
+      "bio": "Susanne Aartun Sundfør er en sanger og låtskriver fra Haugesund. Hun har gitt ut seks soloalbum og vunnet fem Spellemannpriser.",
+      "image": {
+        "file": "/mock/artist-5.jpg",
+        "source": "https://cdn-images.dzcdn.net/images/artist/15e87c36db6f16b0c219a67a37dc9226/500x500-000000-80-0-0.jpg"
+      },
+      "albums": [
+        {
+          "title": "Ten Love Songs",
+          "year": 2015,
+          "cover": {
+            "file": "/mock/cover-5-0.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/69e556b21f1a609592f2750c23085fcf/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "Darlings",
+              "seconds": 159
+            },
+            {
+              "title": "Accelerate",
+              "seconds": 326
+            },
+            {
+              "title": "Fade Away",
+              "seconds": 198
+            },
+            {
+              "title": "Silencer",
+              "seconds": 207
+            },
+            {
+              "title": "Kamikaze",
+              "seconds": 311
+            },
+            {
+              "title": "Memorial",
+              "seconds": 606
+            },
+            {
+              "title": "Delirious",
+              "seconds": 295
+            },
+            {
+              "title": "Slowly",
+              "seconds": 267
+            },
+            {
+              "title": "Trust Me",
+              "seconds": 241
+            },
+            {
+              "title": "Insects",
+              "seconds": 185
+            }
+          ]
+        },
+        {
+          "title": "The Brothel",
+          "year": 2011,
+          "cover": {
+            "file": "/mock/cover-5-1.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/afaadcc3469a7dbd98fd612f02f922a4/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "The Brothel",
+              "seconds": 375
+            },
+            {
+              "title": "Lilith",
+              "seconds": 215
+            },
+            {
+              "title": "Black widow",
+              "seconds": 196
+            },
+            {
+              "title": "It`s all gone tomorrow",
+              "seconds": 367
+            },
+            {
+              "title": "Knight of noir",
+              "seconds": 302
+            },
+            {
+              "title": "Turkish delight",
+              "seconds": 289
+            },
+            {
+              "title": "As I Walked Out One Evening",
+              "seconds": 198
+            },
+            {
+              "title": "O master",
+              "seconds": 261
+            },
+            {
+              "title": "Lullaby",
+              "seconds": 288
+            },
+            {
+              "title": "Father father",
+              "seconds": 188
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Highasakite",
+      "tags": [
+        "Pop",
+        "Alternative",
+        "norwegian"
+      ],
+      "weight": 3,
+      "since": 40,
+      "bio": "Highasakite er en norsk indiepopgruppe bestående av vokalist Ingrid Helene Håvik, trommeslager Trond Bersu, gitarist Kristoffer Bonsaksen og synthist Øystein Moen. Tidligere medlemmer av gruppen er gitarist Kristoffer Lo samt keyboardistene Marte Eberson og Øystein Skar.",
+      "image": {
+        "file": "/mock/artist-6.jpg",
+        "source": "https://cdn-images.dzcdn.net/images/artist/4e1bc5d703d8775677e7b83e2e171b99/500x500-000000-80-0-0.jpg"
+      },
+      "albums": [
+        {
+          "title": "Silent Treatment",
+          "year": 2014,
+          "cover": {
+            "file": "/mock/cover-6-0.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/e875350b706d438dbbe3cae4e458b514/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "Lover, Where Do You Live?",
+              "seconds": 303
+            },
+            {
+              "title": "Since Last Wednesday",
+              "seconds": 236
+            },
+            {
+              "title": "Leaving No Traces",
+              "seconds": 261
+            },
+            {
+              "title": "Hiroshima",
+              "seconds": 363
+            },
+            {
+              "title": "My Only Crime",
+              "seconds": 174
+            },
+            {
+              "title": "I, the Hand Grenade",
+              "seconds": 377
+            },
+            {
+              "title": "Darth Vader",
+              "seconds": 209
+            },
+            {
+              "title": "Iran",
+              "seconds": 246
+            },
+            {
+              "title": "The Man on the Ferry",
+              "seconds": 246
+            },
+            {
+              "title": "Science & Blood Tests",
+              "seconds": 281
+            }
+          ]
+        },
+        {
+          "title": "Camp Echo",
+          "year": 2016,
+          "cover": {
+            "file": "/mock/cover-6-1.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/a6537ff7e774f668c905e3d0b09093e3/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "My Name Is Liar",
+              "seconds": 223
+            },
+            {
+              "title": "Samurai Swords",
+              "seconds": 199
+            },
+            {
+              "title": "Someone Who'll Get It",
+              "seconds": 221
+            },
+            {
+              "title": "My Mind Is a Bad Neighborhood",
+              "seconds": 287
+            },
+            {
+              "title": "God Don’t Leave Me",
+              "seconds": 355
+            },
+            {
+              "title": "I Am My Own Disease",
+              "seconds": 218
+            },
+            {
+              "title": "Golden Ticket",
+              "seconds": 232
+            },
+            {
+              "title": "Deep Sea Diver",
+              "seconds": 265
+            },
+            {
+              "title": "Chernobyl",
+              "seconds": 333
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Todd Terje",
+      "tags": [
+        "Electro",
+        "Dance",
+        "norwegian"
+      ],
+      "weight": 2,
+      "since": 12,
+      "bio": "Todd Terje er artistnavet til Terje Olsen, en norsk DJ og produsent innen elektronisk dansemusikk. Artistnavnet er en hyllest til den amerikanske produsenten og DJ-en Todd Terry. Sammen med blant andre Hans-Peter Lindstrøm og Prins Thomas er han del av den såkalte «Oslo-disco»-scenen. Siden 2012 har han drevet plateselskapet Olsen. Todd Terje er opprinnelig fra Mjøndalen, men er i dag bosatt i Oslo. Han er bror av Big Bang-trommeslageren Olaf Olsen.",
+      "image": {
+        "file": "/mock/artist-7.jpg",
+        "source": "https://cdn-images.dzcdn.net/images/artist/d80c0629e041ae6ab9cdb9d4d1ec8a9f/500x500-000000-80-0-0.jpg"
+      },
+      "albums": [
+        {
+          "title": "It's Album Time",
+          "year": 2014,
+          "cover": {
+            "file": "/mock/cover-7-0.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/06eba01bb74c21f9cb517237fda9ab13/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "Intro (It's Album Time)",
+              "seconds": 100
+            },
+            {
+              "title": "Leisure Suit Preben",
+              "seconds": 260
+            },
+            {
+              "title": "Preben Goes to Acapulco",
+              "seconds": 275
+            },
+            {
+              "title": "Svensk Sås",
+              "seconds": 163
+            },
+            {
+              "title": "Strandbar",
+              "seconds": 268
+            },
+            {
+              "title": "Delorean Dynamite",
+              "seconds": 405
+            },
+            {
+              "title": "Johnny and Mary",
+              "seconds": 392
+            },
+            {
+              "title": "Alfonso Muskedunder",
+              "seconds": 204
+            },
+            {
+              "title": "Swing Star, Pt. 1",
+              "seconds": 258
+            },
+            {
+              "title": "Swing Star, Pt. 2",
+              "seconds": 377
+            },
+            {
+              "title": "Oh Joy",
+              "seconds": 429
+            },
+            {
+              "title": "Inspector Norse",
+              "seconds": 419
+            }
+          ]
+        },
+        {
+          "title": "It's the Arps",
+          "year": 2012,
+          "cover": {
+            "file": "/mock/cover-7-1.jpg",
+            "source": "https://cdn-images.dzcdn.net/images/cover/c8250e5840862ad0783ed9d3d077b11f/500x500-000000-80-0-0.jpg"
+          },
+          "tracks": [
+            {
+              "title": "Inspector Norse",
+              "seconds": 400
+            },
+            {
+              "title": "Myggsommer",
+              "seconds": 203
+            },
+            {
+              "title": "Swing Star, Pt. 1",
+              "seconds": 259
+            },
+            {
+              "title": "Swing Star, Pt. 2",
+              "seconds": 406
+            },
+            {
+              "title": "Swing Star, Pt. 1 & 2",
+              "seconds": 664
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "people": [
+    {
+      "id": 7001,
+      "name": "Renate Reinsve",
+      "department": "Acting",
+      "born": "1987-11-24",
+      "place": "Nedre Eiker",
+      "bio": "Renate Hansen Reinsve er en norsk skuespiller fra Solbergelva i Drammen kommune. Hun vant prisen for beste kvinnelige hovedrolle på Filmfestivalen i Cannes i 2021 for sin rolle i Joachim Triers filmkomedie Verdens verste menneske. Filmen Affeksjonsverdi der Reinsve spiller en av hovedrollene ble i 2026 nominert til ni Oscar-priser; Reinsve ble nominert til Oscar for beste kvinnelige hovedrolle. Under utdelingsseremonien ble Affeksjonsverdi tildelt Oscar for beste internasjonale spillefilm.",
+      "image": {
+        "file": "/mock/person-0.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Renate_Reinsve-9937.jpg/500px-Renate_Reinsve-9937.jpg"
+      }
+    },
+    {
+      "id": 7002,
+      "name": "Anders Danielsen Lie",
+      "department": "Acting",
+      "born": "1979-01-01",
+      "place": "Oslo",
+      "bio": "Anders Danielsen Lie er en norsk filmskuespiller, lege og musiker.",
+      "image": {
+        "file": "/mock/person-1.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Anders_Danielsen_Lie-0031.jpg/500px-Anders_Danielsen_Lie-0031.jpg"
+      }
+    },
+    {
+      "id": 7003,
+      "name": "Aksel Hennie",
+      "department": "Acting",
+      "born": "1975-10-29",
+      "place": "Oslo",
+      "bio": "Aksel Hennie er en norsk skuespiller kjent fra filmer som Hodejegerne, Jonny Vang, Uno og Max Manus.",
+      "image": {
+        "file": "/mock/person-2.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Aksel_Hennie_2012_%28cropped%29.jpg/500px-Aksel_Hennie_2012_%28cropped%29.jpg"
+      }
+    },
+    {
+      "id": 7004,
+      "name": "Kristofer Hivju",
+      "department": "Acting",
+      "born": "1978-12-07",
+      "place": "Oslo",
+      "bio": "Kristofer Hivju er en norsk skuespiller, produsent og manusforfatter som har erfaring fra teater, fjernsyn, radio og film. Han er sønn av skuespillerne Erik Hivju og Lieselotte Holmene.",
+      "image": {
+        "file": "/mock/person-3.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Kristofer_Hivju_%28Cropped%2C_2015%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "id": 7005,
+      "name": "Pedro Pascal",
+      "department": "Acting",
+      "born": "1975-04-02",
+      "place": "Santiago de Chile",
+      "bio": "José Pedro Balmaceda Pascal er en chilensk-født amerikansk skuespiller. Etter nesten to tiår med mindre roller i film og TV, slo Pascal gjennom ved å spille Oberyn Martell i HBO fantasy-serien Game Of Thrones (2014) og Javier Peña i Netflix krim-serien Narcos (2015–2017). Siden 2019 har han hatt hovedrollen i Disney+ Star Wars-serien The Mandalorian og The Book of Boba Fett (2022). Siden 2023 har han spilt Joel Miller i HBO's dramaserie The Last of Us, basert på dataspillet med samme navn. Han ble i 2023 kåret som en av de 100 mest innflytelsesrike menneskene i verden av Time Magazine.",
+      "image": {
+        "file": "/mock/person-4.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Pedro_Pascal_at_the_2026_New_York_Film_Festival-042.jpg/500px-Pedro_Pascal_at_the_2026_New_York_Film_Festival-042.jpg"
+      }
+    },
+    {
+      "id": 7006,
+      "name": "Stellan Skarsgård",
+      "department": "Acting",
+      "born": "1951-06-13",
+      "place": "Göteborgs Kristine församling",
+      "bio": "Stellan Skarsgård er en svensk skuespiller som har hatt sentrale roller i flere internasjonalt kjente filmer.",
+      "image": {
+        "file": "/mock/person-5.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Stellan_Skarsg%C3%A5rd-9707_%28cropped%29.jpg/500px-Stellan_Skarsg%C3%A5rd-9707_%28cropped%29.jpg"
+      }
+    },
+    {
+      "id": 7007,
+      "name": "Liv Ullmann",
+      "department": "Acting",
+      "born": "1938-12-16",
+      "place": "Tokyo",
+      "bio": "Liv Johanne Ullmann er en norsk skuespiller, manusforfatter og filmregissør. Hun fikk gjennombruddet sitt i Edith Carlmars komedie Fjols til fjells i 1957, og sin første hovedrolle i Carlmars Ung flukt i 1959. Samtidig begynte hun også å spille i teaterstykker, og fikk gratistimer hos skuespilleren Tore Foss. På 1960-tallet fikk hun flere filmroller, blant annet i Tonny (1962) og Pan (1962). Hun spilte også i teateroppsetninger som Hamlet, Kransen, Peer Gynt, Brand, Kongs-Emnerne, Et dukkehjem, Rosmersholm og Faust. Ullmann var også aktiv i Fjernsynsteatret.",
+      "image": {
+        "file": "/mock/person-6.png",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Liv_Ullmann_2024_%28cropped%29.png/500px-Liv_Ullmann_2024_%28cropped%29.png"
+      }
+    },
+    {
+      "id": 7008,
+      "name": "Noomi Rapace",
+      "department": "Acting",
+      "born": "1979-12-28",
+      "place": "Hudiksvall",
+      "bio": "Hilda Noomi Rapace er en svensk skuespiller.",
+      "image": {
+        "file": "/mock/person-7.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Noomi_Rapace_PFW_2019.jpg/500px-Noomi_Rapace_PFW_2019.jpg"
+      }
+    },
+    {
+      "id": 7009,
+      "name": "Ane Dahl Torp",
+      "department": "Acting",
+      "born": "1975-08-01",
+      "place": "Bærum",
+      "bio": "Ane Dahl Torp er en norsk skuespiller.",
+      "image": {
+        "file": "/mock/person-8.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Ane_Dahl_Torp_at_Berlinale_2025.jpg/500px-Ane_Dahl_Torp_at_Berlinale_2025.jpg"
+      }
+    },
+    {
+      "id": 7010,
+      "name": "Jakob Oftebro",
+      "department": "Acting",
+      "born": "1986-01-12",
+      "place": "Oslo",
+      "bio": "Jakob Oftebro er en norsk skuespiller som har medvirket i en rekke norske, danske og svenske filmer og TV-produksjoner.",
+      "image": {
+        "file": "/mock/person-9.jpg",
+        "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/Jakob-Oftebro.jpg/3840px-Jakob-Oftebro.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+      }
+    },
+    {
+      "id": 7011,
+      "name": "Joachim Trier",
+      "department": "Directing",
+      "born": "1974-03-01",
+      "place": "København",
+      "bio": "Joachim Trier er en norsk filmregissør og manusforfatter.",
+      "image": {
+        "file": "/mock/person-10.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Joachim_Trier-9987_%28cropped%29.jpg/500px-Joachim_Trier-9987_%28cropped%29.jpg"
+      }
+    },
+    {
+      "id": 7012,
+      "name": "Roar Uthaug",
+      "department": "Directing",
+      "born": "1973-08-25",
+      "place": "Lørenskog",
+      "bio": "Roar Uthaug er en norsk filmregissør. Han er utdannet ved Mediefabrikken og ved Den norske filmskolen i Lillehammer. Som elev ved filmskolen ble han nominert til Student Academy Awards i 2003 med novellefilmen Regjeringen Martin som var hans eksamensfilm.",
+      "image": {
+        "file": "/mock/person-11.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Roar_Uthaug_at_Toronto_International_Film_Festival_%28cropped%29.jpg/500px-Roar_Uthaug_at_Toronto_International_Film_Festival_%28cropped%29.jpg"
+      }
+    },
+    {
+      "id": 7013,
+      "name": "Denis Villeneuve",
+      "department": "Directing",
+      "born": "1967-10-03",
+      "place": "Bécancour",
+      "bio": "Denis Villeneuve er en kanadisk filmregissør.",
+      "image": {
+        "file": "/mock/person-12.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/DVilleneuveRFH121024_%2812_of_23%29_%2854061976489%29_%28cropped%29.jpg/500px-DVilleneuveRFH121024_%2812_of_23%29_%2854061976489%29_%28cropped%29.jpg"
+      }
+    },
+    {
+      "id": 7014,
+      "name": "Jo Nesbø",
+      "department": "Writing",
+      "born": "1960-03-29",
+      "place": "Oslo",
+      "bio": "Jo Nesbø er en norsk musiker, forfatter, siviløkonom og tidligere fotballspiller. Han er utdannet siviløkonom og finansanalytiker fra Norges handelshøyskole og har arbeidet både som aksjemegler og journalist, i tillegg til å være vokalist og låtskriver i popgruppa Di Derre. Nesbøs bøker er utgitt på mer enn 50 språk og har solgt over 60 millioner eksemplarer.",
+      "image": {
+        "file": "/mock/person-13.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Jo_Nesbo.jpg/500px-Jo_Nesbo.jpg"
+      }
+    },
+    {
+      "id": 7015,
+      "name": "Hans Zimmer",
+      "department": "Sound",
+      "born": "1957-09-12",
+      "place": "Frankfurt",
+      "bio": "Hans Florian Zimmer er en tysk komponist og musikkprodusent. Han har gjennom flere tiår komponert musikk for over hundre filmer. Gjennombruddet kom Rain Man (1988) og ble tildelt Oscar for Løvenes konge (1994) og for Dune. Zimmer turnerer med egne konserter.",
+      "image": {
+        "file": "/mock/person-14.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/2/2b/Hans-Zimmer-profile.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "id": 7016,
+      "name": "Jóhann Jóhannsson",
+      "department": "Sound",
+      "born": "1969-09-19",
+      "place": "Reykjavík",
+      "bio": "Jóhann Gunnar Jóhannsson var en islandsk komponist. Han komponerte musikk for et vidt spekter av bruksområder, for teater, dans, TV og film. Hans verk karakteriseres ofte som en kombinasjon av tradisjonell orkestrering med moderne elektroniske elementer.",
+      "image": {
+        "file": "/mock/person-15.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/2/2a/J%C3%B3hann_J%C3%B3hannsson_by_Sachyn_Mital_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    }
+  ],
+  "titles": [
+    {
+      "kind": "film",
+      "tmdb": 91001,
+      "slug": "arrival-2016",
+      "title": "Arrival",
+      "year": 2016,
+      "genres": [
+        "drama",
+        "science fiction",
+        "thriller"
+      ],
+      "length": 116,
+      "overview": "Arrival er en amerikansk science fiction-mysteriefilm fra 2016 regissert av Denis Villeneuve. Filmen handler om vesener fra en fremmed planet som besøker jorden. En gruppe språkforskere forsøker desperat å tolke hva de vil på jorden. Samtidig er jorden på randen av verdenskrig. Hovedrollen spilles av Amy Adams, mens Jeremy Renner og Forest Whitaker har sentrale biroller. Manus er av Eric Heisserer, og er basert på Ted Chiangs novelle Story of Your Life.",
+      "poster": {
+        "file": "/mock/poster-0.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/en/d/df/Arrival%2C_Movie_Poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "kind": "film",
+      "tmdb": 91002,
+      "slug": "blade-runner-2049-2017",
+      "title": "Blade Runner 2049",
+      "year": 2017,
+      "genres": [
+        "science fiction",
+        "mystery",
+        "cyberpunk"
+      ],
+      "length": 164,
+      "overview": "Blade Runner 2049 er en amerikansk science fiction-spillefilm fra 2017 regissert av Denis Villeneuve med Ryan Gosling og Harrison Ford i hovedrollene. Ana de Armas, Sylvia Hoeks, Robin Wright, Mackenzie Davis, Carla Juri, Lennie James, Dave Bautista, og Jared Leto spiller viktige biroller.",
+      "poster": {
+        "file": "/mock/poster-1.png",
+        "source": "https://upload.wikimedia.org/wikipedia/en/9/9b/Blade_Runner_2049_poster.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "kind": "film",
+      "tmdb": 91003,
+      "slug": "parasite-2019",
+      "title": "Parasite",
+      "year": 2019,
+      "genres": [
+        "dramakomedie",
+        "svart humor",
+        "thriller"
+      ],
+      "length": 132,
+      "overview": "Parasite is a 2019 South Korean black comedy thriller film directed by Bong Joon Ho, who co-wrote the screenplay with Han Jin-won. It stars Song Kang-ho, Lee Sun-kyun, Cho Yeo-jeong, Choi Woo-shik, Park So-dam, Jang Hye-jin, Park Myung-hoon, and Lee Jung-eun. The film follows a poor family who infiltrates the home and life of a wealthy family.",
+      "poster": {
+        "file": "/mock/poster-2.png",
+        "source": "https://upload.wikimedia.org/wikipedia/en/5/53/Parasite_%282019_film%29.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "kind": "film",
+      "tmdb": 91004,
+      "slug": "ex-machina-2015",
+      "title": "Ex Machina",
+      "year": 2015,
+      "genres": [
+        "science fiction",
+        "psykologisk thrillerfilm",
+        "drama"
+      ],
+      "length": 108,
+      "overview": "Ex Machina is a 2014 science fiction film, written and directed by Alex Garland in his directorial debut. It stars Domhnall Gleeson, Alicia Vikander, and Oscar Isaac. It follows a programmer who is invited by his CEO to administer the Turing test to an intelligent female humanoid robot.",
+      "poster": {
+        "file": "/mock/poster-3.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/en/b/ba/Ex-machina-uk-poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "kind": "film",
+      "tmdb": 91005,
+      "slug": "verdens-verste-menneske-2021",
+      "title": "Verdens verste menneske",
+      "year": 2021,
+      "genres": [
+        "drama",
+        "komedie",
+        "romantikk"
+      ],
+      "length": 121,
+      "overview": "The Worst Person in the World is a 2021 romantic comedy-drama film directed by Joachim Trier, who co-wrote the screenplay with Eskil Vogt. It is the third and final film in the director's Oslo trilogy, following Reprise (2006) and Oslo, August 31st (2011). The film premiered in competition at the 2021 Cannes Film Festival to widespread critical acclaim, with Renate Reinsve winning the award for Best Actress for her performance in the film. At the 94th Academy Awards, the film was nominated for Best International Feature Film and Best Original Screenplay.",
+      "poster": {
+        "file": "/mock/poster-4.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/en/5/54/The_Worst_Person_in_the_World_%28film%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "kind": "film",
+      "tmdb": 91006,
+      "slug": "oslo-31-august-2011",
+      "title": "Oslo, 31. august",
+      "year": 2011,
+      "genres": [
+        "drama"
+      ],
+      "length": 96,
+      "overview": "Oslo, August 31st is a 2011 Norwegian drama film directed by Joachim Trier. It is the second film, along with Reprise (2006) and The Worst Person in the World (2021), in Trier's Oslo trilogy. The film is a homage to, and loosely based on Pierre Drieu La Rochelle's novel Will O' the Wisp (1931) and Louis Malle's feature film The Fire Within (1963).",
+      "poster": {
+        "file": "/mock/poster-5.png",
+        "source": "https://upload.wikimedia.org/wikipedia/en/a/a9/Oslo%2C_August_31st_poster.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "kind": "film",
+      "tmdb": 91007,
+      "slug": "hodejegerne-2011",
+      "title": "Hodejegerne",
+      "year": 2011,
+      "genres": [
+        "thriller",
+        "krim",
+        "action"
+      ],
+      "length": 98,
+      "overview": "Headhunters is a 2011 Norwegian action thriller film based on the 2008 novel of the same name by Jo Nesbø. The film was directed by Morten Tyldum and stars Aksel Hennie, Nikolaj Coster-Waldau and Synnøve Macody Lund. Hennie portrays the successful but insecure corporate recruiter Roger Brown who lives a double life as an art thief to fund his lavish lifestyle. He discovers that one of his job prospects owns a valuable painting and sets out to steal it.",
+      "poster": {
+        "file": "/mock/poster-6.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/en/7/7e/Headhunter_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "kind": "film",
+      "tmdb": 91008,
+      "slug": "dune-2021",
+      "title": "Dune",
+      "year": 2021,
+      "genres": [
+        "science fiction",
+        "action",
+        "eventyr"
+      ],
+      "length": 155,
+      "overview": "Dune, også skrevet Dune: Part One, er en amerikansk science fiction-film fra 2021 regissert av Denis Villeneuve. Filmen er den første av to filmer basert på boken Sand (Dune) fra 1965 av Frank Herbert. Filmserien er den andre filmversjonen av boken etter David Lynchs Dune fra 1984.",
+      "poster": {
+        "file": "/mock/poster-7.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/en/8/8e/Dune_%282021_film%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "kind": "episode",
+      "tmdb": 91010,
+      "slug": "lilyhammer-2012",
+      "title": "Lilyhammer",
+      "year": 2012,
+      "genres": [
+        "dramakomedie",
+        "krim"
+      ],
+      "length": 3,
+      "overview": "Lilyhammer er en norsk krim- og komiserie som gikk på NRK1 fra 2012 til 2014. Serien var produsert av Rubicon TV for NRK og Netflix og hadde Steven Van Zandt i hovedrollen.",
+      "poster": {
+        "file": "/mock/poster-9.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/en/0/07/Lilyhammer1.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "kind": "episode",
+      "tmdb": 91011,
+      "slug": "succession-2018",
+      "title": "Succession",
+      "year": 2018,
+      "genres": [
+        "dramakomedie"
+      ],
+      "length": 4,
+      "overview": "Succession is an American satirical comedy-drama television series created by English screenwriter Jesse Armstrong that aired for four seasons on HBO from June 3, 2018, to May 28, 2023. The series centers on the Roy family, the owners of global media and entertainment conglomerate Waystar RoyCo, and their fight for control of the company amidst uncertainty about the health of the family's patriarch.",
+      "poster": {
+        "file": "/mock/poster-10.png",
+        "source": "https://upload.wikimedia.org/wikipedia/commons/7/73/SuccessionTV.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    },
+    {
+      "kind": "episode",
+      "tmdb": 91012,
+      "slug": "chernobyl-2019",
+      "title": "Chernobyl",
+      "year": 2019,
+      "genres": [
+        "periode"
+      ],
+      "length": 1,
+      "overview": "Chernobyl is a 2019 historical drama television miniseries that revolves around the Chernobyl disaster of 1986 and the cleanup efforts that followed. The series was created and written by Craig Mazin and directed by Johan Renck. It features an ensemble cast led by Jared Harris, Stellan Skarsgård, Emily Watson, and Paul Ritter. The series was produced by HBO in the United States and Sky UK in the United Kingdom.",
+      "poster": {
+        "file": "/mock/poster-11.jpg",
+        "source": "https://upload.wikimedia.org/wikipedia/en/a/a7/Chernobyl_2019_Miniseries.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+      }
+    }
+  ]
+}

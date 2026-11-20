@@ -6,6 +6,7 @@
 import { env } from "cloudflare:workers"
 
 import { type Env, type Get, lastfmError, type Listening, loadAlbum, loadArtist, loadArtistPictures, loadLastfmNow, loadMusic, loadNowPlaying, loadPerson, loadTrack, loadWatched, settle } from "./sources.ts"
+import { MOCK_VERSION, mockFetch, mockSettings } from "./mock.ts"
 import { loadMonth, loadTrend, loadWeek } from "./week-source.ts"
 import type { Month } from "./months.ts"
 import type { Week } from "./weeks.ts"
@@ -17,13 +18,17 @@ const AGENT = "lmfaole-medier (https://github.com/lmfaole/medier)"
 const KEY_HOST = "https://cache.medier.invalid/"
 
 /** The settings that are text: a secret or a variable that is not a string (a binding) is not one of ours. */
-export const settings = (): Env => Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === "string"))
+const own = (): Env => Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === "string"))
+/** `MOCK_DATA=1` (`.dev.vars`, never a Worker's secret): the sources are answered by `mock.ts`, with no keys and no network. */
+const mocking = (): boolean => own()["MOCK_DATA"] === "1"
+export const settings = (): Env => (mocking() ? mockSettings(own()) : own())
 
 /**
  * Workers on this zone cannot reach an origin outside Cloudflare (every such fetch ends in 525), while a Worker on workers.dev can: the relay (`upstream/`) is that
  * one, and asks on the page's behalf, only for the hosts it knows and only with the key the two share. Without a relay (`astro dev`) the source is asked directly.
  */
 async function ask(url: string, request: { headers?: Record<string, string>; method?: "GET" | "POST"; body?: string }): Promise<Response> {
+  if (mocking()) return mockFetch(url, request)
   const relay = settings()["UPSTREAM_URL"]
   const key = settings()["UPSTREAM_KEY"]
   const headers = { "User-Agent": AGENT, Accept: "application/json", ...request.headers }
@@ -37,7 +42,9 @@ async function ask(url: string, request: { headers?: Record<string, string>; met
 
 export const get: Get = async (url, request) => {
   const cache = caches.default
-  const kept = new Request(request.key === undefined ? url : `${KEY_HOST}${encodeURIComponent(request.key)}`)
+  // Made-up answers are kept apart, so a run on real data never gets one.
+  const prefix = mocking() ? `mock:${MOCK_VERSION}:` : ""
+  const kept = new Request(request.key === undefined && prefix === "" ? url : `${KEY_HOST}${encodeURIComponent(`${prefix}${request.key ?? url}`)}`)
   const found = await cache.match(kept)
   if (found !== undefined) {
     const data: unknown = await found.json()
