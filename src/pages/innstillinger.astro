@@ -3,10 +3,9 @@
 // with the page it came from in `tilbake`; once saved, a word that it is, and the way back there.
 import { Banner } from '@lmfaole/designsystem/components/banner'
 import { Button } from '@lmfaole/designsystem/components/button'
-import { EffectsPreview } from '@lmfaole/designsystem/components/effects-preview'
+import { EffectsChoice, TiltChoice } from '../components/effect-choices'
 import { SettingsSection } from '@lmfaole/designsystem/components/settings-section'
 import { TextLink } from '@lmfaole/designsystem/components/text'
-import { TiltPreview } from '@lmfaole/designsystem/components/tilt-preview'
 import { parsePrefs, PREFS_COOKIE } from '@lmfaole/designsystem/lib/preferences'
 import { SettingsForm } from '../components/settings-fields'
 import Page from '../layouts/Page.astro'
@@ -34,8 +33,8 @@ const action = `${base}api/innstillinger/`
   }
   {lastfm !== undefined && trakt !== undefined && (
     <SettingsForm action={action} back={back} lastfm={lastfm} trakt={trakt} prefs={prefs}>
-      <EffectsPreview slot="effectsPreview" client:visible value={prefs.effects} />
-      <TiltPreview slot="tiltPreview" client:visible />
+      <EffectsChoice slot="effectsField" client:visible value={prefs.effects} />
+      <TiltChoice slot="tiltField" client:visible value={prefs.tilt} />
     </SettingsForm>
   )}
   <SettingsSection id="introen" title="Introen" body="Introen du fikk første gang, med de samme valgene ett og ett. Den åpner seg på forsiden.">

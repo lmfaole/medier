@@ -1,9 +1,8 @@
 ---
 // The first visit's wizard, drawn open by the server (no flash) when the `seen` cookie lacks it, and made a modal of steps by `FirstRunEnhancer`; without JavaScript it is one long form.
-import { EffectsPreview } from '@lmfaole/designsystem/components/effects-preview'
+import { EffectsChoice, TiltChoice } from './effect-choices'
 import { FirstRunEnhancer } from '@lmfaole/designsystem/components/first-run-enhancer'
 import { InstallPrompt } from '@lmfaole/designsystem/components/install-prompt'
-import { TiltPreview } from '@lmfaole/designsystem/components/tilt-preview'
 import { parsePrefs, PREFS_COOKIE } from '@lmfaole/designsystem/lib/preferences'
 import { SEEN_PATH } from '../lib/onboarding'
 import { usersOf } from '../lib/runtime'
@@ -27,8 +26,8 @@ const back = backWithoutError(`${here.pathname}${here.search}`)
   open && lastfm !== undefined && trakt !== undefined && (
     <>
       <MedierFirstRun open action={`${base}api/innstillinger/`} validateUrl={`${base}api/innstillinger/`} back={back} initialStep={isStep(step) ? step : undefined} lastfm={lastfm} trakt={trakt} prefs={prefs}>
-        <EffectsPreview slot="effectsPreview" client:idle value={prefs.effects} />
-        <TiltPreview slot="tiltPreview" client:idle />
+        <EffectsChoice slot="effectsField" client:load value={prefs.effects} />
+        <TiltChoice slot="tiltField" client:load value={prefs.tilt} />
         <InstallPrompt slot="install" client:idle appName="Medier" seen={false} cookiePath={SEEN_PATH} />
       </MedierFirstRun>
       <FirstRunEnhancer client:load />

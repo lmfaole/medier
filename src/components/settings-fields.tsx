@@ -14,7 +14,8 @@ import type { UsernameField } from "../lib/users"
 
 /*
  * The fields of a visitor's settings, the same in the first-run wizard (`MedierFirstRun`) and on «Innstillinger» (`SettingsForm`): native, so both work without JavaScript, and posted to
- * `/api/innstillinger/`. The previews of the effects and the tilt are islands, so they come in from the Astro page as slots (`effectsPreview`, `tiltPreview`), as does the offer to install.
+ * `/api/innstillinger/`. The effects and the tilt are chosen by their live examples, client components, so those two fields are islands that come in from the Astro page as slots
+ * (`effectsField`, `tiltField`, see `effect-choices.tsx`), as does the offer to install. Each wizard step asks one thing.
  */
 
 function UsernameInput({ field }: { field: UsernameField }) {
@@ -39,38 +40,9 @@ function ThemeField({ prefs }: { prefs: Prefs }) {
       legend="Tema"
       value={prefs.theme}
       options={[
-        { value: "system", label: "Som enheten", description: "Lyst eller mørkt etter hva enheten er satt til.", preview: <ThemeSample theme="system" /> },
-        { value: "light", label: "Lyst", preview: <ThemeSample theme="light" /> },
-        { value: "dark", label: "Mørkt", preview: <ThemeSample theme="dark" /> },
-      ]}
-    />
-  )
-}
-
-function EffectsField({ prefs }: { prefs: Prefs }) {
-  return (
-    <ChoiceCards
-      name="effects"
-      legend="Effekter"
-      value={prefs.effects}
-      options={[
-        { value: "on", label: "På", description: "Platen som snurrer, coverne i 3D og bakgrunner som følger lyset." },
-        { value: "off", label: "Av", description: "Flatt og stille. Bruker mindre strøm og passer om bevegelse er ubehagelig." },
-      ]}
-    />
-  )
-}
-
-function TiltField({ prefs }: { prefs: Prefs }) {
-  return (
-    <ChoiceCards
-      name="tilt"
-      legend="Lys som følger telefonen"
-      value={prefs.tilt}
-      hint="På en telefon kan lyset på siden følge hvordan du holder den. Telefonen spør om lov først."
-      options={[
-        { value: "off", label: "Av", description: "Lyset følger pekeren, eller står stille." },
-        { value: "on", label: "På", description: "Lyset følger hvordan du holder telefonen." },
+        { value: "system", label: "Som enheten", description: "Lyst eller mørkt etter hva enheten er satt til.", preview: <ThemeSample theme="system" size="lg" /> },
+        { value: "light", label: "Lyst", preview: <ThemeSample theme="light" size="lg" /> },
+        { value: "dark", label: "Mørkt", preview: <ThemeSample theme="dark" size="lg" /> },
       ]}
     />
   )
@@ -81,13 +53,13 @@ interface FieldsProps {
   lastfm: UsernameField
   trakt: UsernameField
   prefs: Prefs
-  effectsPreview?: ReactNode
-  tiltPreview?: ReactNode
+  effectsField?: ReactNode
+  tiltField?: ReactNode
 }
 
-/** The wizard of the first visit: what the site is, the two usernames, the front page, the theme, the effects and the offer to install, in one form. */
+/** The wizard of the first visit, one question a step: what the site is, the two usernames, the front page, the theme, the effects, the tilt and the offer to install, in one form. */
 export function MedierFirstRun({ open, action, back, validateUrl, initialStep, install, ...fields }: FieldsProps & { open: boolean; action: string; back: string; validateUrl: string; initialStep?: Step | undefined; install?: ReactNode }) {
-  const steps: { id: Step; title: string; body?: string; icon?: "music" | "listen" | "film" | "home" | "moon" | "bolt" | "download"; content?: ReactNode }[] = [
+  const steps: { id: Step; title: string; body?: string; icon?: "music" | "listen" | "film" | "home" | "moon" | "bolt" | "phone" | "download"; content?: ReactNode }[] = [
     {
       id: "velkommen",
       title: "Velkommen til Medier",
@@ -101,18 +73,12 @@ export function MedierFirstRun({ open, action, back, validateUrl, initialStep, i
     { id: "tema", title: "Lyst eller mørkt?", icon: "moon", content: <ThemeField prefs={fields.prefs} /> },
     {
       id: "effekter",
-      title: "Effekter",
-      body: "Medier tegner plater og bakgrunner i 3D. Slå det av om du vil ha det roligere eller spare strøm.",
+      title: "Med eller uten effekter?",
+      body: "Medier tegner plater og bakgrunner i 3D. Velg uten om du vil ha det roligere eller spare strøm.",
       icon: "bolt",
-      content: (
-        <>
-          <EffectsField prefs={fields.prefs} />
-          {fields.effectsPreview}
-          <TiltField prefs={fields.prefs} />
-          {fields.tiltPreview}
-        </>
-      ),
+      content: fields.effectsField,
     },
+    { id: "lys", title: "Skal lyset følge telefonen?", body: "Trykk på et av eksemplene for å velge.", icon: "phone", content: fields.tiltField },
     {
       id: "installer",
       title: "Ha Medier på hjem-skjermen",
@@ -140,11 +106,11 @@ export function SettingsForm({ action, back, ...fields }: FieldsProps & { action
         <SettingsSection id="tema" title="Tema">
           <ThemeField prefs={fields.prefs} />
         </SettingsSection>
-        <SettingsSection id="effekter" title="Effekter" body="Plater og bakgrunner i 3D, og lys som følger telefonen.">
-          <EffectsField prefs={fields.prefs} />
-          {fields.effectsPreview}
-          <TiltField prefs={fields.prefs} />
-          {fields.tiltPreview}
+        <SettingsSection id="effekter" title="Effekter" body="Plater og bakgrunner i 3D.">
+          {fields.effectsField}
+        </SettingsSection>
+        <SettingsSection id="lys" title="Lys" body="Lys som følger hvordan du holder telefonen.">
+          {fields.tiltField}
         </SettingsSection>
         <div>
           <Button type="submit" size="lg">

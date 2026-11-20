@@ -17,7 +17,7 @@ export const SOURCE_FIELD = "kilde"
 export const FROM_FIRST_RUN = "forste-gang"
 
 /** The steps of the wizard, in order. */
-export const STEPS = ["velkommen", "lastfm", "trakt", "forsiden", "tema", "effekter", "installer"] as const
+export const STEPS = ["velkommen", "lastfm", "trakt", "forsiden", "tema", "effekter", "lys", "installer"] as const
 export type Step = (typeof STEPS)[number]
 
 export const isStep = (value: string | null): value is Step => value !== null && (STEPS as readonly string[]).includes(value)

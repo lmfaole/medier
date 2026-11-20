@@ -10,7 +10,8 @@ Hva du hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaol
   Without a username a page shows the form instead of data: Musikk and its pages need Last.fm, Film og TV and its pages Trakt, and the front page, Historikk and Wrapped show what has a username and ask for the rest.
   «Viser data for … · Bytt» at the foot of every page leads to Innstillinger (`/brukernavn/` is a redirect there now).
 - **The first run.** A first visit opens a full-screen wizard over whatever page it landed on (the design system's `FirstRun`, in `src/components/FirstRunWizard.astro` and `src/components/settings-fields.tsx`):
-  welcome · Last.fm · Trakt · the front page's sections · theme · effects and tilt (with live previews) · install. It is drawn open by the server (no flash) until `first-run@1` is in `seen`, and works without JS
+  welcome · Last.fm · Trakt · the front page's sections · theme · effects · tilt · install, one question a step. The effects and the tilt are chosen by their live examples
+  (`ChoiceCards` with `EffectsPreview`/`TiltPreview` as the cards, one island each, `src/components/effect-choices.tsx`). It is drawn open by the server (no flash) until `first-run@1` is in `seen`, and works without JS
   as one form; with JS (`FirstRunEnhancer`) it is one step at a time, and a username is checked as the step is left (`validate=<step>`, answered with `{ errors }`). It posts to
   `src/pages/api/innstillinger.ts`, which keeps the usernames (as `/api/brukernavn/` does), the choices in the design system's `prefs` cookie (theme, effects, tilt, sections; not `HttpOnly`) and marks it seen.
   A username not found sends back to its step (`?forste-gang=<step>` with the error); «Hopp over» (`skip=1`) only marks it seen. It is never drawn on Innstillinger or `/offline/`, and the intros wait until it is done.
