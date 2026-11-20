@@ -3,8 +3,8 @@
  * is quick and the sources are asked little. Pure: the asking is done by the `get` that is passed in (`runtime.ts`), so a test hands it a fake one.
  */
 
-import { type ArtistInfo, artistInfoUrl, type Music, parseArtistInfo, parseRecentTracks, parseTopArtists } from "./lastfm.ts"
-import { type NowPlaying, NOW_PLAYING_URL, parseArtistMatch, parseNowPlaying, parseToken, refreshRequest, searchArtistUrl, type SpotifyArtist } from "./spotify.ts"
+import { type AlbumInfo, albumInfoUrl, type ArtistInfo, artistInfoUrl, type Music, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopArtists, parseTrackInfo, type TrackInfo, trackInfoUrl } from "./lastfm.ts"
+import { type NowPlaying, NOW_PLAYING_URL, parseAlbumMatch, parseArtistMatch, parseNowPlaying, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl, type SpotifyAlbum, type SpotifyArtist, type SpotifyTrack } from "./spotify.ts"
 import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, type Person, personUrl, type TitleInfo } from "./tmdb.ts"
 import { mergeHistory, parseHistory, type Watch, type Watched } from "./trakt.ts"
 
@@ -140,8 +140,45 @@ async function spotifyArtist(token: string, name: string, get: Get): Promise<{ a
 export async function loadArtist(env: Env, get: Get, name: string): Promise<{ lastfm: ArtistInfo | null; spotify: SpotifyArtist | null }> {
   const base = lastfmBase(env)
   const [lastfm, spotify] = await Promise.all([
-    base === null ? null : settle(get(artistInfoUrl(base, name), { ttl: TTL.artist })).then((answer) => (answer === null ? null : parseArtistInfo(answer.data))),
+    base === null ? null : settle(get(artistInfoUrl(base, name, setting(env, "LASTFM_USER")), { ttl: TTL.artist })).then((answer) => (answer === null ? null : parseArtistInfo(answer.data))),
     spotifyToken(env, get).then((token) => (token === null ? null : spotifyArtist(token, name, get).then((found) => found.artist))).catch(() => null),
+  ])
+  return { lastfm, spotify }
+}
+
+/** Last.fm's answer for an address, read; `null` where Last.fm is not set up or did not answer: the rest of the page is there. */
+async function lastfmInfo<T>(env: Env, get: Get, address: (base: string, user: string) => string, parse: (answer: unknown) => T): Promise<T | null> {
+  const base = lastfmBase(env)
+  if (base === null) return null
+  const answer = await settle(get(address(base, setting(env, "LASTFM_USER")), { ttl: TTL.artist }))
+  return answer === null ? null : parse(answer.data)
+}
+
+/** What Spotify says of something found by a search (an album, a track), or `null`: not set up, not found under that name, or Spotify did not answer. */
+async function spotifyFound<T>(env: Env, get: Get, address: string, match: (answer: unknown) => T | null): Promise<T | null> {
+  try {
+    const token = await spotifyToken(env, get)
+    if (token === null) return null
+    return match((await get(address, { headers: { Authorization: `Bearer ${token}` }, ttl: TTL.artist })).data)
+  } catch {
+    return null
+  }
+}
+
+/** A track's page: Last.fm's tags, listeners, length and the owner's own count, and Spotify's link to it. */
+export async function loadTrack(env: Env, get: Get, artist: string, track: string): Promise<{ lastfm: TrackInfo | null; spotify: SpotifyTrack | null }> {
+  const [lastfm, spotify] = await Promise.all([
+    lastfmInfo(env, get, (base, user) => trackInfoUrl(base, artist, track, user), parseTrackInfo),
+    spotifyFound(env, get, searchTrackUrl(track, artist), (answer) => parseTrackMatch(answer, track, artist)),
+  ])
+  return { lastfm, spotify }
+}
+
+/** An album's page: Last.fm's tags, listeners, tracks and the owner's own count, and Spotify's link, day and number of tracks. */
+export async function loadAlbum(env: Env, get: Get, artist: string, album: string): Promise<{ lastfm: AlbumInfo | null; spotify: SpotifyAlbum | null }> {
+  const [lastfm, spotify] = await Promise.all([
+    lastfmInfo(env, get, (base, user) => albumInfoUrl(base, artist, album, user), parseAlbumInfo),
+    spotifyFound(env, get, searchAlbumUrl(album, artist), (answer) => parseAlbumMatch(answer, album, artist)),
   ])
   return { lastfm, spotify }
 }

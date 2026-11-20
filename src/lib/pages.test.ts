@@ -1,7 +1,8 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { artistHref, artistPages, personHref, personId, personIn, slugify, titlePages } from "./pages.ts"
+import { albumHref, albumPages, albumSlug, artistHref, artistPages, personHref, personId, personIn, slugify, titlePages, trackHref, trackPages } from "./pages.ts"
+import type { Play } from "./lastfm.ts"
 import type { Watch } from "./trakt.ts"
 
 const watch = (id: number, url: string, title: string, kind: "film" | "episode", poster: string | null = null): Watch => ({
@@ -67,4 +68,37 @@ test("a person's address has TMDB's id first, and the id is read back from it an
   assert.equal(personId("1158"), 1158)
   assert.equal(personId("al-pacino"), null)
   assert.equal(personId("12345678901-x"), null)
+})
+
+const play = (track: string, artist: string, album: string, at: string, image: string | null = null): Play => ({ track, artist, album, image, url: `https://www.last.fm/music/${artist}/_/${track}`, playedAt: at })
+
+const RECENT = [
+  play("Submit", "Shygirl", "Nymph", "2026-11-19T10:00:00Z", "n.jpg"),
+  play("Firefly", "Shygirl", "Nymph", "2026-11-19T09:00:00Z"),
+  play("Submit", "Shygirl", "", "2026-11-18T09:00:00Z"),
+  play("Submit", "Cover Band", "Nymph", "2026-11-18T08:00:00Z"),
+]
+
+test("an album has one page for each artist and name, with the plays from it newest first and the first cover there is; a play with no album has none", () => {
+  const pages = albumPages({ recent: RECENT })
+  assert.deepEqual(pages.map((page) => page.slug), ["shygirl--nymph", "cover-band--nymph"])
+  assert.deepEqual(pages[0]?.plays.map((one) => one.track), ["Submit", "Firefly"])
+  assert.equal(pages[0]?.image, "n.jpg")
+  assert.equal(pages[0]?.url, "https://www.last.fm/music/Shygirl/Nymph")
+  assert.equal(albumPages({ recent: [play("A", "B C", "D E", "2026-11-19T10:00:00Z")] })[0]?.url, "https://www.last.fm/music/B+C/D+E")
+})
+
+test("a track has one page for each artist and title, however many albums or singles it was played from, with every play of it", () => {
+  const pages = trackPages({ recent: RECENT })
+  assert.deepEqual(pages.map((page) => page.slug), ["shygirl--submit", "shygirl--firefly", "cover-band--submit"])
+  assert.equal(pages[0]?.plays.length, 2)
+  assert.equal(pages[0]?.album, "Nymph")
+  assert.equal(pages[0]?.image, "n.jpg")
+})
+
+test("the address of an album or a track names the artist and the name, set apart by two dashes that a slug has none of", () => {
+  assert.equal(albumHref("/", "Shygirl", "Nymph"), "/musikk/album/shygirl--nymph/")
+  assert.equal(trackHref("/", "Beyoncé", "Break My Soul"), "/musikk/spor/beyonce--break-my-soul/")
+  assert.ok(!slugify("A -- B").includes("--"))
+  assert.notEqual(albumSlug("a-b", "c"), albumSlug("a", "b-c"))
 })

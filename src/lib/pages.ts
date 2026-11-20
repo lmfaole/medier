@@ -83,6 +83,71 @@ export function artistPages(music: Pick<Music, "recent" | "topArtists">): Artist
   return [...pages.values()]
 }
 
+/**
+ * An album's or a track's page, `/musikk/album/<artist>--<album>/` and `/musikk/spor/<artist>--<track>/`: the artist's slug and the name's, set apart by `--`, which a slug never has inside it (a run of
+ * anything but letters is one dash), so two names are never taken for one.
+ */
+export const albumSlug = (artist: string, album: string): string => `${slugify(artist)}--${slugify(album)}`
+export const trackSlug = (artist: string, track: string): string => `${slugify(artist)}--${slugify(track)}`
+export const albumHref = (base: string, artist: string, album: string): string => `${base}musikk/album/${albumSlug(artist, album)}/`
+export const trackHref = (base: string, artist: string, track: string): string => `${base}musikk/spor/${trackSlug(artist, track)}/`
+
+/** A name as a part of an address on Last.fm: spaces are `+`, the rest is encoded. */
+const lastfmPart = (name: string): string => encodeURIComponent(name).replaceAll("%20", "+")
+
+export interface AlbumPage {
+  slug: string
+  title: string
+  artist: string
+  /** The cover as Last.fm hosts it, the first of the plays that has one. */
+  image: string | null
+  /** The album on Last.fm. */
+  url: string
+  /** The plays of tracks on it in the recent list, newest first. */
+  plays: Play[]
+}
+
+export interface TrackPage {
+  slug: string
+  title: string
+  artist: string
+  /** The album it was played from (the first, for a track on more than one); `null` for a play with none. */
+  album: string | null
+  image: string | null
+  /** The track on Last.fm. */
+  url: string
+  /** Each play of it in the recent list, newest first. */
+  plays: Play[]
+}
+
+/** One page for each album in the recent plays, with the plays from it. A play with no album has none. */
+export function albumPages(music: Pick<Music, "recent">): AlbumPage[] {
+  const pages = new Map<string, AlbumPage>()
+  for (const play of music.recent) {
+    if (play.album === "") continue
+    const slug = albumSlug(play.artist, play.album)
+    const page = pages.get(slug) ?? { slug, title: play.album, artist: play.artist, image: null, url: `https://www.last.fm/music/${lastfmPart(play.artist)}/${lastfmPart(play.album)}`, plays: [] }
+    page.image ??= play.image
+    page.plays.push(play)
+    pages.set(slug, page)
+  }
+  return [...pages.values()]
+}
+
+/** One page for each track in the recent plays (by artist and title: the same song on a single and on an album is one), with each play of it. */
+export function trackPages(music: Pick<Music, "recent">): TrackPage[] {
+  const pages = new Map<string, TrackPage>()
+  for (const play of music.recent) {
+    const slug = trackSlug(play.artist, play.track)
+    const page = pages.get(slug) ?? { slug, title: play.track, artist: play.artist, album: null, image: null, url: play.url, plays: [] }
+    page.album ??= play.album === "" ? null : play.album
+    page.image ??= play.image
+    page.plays.push(play)
+    pages.set(slug, page)
+  }
+  return [...pages.values()]
+}
+
 export const titleHref = (base: string, slug: string): string => `${base}film-og-tv/${slug}/`
 export const artistHref = (base: string, name: string): string => `${base}musikk/${slugify(name)}/`
 

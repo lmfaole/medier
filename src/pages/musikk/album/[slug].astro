@@ -1,0 +1,23 @@
+---
+import { AlbumDetail } from '../../../components/detail'
+import Page from '../../../layouts/Page.astro'
+import { albumHref, albumPages, artistHref, trackPages } from '../../../lib/pages'
+import { album, music } from '../../../lib/runtime'
+
+const listening = await music()
+const page = listening === null ? undefined : albumPages(listening).find((one) => one.slug === Astro.params.slug)
+if (listening === null || page === undefined) return Astro.rewrite('/404/')
+const info = await album(page.artist, page.title)
+const played = new Set(trackPages(listening).map((track) => track.slug))
+const base = import.meta.env.BASE_URL
+---
+
+<Page
+  current="music"
+  width="pane"
+  title={page.title}
+  lead={`Album av ${page.artist}`}
+  crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.artist, href: artistHref(base, page.artist) }, { label: page.title, href: albumHref(base, page.artist, page.title) }]}
+>
+  <AlbumDetail page={page} base={base} info={info} played={played} />
+</Page>

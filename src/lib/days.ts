@@ -15,3 +15,21 @@ export function ageOn(born: string, until: string): number | null {
   const years = uy - by - (um < bm || (um === bm && ud < bd) ? 1 : 0)
   return years >= 0 ? years : null
 }
+
+const MONTH_YEAR = new Intl.DateTimeFormat("nb-NO", { month: "long", year: "numeric", timeZone: "UTC" })
+
+/** When something came out, as far as it is known: `2023-05-12` is «12. mai 2023», `2023-05` is «mai 2023» and `2023` is «2023»; anything else is nothing. */
+export function releaseText(released: string): string | null {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(released)) return longDay(released)
+  if (/^\d{4}-\d{2}$/.test(released)) return MONTH_YEAR.format(new Date(`${released}-15T12:00:00Z`))
+  return /^\d{4}$/.test(released) ? released : null
+}
+
+/** A length in seconds as «3:35» (minutes and two-digit seconds), or «1:02:03» when it is an hour or more. */
+export function lengthText(seconds: number): string {
+  const total = Math.round(seconds)
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const rest = String(total % 60).padStart(2, "0")
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}:${rest}` : `${minutes}:${rest}`
+}

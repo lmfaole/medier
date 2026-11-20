@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { authorizeUrl, codeRequest, parseArtistMatch, parseNowPlaying, parseRefreshToken, parseToken, plain, refreshRequest, SCOPE, searchArtistUrl, TOKEN_URL } from "./spotify.ts"
+import { authorizeUrl, codeRequest, parseAlbumMatch, parseArtistMatch, parseTrackMatch, searchAlbumUrl, searchTrackUrl, parseNowPlaying, parseRefreshToken, parseToken, plain, refreshRequest, SCOPE, searchArtistUrl, TOKEN_URL } from "./spotify.ts"
 
 const PLAYING = {
   is_playing: true,
@@ -79,4 +79,29 @@ test("names are compared without case, accents or marks, and searched for by the
   assert.equal(plain("Beyoncé"), "beyonce")
   assert.equal(plain("The Sewing Club"), "thesewingclub")
   assert.equal(searchArtistUrl("Dev Lemons"), "https://api.spotify.com/v1/search?type=artist&limit=10&q=artist%3A%22Dev%20Lemons%22")
+})
+
+const ALBUM = (name: string, artists: string[], over: Record<string, unknown> = {}) => ({ name, artists: artists.map((one) => ({ name: one })), release_date: "2023-05-12", total_tracks: 14, external_urls: { spotify: "https://open.spotify.com/album/a1" }, ...over })
+
+test("an album is the one named the same by the artist asked for (one of several), with its day and its number of tracks", () => {
+  const found = parseAlbumMatch({ albums: { items: [ALBUM("Other", ["Shygirl"]), ALBUM("Nymph", ["Someone", "Shygirl"])] } }, "NYMPH", "shygirl")
+  assert.deepEqual(found, { url: "https://open.spotify.com/album/a1", released: "2023-05-12", tracks: 14 })
+})
+
+test("an album by someone else, with another name, with a link that is not Spotify's or with a date that is no date, is left out or has no date", () => {
+  assert.equal(parseAlbumMatch({ albums: { items: [ALBUM("Nymph", ["Someone Else"])] } }, "Nymph", "Shygirl"), null)
+  assert.equal(parseAlbumMatch({ albums: { items: [ALBUM("Nymph", ["Shygirl"], { external_urls: { spotify: "https://x.com" } })] } }, "Nymph", "Shygirl"), null)
+  assert.deepEqual(parseAlbumMatch({ albums: { items: [ALBUM("Nymph", ["Shygirl"], { release_date: "soon", total_tracks: 0 })] } }, "Nymph", "Shygirl"), { url: "https://open.spotify.com/album/a1", released: null, tracks: null })
+  assert.equal(parseAlbumMatch(null, "Nymph", "Shygirl"), null)
+})
+
+test("a track is the one named the same by the artist asked for, and nothing else", () => {
+  const item = (name: string, artist: string) => ({ name, artists: [{ name: artist }], external_urls: { spotify: "https://open.spotify.com/track/t1" } })
+  assert.deepEqual(parseTrackMatch({ tracks: { items: [item("Submit (Remix)", "Shygirl"), item("Submit", "Shygirl")] } }, "Submit", "Shygirl"), { url: "https://open.spotify.com/track/t1" })
+  assert.equal(parseTrackMatch({ tracks: { items: [item("Submit", "Cover Band")] } }, "Submit", "Shygirl"), null)
+})
+
+test("an album and a track are searched for by both names, in quotes", () => {
+  assert.equal(searchAlbumUrl("Nymph", "Shygirl"), "https://api.spotify.com/v1/search?type=album&limit=10&q=album%3A%22Nymph%22%20artist%3A%22Shygirl%22")
+  assert.equal(searchTrackUrl("Submit", "Shygirl"), "https://api.spotify.com/v1/search?type=track&limit=10&q=track%3A%22Submit%22%20artist%3A%22Shygirl%22")
 })

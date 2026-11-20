@@ -9,6 +9,9 @@ export const AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
 export const SCOPE = "user-read-currently-playing"
 /** The search for one artist by name: ten hits (the most Spotify gives a search in Development Mode), because the first is not always the one (`parseArtistMatch` takes the one that is named the same). */
 export const searchArtistUrl = (name: string): string => `https://api.spotify.com/v1/search?type=artist&limit=10&q=${encodeURIComponent(`artist:"${name}"`)}`
+/** The search for one album, or one track, by its name and its artist's: ten hits, the most Spotify gives (`parseAlbumMatch` and `parseTrackMatch` take the one named the same). */
+export const searchAlbumUrl = (album: string, artist: string): string => `https://api.spotify.com/v1/search?type=album&limit=10&q=${encodeURIComponent(`album:"${album}" artist:"${artist}"`)}`
+export const searchTrackUrl = (track: string, artist: string): string => `https://api.spotify.com/v1/search?type=track&limit=10&q=${encodeURIComponent(`track:"${track}" artist:"${artist}"`)}`
 export const NOW_PLAYING_URL = "https://api.spotify.com/v1/me/player/currently-playing"
 
 export interface NowPlaying {
@@ -103,6 +106,47 @@ export function parseArtistMatch(answer: unknown, name: string): SpotifyArtist |
       return text(found["url"]) !== "" && typeof found["width"] === "number" ? [{ src: text(found["url"]), width: found["width"] }] : []
     })
     return { url, images: images.toSorted((a, b) => a.width - b.width), genres: list(artist["genres"]).flatMap((genre) => (typeof genre === "string" ? [genre] : [])).slice(0, 4) }
+  }
+  return null
+}
+
+/** An album on Spotify: where to open it, when it came out and how many tracks it has. */
+export interface SpotifyAlbum {
+  url: string
+  /** `YYYY-MM-DD`, or `YYYY-MM` or `YYYY` where Spotify only knows that much. */
+  released: string | null
+  tracks: number | null
+}
+
+/** A track on Spotify: where to open it. */
+export interface SpotifyTrack {
+  url: string
+}
+
+const names = (value: unknown): string[] => list(value).map((artist) => text(object(artist)["name"])).filter((name) => name !== "")
+
+/** The album the search found that has the name asked for, by the artist asked for (one of its artists, for an album with several), or `null`. */
+export function parseAlbumMatch(answer: unknown, album: string, artist: string): SpotifyAlbum | null {
+  const wanted = plain(album)
+  if (wanted === "" || plain(artist) === "") return null
+  for (const value of list(object(object(answer)["albums"])["items"])) {
+    const found = object(value)
+    const url = text(object(found["external_urls"])["spotify"])
+    if (plain(text(found["name"])) !== wanted || !names(found["artists"]).some((name) => plain(name) === plain(artist)) || !url.startsWith(SPOTIFY_URL)) continue
+    const released = text(found["release_date"])
+    return { url, released: /^\d{4}(-\d{2}(-\d{2})?)?$/.test(released) ? released : null, tracks: typeof found["total_tracks"] === "number" && found["total_tracks"] > 0 ? found["total_tracks"] : null }
+  }
+  return null
+}
+
+/** The track the search found that has the name asked for, by the artist asked for, or `null`. */
+export function parseTrackMatch(answer: unknown, track: string, artist: string): SpotifyTrack | null {
+  const wanted = plain(track)
+  if (wanted === "" || plain(artist) === "") return null
+  for (const value of list(object(object(answer)["tracks"])["items"])) {
+    const found = object(value)
+    const url = text(object(found["external_urls"])["spotify"])
+    if (plain(text(found["name"])) === wanted && names(found["artists"]).some((name) => plain(name) === plain(artist)) && url.startsWith(SPOTIFY_URL)) return { url }
   }
   return null
 }

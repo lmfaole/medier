@@ -66,12 +66,35 @@ export function parseTopArtists(answer: unknown): TopArtist[] {
     .filter((artist) => artist.name !== "")
 }
 
-/** What Last.fm says of an artist beyond its plays here: what it is tagged as, how many listen, and a few lines about it. */
+/** What Last.fm says of an artist beyond its plays here: what it is tagged as, how many listen, how many times the owner has played it, and a few lines about it. */
 export interface ArtistInfo {
   tags: string[]
   listeners: number | null
+  /** How many times the owner has played it in all (Last.fm counts it when asked with the user's name); `null` where it is not known. */
+  userPlays: number | null
   /** The start of Last.fm's text about it, as plain text (their text is the users', CC BY-SA, with a link back where it is shown). */
   bio: string | null
+}
+
+/** What Last.fm says of a track. */
+export interface TrackInfo {
+  tags: string[]
+  listeners: number | null
+  userPlays: number | null
+  /** How long it is, in seconds. */
+  seconds: number | null
+  /** The start of Last.fm's text about it, plain text; `null` where there is none (most tracks have none). */
+  bio: string | null
+}
+
+/** What Last.fm says of an album, with the tracks it has. */
+export interface AlbumInfo {
+  tags: string[]
+  listeners: number | null
+  userPlays: number | null
+  bio: string | null
+  /** The tracks in order, with their length in seconds where Last.fm has it. */
+  tracks: { title: string; seconds: number | null }[]
 }
 
 const ENTITIES: Record<string, string> = { "&amp;": "&", "&quot;": '"', "&#39;": "'", "&lt;": "<", "&gt;": ">", "&nbsp;": " " }
@@ -84,21 +107,57 @@ export function firstSentences(text: string, limit: number): string {
   return end > limit / 3 ? head.slice(0, end + 1) : `${head.slice(0, head.lastIndexOf(" "))}…`
 }
 
-/** The address that tells Last.fm about an artist: `base` is the one with the key and the user (`sources.ts`). */
-export const artistInfoUrl = (base: string, artist: string): string => `${base}&method=artist.getinfo&autocorrect=1&artist=${encodeURIComponent(artist)}`
+/** A count Last.fm writes as text («1234»): a whole number above nothing, or `null`. */
+const count = (value: unknown): number | null => {
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0 ? number : null
+}
 
-export function parseArtistInfo(answer: unknown): ArtistInfo {
-  const artist = (typeof answer === "object" && answer !== null ? (answer as Record<string, unknown>)["artist"] : null) ?? {}
-  const object = (value: unknown): Record<string, unknown> => (typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : {})
-  const info = object(artist)
-  const tags = (Array.isArray(object(info["tags"])["tag"]) ? (object(info["tags"])["tag"] as unknown[]) : []).flatMap((tag) => {
-    const name = object(tag)["name"]
-    return typeof name === "string" && name !== "" ? [name] : []
-  })
-  const listeners = Number(object(info["stats"])["listeners"])
-  const summary = object(info["bio"])["summary"]
+/** The text of one of Last.fm's wikis (`bio`, `wiki`): what is before its own link and licence line, as plain text, cut at a sentence; `null` for a text that is only the link. */
+function wikiText(wiki: unknown): string | null {
+  const summary = object(wiki)["summary"]
   // The summary ends with a link to Last.fm («Read more on Last.fm») and a licence line: only the text before them is the text.
   const raw = typeof summary === "string" ? summary.split(/<a\s/i)[0] ?? "" : ""
-  const bio = raw.replace(/<[^>]+>/g, "").replace(/&(?:amp|quot|#39|lt|gt|nbsp);/g, (entity) => ENTITIES[entity] ?? entity).replace(/\s+/g, " ").trim()
-  return { tags: tags.slice(0, 4), listeners: Number.isFinite(listeners) && listeners > 0 ? listeners : null, bio: bio.length < 40 ? null : firstSentences(bio, 420) }
+  const text = raw.replace(/<[^>]+>/g, "").replace(/&(?:amp|quot|#39|lt|gt|nbsp);/g, (entity) => ENTITIES[entity] ?? entity).replace(/\s+/g, " ").trim()
+  return text.length < 40 ? null : firstSentences(text, 420)
+}
+
+/** The first tags of what it is tagged as (Last.fm's users'). */
+function tagsOf(value: unknown): string[] {
+  return list(object(value)["tag"]).flatMap((tag) => {
+    const name = object(tag)["name"]
+    return typeof name === "string" && name !== "" ? [name] : []
+  }).slice(0, 4)
+}
+
+/** The address of one of Last.fm's `getinfo` methods: `base` is the one with the key (`sources.ts`), `user` the owner, whose own count Last.fm then adds as `userplaycount`. */
+function infoUrl(base: string, method: string, parts: Record<string, string>, user: string): string {
+  const query = Object.entries(parts).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join("&")
+  return `${base}&method=${method}&autocorrect=1&${query}&username=${encodeURIComponent(user)}`
+}
+
+export const artistInfoUrl = (base: string, artist: string, user: string): string => infoUrl(base, "artist.getinfo", { artist }, user)
+export const trackInfoUrl = (base: string, artist: string, track: string, user: string): string => infoUrl(base, "track.getinfo", { artist, track }, user)
+export const albumInfoUrl = (base: string, artist: string, album: string, user: string): string => infoUrl(base, "album.getinfo", { artist, album }, user)
+
+export function parseArtistInfo(answer: unknown): ArtistInfo {
+  const info = object(object(answer)["artist"])
+  const stats = object(info["stats"])
+  return { tags: tagsOf(info["tags"]), listeners: count(stats["listeners"]), userPlays: count(stats["userplaycount"]), bio: wikiText(info["bio"]) }
+}
+
+export function parseTrackInfo(answer: unknown): TrackInfo {
+  const info = object(object(answer)["track"])
+  const milliseconds = count(info["duration"])
+  return { tags: tagsOf(info["toptags"]), listeners: count(info["listeners"]), userPlays: count(info["userplaycount"]), seconds: milliseconds === null ? null : Math.round(milliseconds / 1000), bio: wikiText(info["wiki"]) }
+}
+
+export function parseAlbumInfo(answer: unknown): AlbumInfo {
+  const info = object(object(answer)["album"])
+  const tracks = list(object(info["tracks"])["track"]).flatMap((value) => {
+    const track = object(value)
+    const title = typeof track["name"] === "string" ? track["name"].trim() : ""
+    return title === "" ? [] : [{ title, seconds: count(track["duration"]) }]
+  })
+  return { tags: tagsOf(info["tags"]), listeners: count(info["listeners"]), userPlays: count(info["userplaycount"]), bio: wikiText(info["wiki"]), tracks }
 }

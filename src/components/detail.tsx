@@ -7,14 +7,14 @@ import { details, PictureRows } from "@lmfaole/designsystem/components/picture-r
 import { Rows } from "@lmfaole/designsystem/components/rows"
 import { Text, TextLink } from "@lmfaole/designsystem/components/text"
 
-import type { ArtistInfo } from "../lib/lastfm.ts"
+import type { AlbumInfo, ArtistInfo, TrackInfo } from "../lib/lastfm.ts"
 import { firstSentences } from "../lib/lastfm.ts"
-import { type Appearance, type ArtistPage, personHref, titleHref, type TitlePage } from "../lib/pages.ts"
-import type { SpotifyArtist } from "../lib/spotify.ts"
+import { type AlbumPage, type Appearance, type ArtistPage, artistHref, albumHref, personHref, titleHref, type TitlePage, type TrackPage, trackSlug, trackHref } from "../lib/pages.ts"
+import type { SpotifyAlbum, SpotifyArtist, SpotifyTrack } from "../lib/spotify.ts"
 import { sourcesOf } from "../lib/image-sources.ts"
 import { type Person, profileSources } from "../lib/tmdb.ts"
 import { episodesCode } from "../lib/trakt.ts"
-import { ageOn, longDay } from "../lib/days.ts"
+import { ageOn, lengthText, longDay, releaseText } from "../lib/days.ts"
 import { shortWhen } from "../lib/when.ts"
 import { FromSpotify } from "./credits.tsx"
 import { PlayRows } from "./sections.tsx"
@@ -97,6 +97,7 @@ export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: str
         facts={[
           ["Sjangere", genres.length === 0 ? null : genres.join(", ")],
           ["Lyttere på Last.fm", lastfm?.listeners == null ? null : lastfm.listeners.toLocaleString("nb-NO")],
+          ["Spilt av meg totalt", lastfm?.userPlays == null ? null : count(lastfm.userPlays, "gang", "ganger")],
           ["Mest spilt siste måned", page.top === null ? null : `Nr. ${page.top.rank}, ${count(page.top.plays, "avspilling", "avspillinger")}`],
           ["Blant de siste avspillingene", page.plays.length === 0 ? "Ingen" : count(page.plays.length, "gang", "ganger")],
         ]}
@@ -162,6 +163,122 @@ export function PersonDetail({ id, person, found, base }: { id: number; person: 
         />
       </PageSection>
       <LinkButton href={`https://www.themoviedb.org/person/${id}`} external>Åpne på TMDB</LinkButton>
+    </Split>
+  )
+}
+
+/** The facts the pages of an album and of a track share: their cover leads, and the facts follow. `cover` is Last.fm's, so no attribution is needed for it. */
+function Cover({ image }: { image: string | null }) {
+  // The picture that leads the page: fetched first, at the width it is drawn.
+  return <Picture src={null} sources={sourcesOf(image)} priority ratio="square" size="hero" />
+}
+
+const tagsText = (tags: readonly string[]): string | null => (tags.length === 0 ? null : tags.join(", "))
+const listeners = (n: number | null | undefined): string | null => (n == null ? null : n.toLocaleString("nb-NO"))
+
+/** The ways out of a page of music: Last.fm, and Spotify where the search found it. */
+function MusicLinks({ lastfm, spotify }: { lastfm: string; spotify: string | null }) {
+  return (
+    <Stack gap="sm">
+      <LinkButton href={lastfm} external>Åpne på Last.fm</LinkButton>
+      {spotify === null ? null : <LinkButton href={spotify} external>Åpne i Spotify</LinkButton>}
+    </Stack>
+  )
+}
+
+/**
+ * A track: its cover, who made it and from what, how long it is and how often it has been played, its plays here, and last the ways to it on Last.fm and Spotify. The facts and the text are
+ * Last.fm's (its text is the users', CC BY-SA, with the link back where it is shown); from Spotify there is only the link to it.
+ */
+export function TrackDetail({ page, base, info }: { page: TrackPage; base: string; info: { lastfm: TrackInfo | null; spotify: SpotifyTrack | null } }) {
+  const { lastfm, spotify } = info
+  const rail = (
+    <Stack gap="lg">
+      <Cover image={page.image} />
+      <FactList
+        facts={[
+          ["Artist", <TextLink href={artistHref(base, page.artist)}>{page.artist}</TextLink>],
+          ["Album", page.album === null ? null : <TextLink href={albumHref(base, page.artist, page.album)}>{page.album}</TextLink>],
+          ["Lengde", lastfm?.seconds == null ? null : lengthText(lastfm.seconds)],
+          ["Sjangere", tagsText(lastfm?.tags ?? [])],
+          ["Lyttere på Last.fm", listeners(lastfm?.listeners)],
+          ["Spilt av meg totalt", lastfm?.userPlays == null ? null : count(lastfm.userPlays, "gang", "ganger")],
+          ["Blant de siste avspillingene", count(page.plays.length, "gang", "ganger")],
+        ]}
+      />
+    </Stack>
+  )
+  return (
+    <Split rail={rail}>
+      {lastfm?.bio == null ? null : (
+        <PageSection id="om" title="Om låten">
+          <Text>{lastfm.bio}</Text>
+          <Text size="sm" tone="muted">
+            Tekst fra <TextLink href={page.url} external>Last.fm</TextLink>, brukernes egen (CC BY-SA).
+          </Text>
+        </PageSection>
+      )}
+      <PageSection id="siste" title="Siste avspillinger">
+        <PlayRows plays={page.plays} base={base} artistLinks={false} trackLinks={false} />
+      </PageSection>
+      <MusicLinks lastfm={page.url} spotify={spotify?.url ?? null} />
+    </Split>
+  )
+}
+
+/**
+ * An album: its cover, who made it, when it came out and how many tracks it has, the tracks in order (each links to its page where it has been played), the plays from it here, and last the ways
+ * to it on Last.fm and Spotify. The day and the number of tracks are Spotify's, so they carry its mark and the link back; the rest is Last.fm's.
+ */
+export function AlbumDetail({ page, base, info, played }: { page: AlbumPage; base: string; info: { lastfm: AlbumInfo | null; spotify: SpotifyAlbum | null }; /** The slugs of the tracks that have a page. */ played: ReadonlySet<string> }) {
+  const { lastfm, spotify } = info
+  const released = spotify?.released == null ? null : releaseText(spotify.released)
+  const tracks = lastfm?.tracks ?? []
+  const fromSpotify = released !== null || spotify?.tracks != null
+  const rail = (
+    <Stack gap="lg">
+      <Cover image={page.image} />
+      <FactList
+        facts={[
+          ["Artist", <TextLink href={artistHref(base, page.artist)}>{page.artist}</TextLink>],
+          ["Utgitt", released],
+          ["Spor", spotify?.tracks != null ? String(spotify.tracks) : tracks.length === 0 ? null : String(tracks.length)],
+          ["Sjangere", tagsText(lastfm?.tags ?? [])],
+          ["Lyttere på Last.fm", listeners(lastfm?.listeners)],
+          ["Spilt av meg totalt", lastfm?.userPlays == null ? null : count(lastfm.userPlays, "gang", "ganger")],
+          ["Blant de siste avspillingene", count(page.plays.length, "gang", "ganger")],
+        ]}
+      />
+      {fromSpotify ? <FromSpotify /> : null}
+    </Stack>
+  )
+  return (
+    <Split rail={rail}>
+      {lastfm?.bio == null ? null : (
+        <PageSection id="om" title="Om albumet">
+          <Text>{lastfm.bio}</Text>
+          <Text size="sm" tone="muted">
+            Tekst fra <TextLink href={page.url} external>Last.fm</TextLink>, brukernes egen (CC BY-SA).
+          </Text>
+        </PageSection>
+      )}
+      {tracks.length === 0 ? null : (
+        <PageSection id="spor" title="Spor">
+          <Rows
+            lead="rank"
+            columns={{ name: "Spor", value: "Lengde" }}
+            rows={tracks.map((track, index) => ({
+              key: `${index}-${track.title}`,
+              body: played.has(trackSlug(page.artist, track.title)) ? <TextLink href={trackHref(base, page.artist, track.title)}>{track.title}</TextLink> : track.title,
+              trailing: <Text as="span" size="sm" tone="muted" numeric>{track.seconds === null ? "" : lengthText(track.seconds)}</Text>,
+            }))}
+          />
+        </PageSection>
+      )}
+      <PageSection id="siste" title="Siste avspillinger">
+        <PlayRows plays={page.plays} base={base} artistLinks={false} albumLinks={false} />
+      </PageSection>
+      <MusicLinks lastfm={page.url} spotify={spotify?.url ?? null} />
     </Split>
   )
 }

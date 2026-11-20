@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { type Env, type Get, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, loadPerson, loadWatched, MAX_POSTER_LOOKUPS, settle, TTL } from "./sources.ts"
+import { type Env, type Get, loadAlbum, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, loadPerson, loadTrack, loadWatched, MAX_POSTER_LOOKUPS, settle, TTL } from "./sources.ts"
 
 /** A `get` that answers from a table by the start of the address and remembers what was asked. */
 function fake(answers: Record<string, unknown>, hits = new Set<string>()): { get: Get; asked: { url: string; ttl: number; method: string | undefined }[] } {
@@ -161,4 +161,46 @@ test("a person is asked for by TMDB's id and read; without a key, or for someone
   assert.equal(await loadPerson({}, get, 7), null)
   assert.equal(asked.length, 2)
   assert.ok(asked[0]?.startsWith("https://api.themoviedb.org/3/person/7?language=nb-NO"))
+})
+
+/** A `get` for album and track pages: Last.fm's info, Spotify's token and a search that finds what is asked for unless `missing`. */
+function musicGet(over: { lastfm?: unknown; missing?: boolean } = {}): { get: Get; asked: string[] } {
+  const asked: string[] = []
+  const get: Get = async (url, request) => {
+    asked.push(url)
+    if (request.method === "POST") return { data: { access_token: "tok" }, hit: false }
+    if (url.startsWith("https://ws.audioscrobbler.com/")) {
+      if (over.lastfm === "down") throw new Error("down")
+      return { data: url.includes("track.getinfo") ? { track: { duration: "200000", listeners: "10", userplaycount: "4" } } : { album: { listeners: "5", userplaycount: "2", tracks: { track: [{ name: "One", duration: "100" }] } } }, hit: false }
+    }
+    if (over.missing === true) return { data: { albums: { items: [] }, tracks: { items: [] } }, hit: false }
+    return { data: { albums: { items: [{ name: "LP", artists: [{ name: "Band" }], release_date: "2023-01-02", total_tracks: 9, external_urls: { spotify: "https://open.spotify.com/album/z" } }] }, tracks: { items: [{ name: "Song", artists: [{ name: "Band" }], external_urls: { spotify: "https://open.spotify.com/track/s" } }] } }, hit: false }
+  }
+  return { get, asked }
+}
+
+test("an album's page has Last.fm's info for it and Spotify's day, tracks and link, each asked for by artist and name", async () => {
+  const { get, asked } = musicGet()
+  const got = await loadAlbum(SPOTIFY, get, "Band", "LP")
+  assert.equal(got.lastfm?.userPlays, 2)
+  assert.deepEqual(got.lastfm?.tracks, [{ title: "One", seconds: 100 }])
+  assert.deepEqual(got.spotify, { url: "https://open.spotify.com/album/z", released: "2023-01-02", tracks: 9 })
+  assert.ok(asked.some((url) => url.includes("album.getinfo") && url.includes("artist=Band") && url.includes("album=LP") && url.includes("username=u")))
+})
+
+test("a track's page has Last.fm's length and count and Spotify's link; a source that fails leaves out only its own part", async () => {
+  const both = await loadTrack(SPOTIFY, musicGet().get, "Band", "Song")
+  assert.equal(both.lastfm?.seconds, 200)
+  assert.equal(both.spotify?.url, "https://open.spotify.com/track/s")
+  const noLastfm = await loadTrack(SPOTIFY, musicGet({ lastfm: "down" }).get, "Band", "Song")
+  assert.equal(noLastfm.lastfm, null)
+  assert.equal(noLastfm.spotify?.url, "https://open.spotify.com/track/s")
+})
+
+test("an album or a track Spotify does not know, or with Spotify not set up, has no Spotify part and the rest is there", async () => {
+  assert.equal((await loadAlbum(SPOTIFY, musicGet({ missing: true }).get, "Band", "LP")).spotify, null)
+  const noSpotify = await loadTrack({ LASTFM_API_KEY: "k", LASTFM_USER: "u" }, musicGet().get, "Band", "Song")
+  assert.equal(noSpotify.spotify, null)
+  assert.equal(noSpotify.lastfm?.userPlays, 4)
+  assert.deepEqual(await loadAlbum({}, musicGet().get, "Band", "LP"), { lastfm: null, spotify: null })
 })
