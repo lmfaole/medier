@@ -2,11 +2,12 @@ import { FactList } from "@lmfaole/designsystem/components/fact-list"
 import { LinkButton } from "@lmfaole/designsystem/components/link-button"
 import { Split, Stack } from "@lmfaole/designsystem/components/layout"
 import { PageSection } from "@lmfaole/designsystem/components/page-section"
+import { RankedRows } from "@lmfaole/designsystem/components/ranked-rows"
 import { details, PictureRows } from "@lmfaole/designsystem/components/picture-rows"
 import { Rows } from "@lmfaole/designsystem/components/rows"
 import { Text, TextLink } from "@lmfaole/designsystem/components/text"
 
-import type { AlbumInfo, ArtistInfo, TrackInfo } from "../lib/lastfm.ts"
+import type { AlbumInfo, ArtistAlbum, ArtistInfo, TrackInfo } from "../lib/lastfm.ts"
 import { firstSentences } from "../lib/lastfm.ts"
 import { type AlbumPage, type Appearance, type ArtistPage, artistHref, albumHref, personHref, titleHref, type TitlePage, type TrackPage, trackSlug, trackHref } from "../lib/pages.ts"
 import type { SpotifyAlbum, SpotifyArtist, SpotifyTrack } from "../lib/spotify.ts"
@@ -19,6 +20,8 @@ import { shortWhen } from "../lib/when.ts"
 import { FromSpotify } from "./credits.tsx"
 import { PlayRows } from "./sections.tsx"
 
+/** A big count in few characters: «5,1 mill.» from a million, the whole number («320 000») below. */
+const compactCount = (n: number): string => (n >= 1_000_000 ? new Intl.NumberFormat("nb-NO", { notation: "compact", maximumFractionDigits: 1 }).format(n) : n.toLocaleString("nb-NO"))
 const count = (n: number, one: string, many: string): string => `${n.toLocaleString("nb-NO")} ${n === 1 ? one : many}`
 
 /** A film's length as «2 t 50 min»; under an hour just the minutes. */
@@ -80,8 +83,10 @@ export function TitleDetail({ page, base }: { page: TitlePage; base: string }) {
  * An artist: its picture and what is known of it, its place among the month's most played, its recent plays, and last the ways to it on Last.fm and Spotify. The picture and the
  * link to it are Spotify's; the tags, the listeners and the text are Last.fm's (its text is the users', CC BY-SA, with the link back where it is shown).
  */
-export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null } }) {
-  const { lastfm, spotify } = info
+export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[] } }) {
+  const { lastfm, spotify, albums } = info
+  // The albums among the recent plays have a page of their own here; the others are only named.
+  const played = new Set(page.plays.map((play) => play.album))
   const genres = lastfm !== null && lastfm.tags.length > 0 ? lastfm.tags : (spotify?.genres ?? [])
   const rail = (
     <Stack gap="lg">
@@ -103,6 +108,24 @@ export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: str
           <Text>{lastfm.bio}</Text>
           <Text size="sm" tone="muted">
             Tekst fra <TextLink href={page.url} external>Last.fm</TextLink>, brukernes egen (CC BY-SA).
+          </Text>
+        </PageSection>
+      )}
+      {albums.length === 0 ? null : (
+        <PageSection id="album" title="Album">
+          <RankedRows
+            {...SHAPES.album}
+            rows={albums.map((album) => ({
+              key: album.title,
+              sources: sourcesOf(album.image),
+              title: played.has(album.title) ? <TextLink href={albumHref(base, page.name, album.title)}>{album.title}</TextLink> : album.title,
+              detail: played.has(album.title) ? "Spilt av meg nylig" : null,
+              value: `${compactCount(album.plays)} avspillinger`,
+              amount: album.plays,
+            }))}
+          />
+          <Text size="sm" tone="muted">
+            De mest spilte albumene på <TextLink href={page.url} external>Last.fm</TextLink>, etter avspillinger der.
           </Text>
         </PageSection>
       )}

@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { albumInfoUrl, artistChartUrl, artistInfoUrl, parseArtistChart, parseRecentPage, playsInRangeUrl, firstSentences, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopArtists, parseTrackInfo, trackInfoUrl } from "./lastfm.ts"
+import { albumInfoUrl, artistChartUrl, artistInfoUrl, parseArtistChart, parseRecentPage, parseTopAlbums, artistTopAlbumsUrl, playsInRangeUrl, firstSentences, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopArtists, parseTrackInfo, trackInfoUrl } from "./lastfm.ts"
 
 test("recent tracks: a played one has its time, the one playing now has none, an empty cover is null and a broken row is left out", () => {
   const plays = parseRecentTracks({
@@ -98,4 +98,28 @@ test("a week's chart has each artist's plays and place; one with no name or no c
 test("a range is asked for by unix seconds with the end left out, and a chart by both ends", () => {
   assert.equal(playsInRangeUrl("https://x/?k=1", 100, 200, 3), "https://x/?k=1&method=user.getrecenttracks&from=100&to=199&limit=200&page=3")
   assert.equal(artistChartUrl("https://x/?k=1", 100, 200), "https://x/?k=1&method=user.getweeklyartistchart&from=100&to=200")
+})
+
+test("an artist's albums: most played first, with no nameless ones, no repeats, and none without plays", () => {
+  const albums = parseTopAlbums({
+    topalbums: {
+      album: [
+        { name: "(null)", playcount: "900", url: "u0", image: [] },
+        { name: "Small", playcount: "10", url: "u1", image: [{ "#text": "s.jpg" }, { "#text": "l.jpg" }] },
+        { name: "Big", playcount: "5000", url: "u2", image: [{ "#text": "b.jpg" }] },
+        { name: "big", playcount: "4000", url: "u3", image: [] },
+        { name: "None", playcount: "0", url: "u4", image: [] },
+        { name: "Broken", playcount: "x", url: "u5", image: [] },
+      ],
+    },
+  })
+  assert.deepEqual(albums.map((album) => album.title), ["Big", "Small"])
+  assert.equal(albums[0]?.plays, 5000)
+  assert.equal(albums[1]?.image, "l.jpg")
+  assert.deepEqual(parseTopAlbums({}), [])
+  assert.equal(parseTopAlbums({ topalbums: { album: Array.from({ length: 30 }, (_, index) => ({ name: `A${index}`, playcount: String(index + 1), url: "u", image: [] })) } }, 5).length, 5)
+})
+
+test("the address of an artist's albums names the artist, escaped", () => {
+  assert.equal(artistTopAlbumsUrl("https://x/?k=1", "Years & Years"), "https://x/?k=1&method=artist.gettopalbums&autocorrect=1&artist=Years%20%26%20Years&limit=24")
 })

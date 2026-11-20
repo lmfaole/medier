@@ -3,7 +3,7 @@
  * is quick and the sources are asked little. Pure: the asking is done by the `get` that is passed in (`runtime.ts`), so a test hands it a fake one.
  */
 
-import { type AlbumInfo, albumInfoUrl, type ArtistInfo, artistInfoUrl, type Music, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopArtists, parseTrackInfo, type TrackInfo, trackInfoUrl } from "./lastfm.ts"
+import { type AlbumInfo, albumInfoUrl, type ArtistAlbum, type ArtistInfo, artistInfoUrl, artistTopAlbumsUrl, type Music, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopAlbums, parseTopArtists, parseTrackInfo, type TrackInfo, trackInfoUrl } from "./lastfm.ts"
 import { type NowPlaying, NOW_PLAYING_URL, parseAlbumMatch, parseArtistMatch, parseNowPlaying, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl, type SpotifyAlbum, type SpotifyArtist, type SpotifyTrack } from "./spotify.ts"
 import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, type Person, personUrl, type TitleInfo } from "./tmdb.ts"
 import { mergeHistory, parseHistory, type Watch, type Watched } from "./trakt.ts"
@@ -154,14 +154,15 @@ async function spotifyArtist(token: string, name: string, get: Get): Promise<{ a
   }
 }
 
-/** What an artist's page shows beyond its plays: Last.fm's tags, listeners and text, and Spotify's picture; each leaves out only itself when it fails. */
-export async function loadArtist(env: Env, get: Get, name: string): Promise<{ lastfm: ArtistInfo | null; spotify: SpotifyArtist | null }> {
+/** What an artist's page shows beyond its plays: Last.fm's tags, listeners, text and most played albums, and Spotify's picture; each leaves out only itself when it fails. */
+export async function loadArtist(env: Env, get: Get, name: string): Promise<{ lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[] }> {
   const base = lastfmBase(env)
-  const [lastfm, spotify] = await Promise.all([
+  const [lastfm, spotify, albums] = await Promise.all([
     base === null ? null : settle(get(artistInfoUrl(base, name, setting(env, "LASTFM_USER")), { ttl: TTL.artist })).then((answer) => (answer === null ? null : parseArtistInfo(answer.data))),
     spotifyToken(env, get).then((token) => (token === null ? null : spotifyArtist(token, name, get).then((found) => found.artist))).catch(() => null),
+    base === null ? [] : settle(get(artistTopAlbumsUrl(base, name), { ttl: TTL.artist })).then((answer) => (answer === null ? [] : parseTopAlbums(answer.data))),
   ])
-  return { lastfm, spotify }
+  return { lastfm, spotify, albums }
 }
 
 /** Last.fm's answer for an address, read; `null` where Last.fm is not set up or did not answer: the rest of the page is there. */

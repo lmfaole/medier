@@ -206,3 +206,32 @@ export const playsInRangeUrl = (base: string, from: number, to: number, page: nu
 export const artistChartUrl = (base: string, from: number, to: number): string => `${base}&method=user.getweeklyartistchart&from=${from}&to=${to}`
 /** The same question with one play to a page: Last.fm still says how many there are in all, which is all a trend needs. */
 export const playsTotalUrl = (base: string, from: number, to: number): string => `${base}&method=user.getrecenttracks&from=${from}&to=${to - 1}&limit=1&page=1`
+
+/** One of an artist's albums as Last.fm ranks them: its name, how many plays it has on Last.fm in all, and its cover. */
+export interface ArtistAlbum {
+  title: string
+  plays: number
+  image: string | null
+  url: string
+}
+
+/**
+ * The most played albums of an artist (`artist.gettopalbums`), most first: Last.fm lists some with no name («(null)») and the same album twice under different spellings, which are left out; at most `limit`.
+ * What Last.fm has no plays for is not ranked.
+ */
+export function parseTopAlbums(answer: unknown, limit = 8): ArtistAlbum[] {
+  const seen = new Set<string>()
+  const albums: ArtistAlbum[] = []
+  for (const value of list(object(object(answer)["topalbums"])["album"])) {
+    const album = object(value)
+    const title = text(album["name"]).trim()
+    const plays = Number(text(album["playcount"]))
+    const key = title.toLowerCase()
+    if (title === "" || title === "(null)" || !Number.isFinite(plays) || plays <= 0 || seen.has(key)) continue
+    seen.add(key)
+    albums.push({ title, plays, image: largest(album["image"]), url: text(album["url"]) })
+  }
+  return albums.sort((a, b) => b.plays - a.plays).slice(0, limit)
+}
+
+export const artistTopAlbumsUrl = (base: string, artist: string): string => `${base}&method=artist.gettopalbums&autocorrect=1&artist=${encodeURIComponent(artist)}&limit=24`
