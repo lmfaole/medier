@@ -1,6 +1,8 @@
 ---
 import Period from '../../components/Period.astro'
+import { Head } from '../../components/head'
 import { OtherPeriods, PeriodChips } from '../../components/wrapped'
+import { sourcesOf } from '../../lib/image-sources'
 import Page from '../../layouts/Page.astro'
 import { monthAt, monthRange, monthShort, monthText, monthTitle, parseMonth, recentMonths } from '../../lib/months'
 import { albumPages, artistPages, titlePages, trackPages } from '../../lib/pages'
@@ -26,11 +28,13 @@ const links = {
 const current = monthAt(now).id
 const months = recentMonths(now, 12).map((one) => ({ key: one.id, label: `${monthTitle(one)}${one.id === current ? ' (så langt)' : ''}`, range: monthRange(one), href: `${base}maned/${one.id}/` }))
 const complete = now >= month.end * 1000
+const topAlbum = data.music?.stats.topAlbums[0]
 const span = monthsUpTo(month, TREND_LENGTH).map((one) => ({ id: one.id, start: one.start, end: one.end, label: monthShort(one) }))
 const days = dayColumns(data.music?.stats.byDate ?? {}, month.first, month.days)
 ---
 
-<Page current="week" width="reading" title={monthTitle(month)} lead={`${monthRange(month)}${complete ? '' : ' · så langt'}`} crumbs={[{ label: 'Medier', href: base }, { label: monthTitle(month), href: `${base}maned/${month.id}/` }]}>
+<Page bare current="week" width="reading" title={monthTitle(month)} lead={`${monthRange(month)}${complete ? '' : ' · så langt'}`} crumbs={[{ label: 'Medier', href: base }, { label: monthTitle(month), href: `${base}maned/${month.id}/` }]}>
+  <Head client:idle kind="Wrapped" title={monthTitle(month)} sources={sourcesOf(topAlbum?.image ?? null)} shape="album" lines={[`${monthRange(month)}${complete ? '' : ' · så langt'}`, ...(topAlbum === undefined ? [] : [`Mest spilt: ${topAlbum.title}, ${topAlbum.artist}`])]} />
   <PeriodChips current="month" weekHref={`${base}uke/`} monthHref={`${base}maned/`} />
   <TrendSection server:defer periods={span} title={`Siste ${TREND_LENGTH} måneder`} description={`Avspillinger per måned, til og med ${monthText(month)}.`} ariaLabel="Avspillinger per måned" />
   {days.some((one) => one.value > 0) && <PlaysChart client:visible title="Dag for dag" description={`Avspillinger per dag i ${monthText(month)}.`} ariaLabel="Avspillinger per dag" columns={days} labelEvery={5} />}

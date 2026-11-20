@@ -11,7 +11,7 @@ const MISSES = 2
 
 /**
  * What plays now, and it keeps up: the card is asked for again every fifteen seconds while the page is open and visible (nothing is asked while the tab is hidden, and it asks at once when it is back),
- * and a new song changes it. The region is on the page before anything plays, so a screen reader is told when a song starts or changes, politely (WCAG 4.1.3). An island: `client:load`.
+ * and a new song changes it: the card is given the new song (not made again), so the disc takes the new cover and the colours of its stage go over to the cover's in one move. The region is on the page before anything plays, so a screen reader is told when a song starts or changes, politely (WCAG 4.1.3). An island: `client:load`.
  */
 export function NowPlayingLive({ initial, endpoint }: { initial: Playing | null; endpoint: string }) {
   const [now, setNow] = useState<Playing | null>(initial)
@@ -60,5 +60,5 @@ export function NowPlayingLive({ initial, endpoint }: { initial: Playing | null;
     }
   }, [endpoint])
 
-  return <LiveRegion>{now === null ? null : <NowPlayingSection key={`${now.artist}-${now.track}`} now={now} />}</LiveRegion>
+  return <LiveRegion>{now === null ? null : <NowPlayingSection now={now} />}</LiveRegion>
 }
