@@ -132,7 +132,7 @@ function NewArtists({ names, links, base }: { names: readonly { name: string; pl
   return (
     <PageSection id="nye" title="Nye artister" icon="new">
       {names.length === 0 ? (
-        <EmptyState title="Ingen nye blant de mest spilte" description="Alle hadde jeg spilt før." />
+        <EmptyState title="Ingen nye blant de mest spilte" description="Alle artistene du spilte mest hadde du hørt på før." />
       ) : (
         <Rows
           columns={{ name: "Artist", value: "Avspillinger" }}
@@ -157,7 +157,7 @@ function Watched({ stats, links, base }: { stats: WatchStats; links: Linkable; b
   return (
     <PageSection id="film-og-tv" title="Film og TV" icon="film">
       {nothing ? (
-        <EmptyState title="Ingenting sett i perioden" />
+        <EmptyState icon="film" title="Ingenting sett i perioden" description="Filmer og episoder du markerer som sett på Trakt i perioden, telles her." action={{ href: `${base}film-og-tv/`, label: "Se det du har sett sist" }} />
       ) : (
         <Stack gap="lg">
           <FactList facts={[["Filmer", number(stats.films)], ["Episoder", number(stats.episodes)]]} />
@@ -231,7 +231,7 @@ export function PeriodView({ data, links, base, previous, part }: { data: Period
     if (music === null) return null
     return music.stats.total === 0 ? (
       <PageSection id="tall" title="Tall" icon="chart">
-        <EmptyState icon="music" title="Ingen avspillinger i perioden" />
+        <EmptyState icon="music" title="Ingen avspillinger i perioden" description="Oppsummeringen lages av det Last.fm førte opp i perioden. Velg en annen periode, eller se det du har hørt på sist." action={{ href: `${base}musikk/`, label: "Se de siste avspillingene" }} />
       </PageSection>
     ) : (
       <Numbers stats={music.stats} previousTotal={music.previousTotal} previous={previous} truncated={music.truncated} />

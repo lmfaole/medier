@@ -5,10 +5,13 @@ Hva du hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaol
 
 ## How it works
 
-- **Whose data.** The visitor's own: they give their Last.fm and Trakt usernames in a form (`src/components/username-form.tsx`, posted to `src/pages/api/brukernavn.ts`, no JS needed), which checks each with its
+- **Whose data.** The visitor's own: they give their Last.fm and Trakt usernames in a form (the design system's `UsernameForm`, in `src/components/UsernameGate.astro`, posted to `src/pages/api/brukernavn.ts`, no JS needed), which checks each with its
   service (Last.fm's `user.getinfo`; Trakt's profile, which must be public) and keeps it in a cookie for a year (`lastfm_user`, `trakt_user`; path `/`, `SameSite=Lax`, `Secure`, `HttpOnly`). An empty field forgets it.
   Without a username a page shows the form instead of data: Musikk and its pages need Last.fm, Film og TV and its pages Trakt, and the front page, Historikk and Wrapped show what has a username and ask for the rest.
-  «Viser data for … · Bytt» at the foot of every page leads to `/brukernavn/`. Only public data is shown: the site's keys are used, never a sign-in of the visitor's. The Worker has no username of its own.
+  «Viser data for … · Bytt» at the foot of every page leads to `/brukernavn/`.
+- **The first visit.** Historikk, Musikk and Film og TV each have a short intro (`IntroCallout`, the texts in `src/lib/onboarding.ts`), Historikk has «Nytt» in the navigation until
+  `NEW_HISTORIKK.until` or until it is opened, and the front page offers to install the app (`InstallPrompt`). What has been dismissed is kept in the design system's `seen` cookie
+  (path `/`), read by the server so nothing flashes; an intro is never shown where the page shows the username form instead. An empty list says why and what to do about it (`EmptyState` with one action). Only public data is shown: the site's keys are used, never a sign-in of the visitor's. The Worker has no username of its own.
   Every page is `Cache-Control: private` with `Vary: Cookie` (`src/middleware.ts`), the Worker's cache is keyed by the address (which has the username in it), and the service worker keeps one visitor's pages at a time.
 - A page asks its sources when it is asked for: Last.fm (plays and what plays now), Trakt (viewings), TMDB (posters) and Spotify (artists' pictures and links, found by name). Each answer is kept in the Worker's cache for a short while
   (`TTL` in `src/lib/sources.ts`: 15 s for what plays now, a minute for the plays, five minutes for the viewings, a month for a poster), so a page is quick and the sources are asked little.

@@ -1,8 +1,8 @@
 ---
 // The form a page shows in place of the data it has no username for: the services it needs, filled in with what the visitor has, back to this page when sent.
 import { usersOf } from '../lib/runtime'
-import { backWithoutError, formError, type Service } from '../lib/users'
-import { FORM_BODY, UsernameForm, usernameFields } from './username-form'
+import { UsernameForm } from '@lmfaole/designsystem/components/username-form'
+import { backWithoutError, FORM_BODY, formError, type Service, usernameFields } from '../lib/users'
 
 interface Props {
   services: Service[]

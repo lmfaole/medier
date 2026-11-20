@@ -25,7 +25,7 @@ export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = 
     ...plays.map((play) => ({ key: `${play.playedAt}-${play.url}`, artist: play.artist, track: play.track, album: play.album, image: play.image, aside: play.playedAt === null ? "Spilles nå" : shortWhen(play.playedAt), live: play.playedAt === null, played: play.playedAt !== null })),
   ]
   const shown = limit === undefined ? rows : rows.slice(0, limit)
-  if (shown.length === 0) return <EmptyState icon="music" title="Ingen avspillinger å vise" description="Last.fm svarte ikke, eller har ingen avspillinger ennå." />
+  if (shown.length === 0) return <EmptyState icon="music" title="Ingen avspillinger ennå" description="Last.fm fører opp det du hører på når en spiller (Spotify, Apple Music eller andre) er koblet til kontoen. Det kan også være at Last.fm ikke svarte akkurat nå." action={{ href: "https://www.last.fm/about/trackmymusic", label: "Koble til en spiller" }} />
   const known = new Set(plays.map((play) => play.artist))
   return (
     <PictureRows
@@ -91,7 +91,7 @@ export function WatchRows({ items, base, limit }: { items: readonly Watch[]; bas
   // Each viewing's page: the film's, or the show's for an episode.
   const pageOf = new Map(titlePages(items).flatMap((page) => page.viewings.map((watch) => [String(watch.id), page.slug] as const)))
   const shown = limit === undefined ? rows : rows.slice(0, limit)
-  if (shown.length === 0) return <EmptyState icon="film" title="Ingenting å vise" description="Trakt svarte ikke, eller har ingenting sett ennå." />
+  if (shown.length === 0) return <EmptyState icon="film" title="Ingenting sett ennå" description="Det du markerer som sett på Trakt, eller som en tilkoblet strømmetjeneste fører opp der, dukker opp her. Det kan også være at Trakt ikke svarte akkurat nå." action={{ href: "https://trakt.tv/", label: "Marker noe som sett på Trakt" }} />
   return (
     <PictureRows
       ratio="poster"

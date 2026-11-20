@@ -1,4 +1,6 @@
 ---
+import Intro from '../../components/Intro.astro'
+import { INTROS } from '../../lib/onboarding'
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
 
 import { Fetched, WatchRows } from '../../components/sections'
@@ -17,6 +19,7 @@ const seen = users.trakt === null ? null : await watched(users)
       <UsernameGate services={['trakt']} />
     ) : (
       <>
+        <Intro intro={INTROS.film} />
         <PageSection id="sett" title="Sist sett">
           <WatchRows items={seen?.items ?? []} base={base} />
         </PageSection>

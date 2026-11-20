@@ -1,4 +1,7 @@
 ---
+import { MarkSeen } from '@lmfaole/designsystem/components/mark-seen'
+import Intro from '../../components/Intro.astro'
+import { INTROS, NEW_HISTORIKK, SEEN_PATH } from '../../lib/onboarding'
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
 
 import { HistoryTimeline, Sessions } from '../../components/history'
@@ -26,6 +29,7 @@ const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, 
   {
     missing.length < 2 && (
       <>
+        <Intro intro={INTROS.historikk} />
         <PageSection id="okter" title="Lytte- og titteøkter" icon="listen">
           <Sessions plays={plays} watches={watches} now={now} playing={playing} />
         </PageSection>
@@ -37,4 +41,5 @@ const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, 
       </>
     )
   }
+  <MarkSeen client:idle id={NEW_HISTORIKK.id} cookiePath={SEEN_PATH} />
 </Page>

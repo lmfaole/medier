@@ -1,4 +1,6 @@
 ---
+import Intro from '../../components/Intro.astro'
+import { INTROS } from '../../lib/onboarding'
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
 
 import { Fetched, PlayRows, TopArtistRows } from '../../components/sections'
@@ -19,6 +21,7 @@ const now = playingNow(listening?.now ?? null)
       <UsernameGate services={['lastfm']} />
     ) : (
       <>
+        <Intro intro={INTROS.musikk} />
         <PageSection id="siste" title="Siste avspillinger">
           <PlayRows plays={listening?.recent ?? []} now={now} base={base} />
         </PageSection>

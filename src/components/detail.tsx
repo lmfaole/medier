@@ -64,7 +64,7 @@ export function TitleDetail({ page, base }: { page: TitlePage; base: string }) {
           <Rows columns={{ name: "Navn", value: "Rolle" }} rows={crew.map((one) => ({ key: `${one.id}-${one.role}`, body: <TextLink href={personHref(base, one.id, one.name)}>{one.name}</TextLink>, trailing: <Text as="span" size="sm" tone="muted">{one.role}</Text> }))} />
         </PageSection>
       )}
-      <PageSection id="sett" title={page.kind === "film" ? "Når jeg så den" : "Episodene jeg har sett"}>
+      <PageSection id="sett" title={page.kind === "film" ? "Når du så den" : "Episodene du har sett"}>
         <Rows
           columns={{ name: page.kind === "film" ? "Visning" : "Episode", value: "Sett" }}
           rows={page.viewings.map((watch) => ({
@@ -94,7 +94,7 @@ export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: str
         facts={[
           ["Sjangere", genres.length === 0 ? null : genres.join(", ")],
           ["Lyttere på Last.fm", lastfm?.listeners == null ? null : lastfm.listeners.toLocaleString("nb-NO")],
-          ["Spilt av meg totalt", lastfm?.userPlays == null ? null : count(lastfm.userPlays, "gang", "ganger")],
+          ["Spilt av deg totalt", lastfm?.userPlays == null ? null : count(lastfm.userPlays, "gang", "ganger")],
           ["Mest spilt siste måned", page.top === null ? null : `Nr. ${page.top.rank}, ${count(page.top.plays, "avspilling", "avspillinger")}`],
           ["Blant de siste avspillingene", page.plays.length === 0 ? "Ingen" : count(page.plays.length, "gang", "ganger")],
         ]}
@@ -119,7 +119,7 @@ export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: str
               key: album.title,
               sources: sourcesOf(album.image),
               title: played.has(album.title) ? <TextLink href={albumHref(base, page.name, album.title)}>{album.title}</TextLink> : album.title,
-              detail: played.has(album.title) ? "Spilt av meg nylig" : null,
+              detail: played.has(album.title) ? "Spilt av deg nylig" : null,
               value: `${compactCount(album.plays)} avspillinger`,
               amount: album.plays,
             }))}
@@ -168,7 +168,7 @@ export function PersonDetail({ id, person, found, base }: { id: number; person: 
           <Text size="sm" tone="muted">Tekst fra TMDB.</Text>
         </PageSection>
       )}
-      <PageSection id="sett" title="I det jeg har sett">
+      <PageSection id="sett" title="I det du har sett">
         <PictureRows
           ratio="poster"
           rows={found.appearances.map(({ page, roles }) => ({ key: page.slug, picture: null, sources: sourcesOf(page.poster), title: <TextLink href={titleHref(base, page.slug)}>{page.title}</TextLink>, detail: details([roles.join(", ") || null]), aside: page.year === null ? (page.kind === "film" ? "Film" : "Serie") : String(page.year) }))}
@@ -207,7 +207,7 @@ export function TrackDetail({ page, base, info }: { page: TrackPage; base: strin
           ["Lengde", lastfm?.seconds == null ? null : lengthText(lastfm.seconds)],
           ["Sjangere", tagsText(lastfm?.tags ?? [])],
           ["Lyttere på Last.fm", listeners(lastfm?.listeners)],
-          ["Spilt av meg totalt", lastfm?.userPlays == null ? null : count(lastfm.userPlays, "gang", "ganger")],
+          ["Spilt av deg totalt", lastfm?.userPlays == null ? null : count(lastfm.userPlays, "gang", "ganger")],
           ["Blant de siste avspillingene", count(page.plays.length, "gang", "ganger")],
         ]}
       />
@@ -249,7 +249,7 @@ export function AlbumDetail({ page, base, info, played }: { page: AlbumPage; bas
           ["Spor", spotify?.tracks != null ? String(spotify.tracks) : tracks.length === 0 ? null : String(tracks.length)],
           ["Sjangere", tagsText(lastfm?.tags ?? [])],
           ["Lyttere på Last.fm", listeners(lastfm?.listeners)],
-          ["Spilt av meg totalt", lastfm?.userPlays == null ? null : count(lastfm.userPlays, "gang", "ganger")],
+          ["Spilt av deg totalt", lastfm?.userPlays == null ? null : count(lastfm.userPlays, "gang", "ganger")],
           ["Blant de siste avspillingene", count(page.plays.length, "gang", "ganger")],
         ]}
       />

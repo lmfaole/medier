@@ -31,6 +31,6 @@ export function HistoryTimeline({ plays, watches, now, playing, base }: { plays:
     ...playsTimeline(plays, { href: (play) => trackHref(base, play.artist, play.track) }),
     ...watchesTimeline(watches, { href: (watch) => { const slug = pageOf.get(watch.id); return slug === undefined ? undefined : titleHref(base, slug) } }),
   ]
-  if (events.length === 0) return <EmptyState icon="history" title="Ingen historikk å vise" description="Last.fm og Trakt svarte ikke, eller har ingenting ennå." />
+  if (events.length === 0) return <EmptyState icon="history" title="Ingen historikk ennå" description="Tidslinjen fylles med det Last.fm fører opp at du hører på og det du markerer som sett på Trakt. Er den tom, kan det være feil brukernavn, eller at tjenestene ikke svarte akkurat nå." action={{ href: `${base}brukernavn/?tilbake=${encodeURIComponent(`${base}historikk/`)}`, label: "Sjekk brukernavnene" }} />
   return <Timeline label="Historikk" events={events} now={now} groupNouns={groupNounsOf(events)} />
 }

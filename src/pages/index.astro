@@ -1,4 +1,7 @@
 ---
+import { InstallPrompt } from '@lmfaole/designsystem/components/install-prompt'
+import { isSeen, parseSeen, SEEN_COOKIE } from '@lmfaole/designsystem/lib/onboarding'
+import { SEEN_PATH } from '../lib/onboarding'
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
 import { TextLink } from '@lmfaole/designsystem/components/text'
 
@@ -20,6 +23,8 @@ const now = playingNow(listening?.now ?? null)
 const plays = (listening?.recent ?? []).filter((play) => play.playedAt !== null)
 // The sections of a service with no username are a form asking for it: one form for both when neither is given.
 const missing: Service[] = [...(users.lastfm === null ? (['lastfm'] as const) : []), ...(users.trakt === null ? (['trakt'] as const) : [])]
+// The offer to install the app, once: «Ikke nå» or an install puts it away for good.
+const installSeen = isSeen(parseSeen(Astro.cookies.get(SEEN_COOKIE)?.value), 'install')
 const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, source: 'Last.fm' }]), ...(users.trakt === null ? [] : [{ at: seen?.at ?? null, source: 'Trakt' }])]
 ---
 
@@ -53,5 +58,6 @@ const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, 
       </PageSection>
     )
   }
+  {!installSeen && <InstallPrompt client:idle appName="Medier" seen={false} cookiePath={SEEN_PATH} />}
   {sources.length > 0 && <Fetched sources={sources} />}
 </Page>

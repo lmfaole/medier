@@ -83,3 +83,41 @@ export function fieldAction(value: unknown): FieldAction {
 export const whoOf = (users: Users): string => `${users.lastfm ?? ""}|${users.trakt ?? ""}`
 
 export const WHO_HEADER = "X-Medier-Who"
+
+/** One field of the username form (the design system's `UsernameForm`). */
+export interface UsernameField {
+  name: string
+  label: string
+  value?: string
+  hint?: string
+  error?: string
+}
+
+const HINT: Record<Service, string> = {
+  lastfm: "Brukernavnet ditt på last.fm, der avspillingene dine blir registrert.",
+  trakt: "Brukernavnet ditt på trakt.tv. Profilen må være offentlig.",
+}
+
+const NOT_FOUND: Record<Service, (value: string) => string> = {
+  lastfm: (value) => `Fant ingen bruker som heter «${value}» på Last.fm. Sjekk stavingen.`,
+  trakt: (value) => `Fant ingen offentlig profil som heter «${value}» på Trakt. Sjekk stavingen, og at profilen ikke er privat.`,
+}
+
+/** The fields for the services a page needs, filled in with what the visitor has (or typed, when it was not found), with the error of one that was not found. */
+export function usernameFields(services: readonly Service[], users: Users, error: { service: Service; value: string } | null): UsernameField[] {
+  return services.map((service) => {
+    const failed = error?.service === service
+    const value = failed ? error.value : (users[service] ?? undefined)
+    return { name: service, label: `Brukernavn på ${SERVICE_NAME[service]}`, hint: HINT[service], ...(value === undefined ? {} : { value }), ...(failed ? { error: NOT_FOUND[service](error.value) } : {}) }
+  })
+}
+
+/** The usernames the visitor has given, in words for the chip: one name where both are the same, else each with its service. */
+export function usersText(users: Users): string | null {
+  if (users.lastfm !== null && users.trakt !== null) return users.lastfm.toLowerCase() === users.trakt.toLowerCase() ? users.lastfm : `${users.lastfm} (Last.fm) og ${users.trakt} (Trakt)`
+  if (users.lastfm !== null) return `${users.lastfm} (Last.fm)`
+  if (users.trakt !== null) return `${users.trakt} (Trakt)`
+  return null
+}
+
+export const FORM_BODY = "Vi viser bare det som er offentlig på profilen. Brukernavnet lagres i en informasjonskapsel i denne nettleseren."
