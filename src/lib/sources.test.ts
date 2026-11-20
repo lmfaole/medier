@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { type Env, type Get, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, loadWatched, MAX_POSTER_LOOKUPS, settle, TTL } from "./sources.ts"
+import { type Env, type Get, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, loadPerson, loadWatched, MAX_POSTER_LOOKUPS, settle, TTL } from "./sources.ts"
 
 /** A `get` that answers from a table by the start of the address and remembers what was asked. */
 function fake(answers: Record<string, unknown>, hits = new Set<string>()): { get: Get; asked: { url: string; ttl: number; method: string | undefined }[] } {
@@ -55,7 +55,7 @@ test("a cold page asks TMDB for no more than MAX_POSTER_LOOKUPS posters that wer
 })
 
 test("posters that are kept cost nothing against the limit, so every film gets its poster", async () => {
-  const everything = new Set(history(30).map((entry) => `https://api.themoviedb.org/3/movie/${entry.movie.ids.tmdb}?language=nb-NO&api_key=t`))
+  const everything = new Set(history(30).map((entry) => `https://api.themoviedb.org/3/movie/${entry.movie.ids.tmdb}?language=nb-NO&append_to_response=credits&api_key=t`))
   const { get } = fake({ "https://api.trakt.tv/": history(30), "https://api.themoviedb.org/": { poster_path: "/p.jpg" } }, everything)
   const watched = await loadWatched(ENV, get)
   assert.equal(watched?.items.filter((item) => item.poster !== null).length, 30)
@@ -148,4 +148,17 @@ test("pictures that are kept cost nothing against the limit, and without Spotify
   const kept = new Set(names.map((name) => `https://api.spotify.com/v1/search?type=artist&limit=10&q=${encodeURIComponent(`artist:"${name}"`)}`))
   assert.equal((await loadArtistPictures(SPOTIFY, spotify([], kept).get, names)).size, 20)
   assert.equal((await loadArtistPictures({ LASTFM_API_KEY: "k" }, spotify().get, names)).size, 0)
+})
+
+test("a person is asked for by TMDB's id and read; without a key, or for someone TMDB does not know, there is nothing", async () => {
+  const asked: string[] = []
+  const get: Get = async (url) => {
+    asked.push(url)
+    return { data: url.includes("/person/7?") ? { name: "Al Pacino", known_for_department: "Acting" } : { success: false }, hit: false }
+  }
+  assert.equal((await loadPerson(ENV, get, 7))?.name, "Al Pacino")
+  assert.equal(await loadPerson(ENV, get, 8), null)
+  assert.equal(await loadPerson({}, get, 7), null)
+  assert.equal(asked.length, 2)
+  assert.ok(asked[0]?.startsWith("https://api.themoviedb.org/3/person/7?language=nb-NO"))
 })

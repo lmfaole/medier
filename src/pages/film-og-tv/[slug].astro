@@ -17,5 +17,5 @@ const kind = page.kind === 'film' ? 'Film' : 'Serie'
   lead={page.year === null ? kind : `${kind} · ${page.year}`}
   crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: `${base}film-og-tv/` }, { label: page.title, href: titleHref(base, page.slug) }]}
 >
-  <TitleDetail page={page} />
+  <TitleDetail page={page} base={base} />
 </Page>

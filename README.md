@@ -10,7 +10,9 @@ Hva jeg hører på og ser: en side på Cloudflare Workers, <https://medier.lmfao
   A source that is down, or not set up, leaves its part out; the rest of the page shows.
 - **Pictures and a little more.** An artist's page has its picture and a link to it from Spotify (found by searching the name, and only used where an artist is named exactly the same: a wrong
   picture is worse than none), the tags, the listeners and the start of the text from Last.fm, and the top-artist lists have the pictures too. A film's or a show's page has the plot (in
-  Norwegian where TMDB has it), genres, length or seasons and TMDB's vote, from the same answer as the poster. Spotify content is attributed to Spotify (their mark, 28 px, one colour) and
+  Norwegian where TMDB has it), genres, length or seasons and TMDB's vote, from the same answer as the poster. A title's page also names who played in it (the first twelve, each with the part) and who made it (directing, writing, music, photography, and for a show who created it), from the same TMDB answer
+  (`append_to_response=credits`); each person has a page of their own, `/personer/<TMDB id>-<name>/`, with their picture, dates and life story from TMDB (in Norwegian where TMDB has it) and the films and
+  shows seen that they are named in. A person has a page only while a title seen names them. Spotify content is attributed to Spotify (their mark, 28 px, one colour) and
   links back to it; TMDB's statement is at the foot of every page. Everything is kept for a day at most (a poster and a title's facts for a month) and nothing is stored.
 - There is no database and nothing is committed as data. `src/lib/` reads the APIs' answers (pure, with tests); `src/components/` and `src/pages/` show them.
 - A Worker on the lmfaole.party zone cannot reach origins outside Cloudflare (every such fetch ends in 525), so the site asks through a small relay, `upstream/` (`medier-upstream` on

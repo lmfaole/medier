@@ -85,3 +85,38 @@ export function artistPages(music: Pick<Music, "recent" | "topArtists">): Artist
 
 export const titleHref = (base: string, slug: string): string => `${base}film-og-tv/${slug}/`
 export const artistHref = (base: string, name: string): string => `${base}musikk/${slugify(name)}/`
+
+/** A person's page, `/personer/<id>-<name>/`: TMDB's id first, so two with the same name are two pages and a changed spelling of a name is the same page. */
+export const personHref = (base: string, id: number, name: string): string => `${base}personer/${id}-${slugify(name)}/`
+
+/** The id in a person's address, or `null` where it is not one. */
+export function personId(slug: string): number | null {
+  const match = /^(\d{1,9})(?:-|$)/.exec(slug)
+  return match === null ? null : Number(match[1])
+}
+
+/** A person as the pages that name them know them: who, a picture, and what they did there. */
+export interface Appearance {
+  /** The film or the show. */
+  page: TitlePage
+  /** What they did in it: the part, or the jobs. */
+  roles: string[]
+}
+
+/**
+ * Where a person is named among the films and shows seen: the cast and the crew each title's page keeps. Newest first, as the titles are, with the parts and the jobs of each.
+ * `name` and `profile` are what the credits say of them (the first found), for a page that has nothing else of them.
+ */
+export function personIn(items: readonly Watch[], id: number): { name: string; profile: string | null; appearances: Appearance[] } | null {
+  let name = ""
+  let profile: string | null = null
+  const appearances: Appearance[] = []
+  for (const page of titlePages(items)) {
+    const credits = [...(page.info?.cast ?? []), ...(page.info?.crew ?? [])].filter((one) => one.id === id)
+    if (credits.length === 0) continue
+    name ||= credits[0]?.name ?? ""
+    profile ??= credits.find((one) => one.profile !== null)?.profile ?? null
+    appearances.push({ page, roles: [...new Set(credits.flatMap((one) => (one.role === null ? [] : [one.role])))] })
+  }
+  return appearances.length === 0 ? null : { name, profile, appearances }
+}

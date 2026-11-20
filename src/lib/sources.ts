@@ -5,7 +5,7 @@
 
 import { type ArtistInfo, artistInfoUrl, type Music, parseArtistInfo, parseRecentTracks, parseTopArtists } from "./lastfm.ts"
 import { type NowPlaying, NOW_PLAYING_URL, parseArtistMatch, parseNowPlaying, parseToken, refreshRequest, searchArtistUrl, type SpotifyArtist } from "./spotify.ts"
-import { authorize, detailsUrl, parseInfo, parsePoster, type TitleInfo } from "./tmdb.ts"
+import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, type Person, personUrl, type TitleInfo } from "./tmdb.ts"
 import { mergeHistory, parseHistory, type Watch, type Watched } from "./trakt.ts"
 
 /** The settings a Worker has: its secrets and its variables (`settings.ts`). A source whose key is not set is left out, not an error. */
@@ -100,6 +100,14 @@ export async function loadWatched(env: Env, get: Get): Promise<Watched | null> {
   const [movies, episodes] = await Promise.all([page("movies"), page("episodes")])
   const items = mergeHistory(movies, episodes).slice(0, 50)
   return { at: new Date().toISOString(), user, items: await withPosters(items, setting(env, "TMDB_API_KEY"), get) }
+}
+
+/** A person from TMDB's page of them (their life story, dates and place), kept for a month; `null` where TMDB is not set up, does not know them, or did not answer. */
+export async function loadPerson(env: Env, get: Get, id: number): Promise<Person | null> {
+  const key = setting(env, "TMDB_API_KEY")
+  if (key === "") return null
+  const request = authorize(key, personUrl(id))
+  return parsePerson((await get(request.url, { headers: request.headers, ttl: TTL.poster })).data)
 }
 
 /** The song playing now on Spotify, or `null` (nothing plays, Spotify is not set up, or its token has run out: the page simply shows nothing). */

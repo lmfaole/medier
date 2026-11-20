@@ -1,0 +1,19 @@
+---
+import { PersonDetail } from '../../components/detail'
+import Page from '../../layouts/Page.astro'
+import { personHref, personId, personIn } from '../../lib/pages'
+import { person as loadPerson, watched } from '../../lib/runtime'
+
+const id = personId(Astro.params.slug ?? '')
+if (id === null) return Astro.rewrite('/404/')
+// What the credits of the films seen say of them, and TMDB's own page of them: either is enough for a page, and the second is kept for a month.
+const [seen, person] = await Promise.all([watched(), loadPerson(id)])
+const found = seen === null ? null : personIn(seen.items, id)
+if (found === null) return Astro.rewrite('/404/')
+const base = import.meta.env.BASE_URL
+const name = person?.name ?? found.name
+---
+
+<Page width="pane" title={name} lead={person?.department ?? 'Fra rollelisten'} crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: `${base}film-og-tv/` }, { label: name, href: personHref(base, id, name) }]}>
+  <PersonDetail id={id} person={person} found={found} base={base} />
+</Page>
