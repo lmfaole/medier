@@ -161,3 +161,54 @@ export function parseAlbumInfo(answer: unknown): AlbumInfo {
   })
   return { tags: tagsOf(info["tags"]), listeners: count(info["listeners"]), userPlays: count(info["userplaycount"]), bio: wikiText(info["wiki"]), tracks }
 }
+
+/** One page of the plays in a range of time (`user.getrecenttracks` with `from` and `to`), with where it is among the pages. What is playing this moment is left out: it is not a finished play. */
+export interface RecentPage {
+  plays: Play[]
+  page: number
+  totalPages: number
+  /** How many plays there are in all, in the whole range. */
+  total: number
+}
+
+export function parseRecentPage(answer: unknown): RecentPage {
+  const meta = object(object(object(answer)["recenttracks"])["@attr"])
+  const whole = (value: unknown, fallback: number): number => {
+    const written = text(value)
+    return written !== "" && Number.isInteger(Number(written)) && Number(written) >= 0 ? Number(written) : fallback
+  }
+  return {
+    plays: parseRecentTracks(answer).filter((play) => play.playedAt !== null),
+    page: whole(meta["page"], 1),
+    totalPages: whole(meta["totalPages"], 1),
+    total: whole(meta["total"], 0),
+  }
+}
+
+/** One artist of a week's chart: its plays that week, and its place (1 is the most played). */
+export interface ChartArtist {
+  name: string
+  plays: number
+  rank: number
+}
+
+export function parseArtistChart(answer: unknown): ChartArtist[] {
+  return list(object(object(answer)["weeklyartistchart"])["artist"]).flatMap((value) => {
+    const artist = object(value)
+    const name = text(artist["name"])
+    const plays = Number(text(artist["playcount"]))
+    return name === "" || !Number.isFinite(plays) ? [] : [{ name, plays, rank: Number(text(object(artist["@attr"])["rank"])) || 0 }]
+  })
+}
+
+/** How many plays of an artist the owner has had in a range (`user.getartisttracks`): its total, or `null` where Last.fm did not say. */
+export function parseArtistPlays(answer: unknown): number | null {
+  const total = Number(text(object(object(object(answer)["artisttracks"])["@attr"])["total"]))
+  return Number.isFinite(total) && total >= 0 && text(object(object(object(answer)["artisttracks"])["@attr"])["total"]) !== "" ? total : null
+}
+
+/** The addresses of the weekly wrapped's questions to Last.fm: `base` is the one with the key and the user (`sources.ts`); times are unix seconds, and `to` is not included. */
+export const playsInRangeUrl = (base: string, from: number, to: number, page: number): string => `${base}&method=user.getrecenttracks&from=${from}&to=${to - 1}&limit=200&page=${page}`
+export const artistChartUrl = (base: string, from: number, to: number): string => `${base}&method=user.getweeklyartistchart&from=${from}&to=${to}`
+/** The plays of one artist before a moment: asked for with a limit of one, since only the total is wanted. */
+export const artistPlaysBeforeUrl = (base: string, artist: string, before: number): string => `${base}&method=user.getartisttracks&artist=${encodeURIComponent(artist)}&endTimestamp=${before - 1}&limit=1`

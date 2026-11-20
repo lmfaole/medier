@@ -22,6 +22,18 @@ Hva jeg hører på og ser: en side på Cloudflare Workers, <https://medier.lmfao
 - Spotify asks one permission, to see what plays (`user-read-currently-playing`). The song shows first on the front page and on Musikk, marked «nå». Where Spotify is not set up, Last.fm's
   own «now playing» (a scrobble of the same song) is shown instead.
 
+## Weekly wrapped
+
+The place **Uke** in the bar opens the last week that is over, `/uke/<year>-<week>/` (ISO weeks, Monday to Sunday in Oslo time, `src/lib/weeks.ts`); this week so far and the twelve before it are listed on the page.
+Only numbers and lists: **Tall** (plays, how many different artists and songs, listening time, the busiest day and hour, the shape of the days), **top artists, albums and songs** in the shapes of what they are, with how each artist's place
+moved since the week before, **new artists** (those among the ten most played that had no plays at all before the week) and **film og TV** (films, episodes, the shows most watched, and runs of three episodes or more of one show on a day).
+
+Nothing is stored: every week is made when it is asked for, from Last.fm (`user.getrecenttracks` with the week's range, read page by page up to 1 600 plays; the week before's `getweeklyartistchart`; `getartisttracks` before the
+week for who is new; `track.getinfo` for the length of the most played songs) and Trakt (the history in the range), and kept for a day when the week is over and for five minutes when it is not. A page may ask a Worker's limit of
+questions, so the lengths of songs and the new artists come in turns (at most 10 and 8 new questions on a page, the most played first, what is kept is free) and fill in over the next visits. The listening time is an **estimate**: the known lengths,
+and the plays whose length is not known counted at their average (a typical 3½ minutes where none is known), with how many of the plays the length is known of. No Spotify data is in it except the pictures of the artists. `src/lib/wrapped.ts`
+makes the numbers, `src/lib/week-source.ts` fetches what they are made of; both are tested.
+
 ## Installed app (PWA)
 
 The site installs on a phone or a computer and opens without the browser around it: «Legg til på Hjem-skjerm» on iOS, the install offer in the address bar on Android and desktop Chrome (there is no install button

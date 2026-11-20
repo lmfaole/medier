@@ -1,0 +1,31 @@
+---
+import { OtherWeeks, WeekView } from '../../components/wrapped'
+import Page from '../../layouts/Page.astro'
+import { albumPages, artistPages, titlePages, trackPages } from '../../lib/pages'
+import { artistPictures, music, watched, week as loadWeek } from '../../lib/runtime'
+import { isComplete, parseWeek, rangeText, recentWeeks, weekAt } from '../../lib/weeks'
+
+const base = import.meta.env.BASE_URL
+const now = Date.now()
+const week = parseWeek(Astro.params.week ?? '')
+// A week that has not begun has nothing to tell, and an address that is no week is no page.
+if (week === null || week.start * 1000 > now) return Astro.rewrite('/404/')
+const [data, listening, seen] = await Promise.all([loadWeek(week), music(), watched()])
+if (data === null) return Astro.rewrite('/404/')
+// What has a page of its own to link to: among the recent plays (artists, albums, songs) and the films and shows seen.
+const links = {
+  artists: new Set(listening === null ? [] : artistPages(listening).map((page) => page.name)),
+  albums: new Set(listening === null ? [] : albumPages(listening).map((page) => page.slug)),
+  tracks: new Set(listening === null ? [] : trackPages(listening).map((page) => page.slug)),
+  titles: new Map(seen === null ? [] : titlePages(seen.items).map((page) => [page.title, page.slug] as const)),
+}
+const pictures = await artistPictures((data.music?.stats.topArtists ?? []).map((artist) => artist.name))
+const current = weekAt(now).id
+const weeks = recentWeeks(now, 12).map((one) => ({ week: one, now: one.id === current }))
+const complete = isComplete(week, now)
+---
+
+<Page current="week" width="reading" title={`Uke ${week.number}`} lead={`${rangeText(week)}${complete ? '' : ' · så langt'}`} crumbs={[{ label: 'Medier', href: base }, { label: `Uke ${week.number}`, href: `${base}uke/${week.id}/` }]}>
+  <WeekView data={data} pictures={pictures} links={links} base={base} />
+  <OtherWeeks weeks={weeks} current={week.id} base={base} />
+</Page>

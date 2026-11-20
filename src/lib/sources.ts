@@ -25,13 +25,13 @@ export interface Request {
 export type Get = (url: string, request: Request) => Promise<{ data: unknown; hit: boolean }>
 
 /** How long each kind of answer is kept, in seconds. A poster does not change; what is playing now does, quickly. */
-export const TTL = { nowPlaying: 15, token: 3000, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600, artist: 24 * 3600 } as const
+export const TTL = { nowPlaying: 15, token: 3000, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600, artist: 24 * 3600, weekDone: 24 * 3600, weekLive: 300, firsts: 7 * 24 * 3600, length: 7 * 24 * 3600 } as const
 
 /** Most of a page's asks that are not kept already: a cold page must stay well under a Worker's limit on what it may ask for. */
 export const MAX_POSTER_LOOKUPS = 12
 const POSTER_BATCH = 6
 
-const setting = (env: Env, name: string): string => env[name] ?? ""
+export const setting = (env: Env, name: string): string => env[name] ?? ""
 
 /** The music, and the song Last.fm says is playing now (a scrobble of whatever plays, Spotify included), which is not a finished play and so not in `recent`. */
 export interface Listening extends Music {
@@ -39,7 +39,7 @@ export interface Listening extends Music {
 }
 
 /** The start of every Last.fm address: the key and the user, or `null` where there is no key. */
-function lastfmBase(env: Env): string | null {
+export function lastfmBase(env: Env): string | null {
   const key = setting(env, "LASTFM_API_KEY")
   if (key === "") return null
   return `https://ws.audioscrobbler.com/2.0/?format=json&api_key=${encodeURIComponent(key)}&user=${encodeURIComponent(setting(env, "LASTFM_USER"))}`

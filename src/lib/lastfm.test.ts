@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { albumInfoUrl, artistInfoUrl, firstSentences, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopArtists, parseTrackInfo, trackInfoUrl } from "./lastfm.ts"
+import { albumInfoUrl, artistChartUrl, artistInfoUrl, artistPlaysBeforeUrl, parseArtistChart, parseArtistPlays, parseRecentPage, playsInRangeUrl, firstSentences, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopArtists, parseTrackInfo, trackInfoUrl } from "./lastfm.ts"
 
 test("recent tracks: a played one has its time, the one playing now has none, an empty cover is null and a broken row is left out", () => {
   const plays = parseRecentTracks({
@@ -77,4 +77,33 @@ test("an album's info has its tracks in order, one track is a list of one, and a
 test("a track and an album are asked for by artist and name, encoded, with the owner's name for the count", () => {
   assert.equal(trackInfoUrl("https://x/?k=1", "A & B", "Why?", "me"), "https://x/?k=1&method=track.getinfo&autocorrect=1&artist=A%20%26%20B&track=Why%3F&username=me")
   assert.equal(albumInfoUrl("https://x/?k=1", "A", "LP", "me"), "https://x/?k=1&method=album.getinfo&autocorrect=1&artist=A&album=LP&username=me")
+})
+
+test("a page of a range's plays has where it is among the pages and how many there are in all, and what plays this moment is not one of them", () => {
+  const page = parseRecentPage({ recenttracks: { "@attr": { page: "2", totalPages: "5", total: "913" }, track: [
+    { name: "Now", artist: { "#text": "A" }, "@attr": { nowplaying: "true" } },
+    { name: "Then", artist: { "#text": "B" }, album: { "#text": "X" }, url: "u", date: { uts: "1763560800" } },
+  ] } })
+  assert.deepEqual([page.page, page.totalPages, page.total], [2, 5, 913])
+  assert.deepEqual(page.plays.map((play) => play.track), ["Then"])
+  assert.deepEqual(parseRecentPage({}), { plays: [], page: 1, totalPages: 1, total: 0 })
+})
+
+test("a week's chart has each artist's plays and place; one with no name or no count is left out", () => {
+  const chart = parseArtistChart({ weeklyartistchart: { artist: [{ name: "A", playcount: "41", "@attr": { rank: "1" } }, { name: "", playcount: "3" }, { name: "B", playcount: "x" }, { name: "C", playcount: "7", "@attr": { rank: "2" } }] } })
+  assert.deepEqual(chart, [{ name: "A", plays: 41, rank: 1 }, { name: "C", plays: 7, rank: 2 }])
+  assert.deepEqual(parseArtistChart(null), [])
+})
+
+test("the plays of an artist before a moment are its total, nothing is zero, and an answer without one is not known", () => {
+  assert.equal(parseArtistPlays({ artisttracks: { "@attr": { total: "12" } } }), 12)
+  assert.equal(parseArtistPlays({ artisttracks: { "@attr": { total: "0" } } }), 0)
+  assert.equal(parseArtistPlays({ error: 6 }), null)
+  assert.equal(parseArtistPlays({ artisttracks: { "@attr": {} } }), null)
+})
+
+test("a range is asked for by unix seconds with the end left out, a chart by both ends, and the plays before a moment by the second before it", () => {
+  assert.equal(playsInRangeUrl("https://x/?k=1", 100, 200, 3), "https://x/?k=1&method=user.getrecenttracks&from=100&to=199&limit=200&page=3")
+  assert.equal(artistChartUrl("https://x/?k=1", 100, 200), "https://x/?k=1&method=user.getweeklyartistchart&from=100&to=200")
+  assert.equal(artistPlaysBeforeUrl("https://x/?k=1", "Beyoncé", 100), "https://x/?k=1&method=user.getartisttracks&artist=Beyonc%C3%A9&endTimestamp=99&limit=1")
 })

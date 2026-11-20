@@ -6,6 +6,8 @@
 import { env } from "cloudflare:workers"
 
 import { type Env, type Get, type Listening, loadAlbum, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, loadPerson, loadTrack, loadWatched, settle } from "./sources.ts"
+import { loadWeek } from "./week-source.ts"
+import type { Week } from "./weeks.ts"
 import type { NowPlaying } from "./spotify.ts"
 import type { Watched } from "./trakt.ts"
 
@@ -54,3 +56,4 @@ export const artistPictures = (names: readonly string[]) => loadArtistPictures(s
 export const person = (id: number) => settle(loadPerson(settings(), get, id))
 export const album = (artist: string, title: string) => loadAlbum(settings(), get, artist, title)
 export const track = (artist: string, title: string) => loadTrack(settings(), get, artist, title)
+export const week = (which: Week) => settle(loadWeek(settings(), get, which, Date.now()))

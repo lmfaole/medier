@@ -1,0 +1,6 @@
+---
+import { lastCompletedWeek } from '../../lib/weeks'
+
+// The place «Uke» in the bar opens the last week that is over: the wrapped of the week that has just ended. The weeks before it, and this one so far, are on its page.
+return Astro.redirect(`${import.meta.env.BASE_URL}uke/${lastCompletedWeek(Date.now()).id}/`)
+---
