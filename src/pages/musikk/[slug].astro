@@ -1,5 +1,6 @@
 ---
 import { ArtistDetail } from '../../components/detail'
+import { Lit } from '../../components/lit'
 import Page from '../../layouts/Page.astro'
 import { artistPages } from '../../lib/pages'
 import { artist, music } from '../../lib/runtime'
@@ -12,5 +13,6 @@ const base = import.meta.env.BASE_URL
 ---
 
 <Page current="music" width="pane" title={page.name} lead="Artist" crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.name, href: `${base}musikk/${page.slug}/` }]}>
+  <Lit client:idle />
   <ArtistDetail page={page} base={base} info={info} />
 </Page>

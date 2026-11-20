@@ -1,5 +1,6 @@
 ---
 import { PersonDetail } from '../../components/detail'
+import { Lit } from '../../components/lit'
 import Page from '../../layouts/Page.astro'
 import { personHref, personId, personIn } from '../../lib/pages'
 import { person as loadPerson, watched } from '../../lib/runtime'
@@ -15,5 +16,6 @@ const name = person?.name ?? found.name
 ---
 
 <Page current="film" width="pane" title={name} lead={person?.department ?? 'Fra rollelisten'} crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: `${base}film-og-tv/` }, { label: name, href: personHref(base, id, name) }]}>
+  <Lit client:idle />
   <PersonDetail id={id} person={person} found={found} base={base} />
 </Page>

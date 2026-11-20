@@ -1,5 +1,6 @@
 ---
 import { TitleDetail } from '../../components/detail'
+import { Lit } from '../../components/lit'
 import Page from '../../layouts/Page.astro'
 import { titleHref, titlePages } from '../../lib/pages'
 import { watched } from '../../lib/runtime'
@@ -17,5 +18,6 @@ const kind = page.kind === 'film' ? 'Film' : 'Serie'
   lead={page.year === null ? kind : `${kind} · ${page.year}`}
   crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: `${base}film-og-tv/` }, { label: page.title, href: titleHref(base, page.slug) }]}
 >
+  <Lit client:idle />
   <TitleDetail page={page} base={base} />
 </Page>

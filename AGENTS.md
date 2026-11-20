@@ -9,5 +9,6 @@ deploy; `npm run settings:push` sets them). Kept small on purpose; read `README.
   the Worker's cache for as long as each source's `TTL` says. Reading an API's answer is a pure function in `src/lib/` with a test next to it (`node --test`).
 - A Worker on the lmfaole.party zone cannot reach Last.fm, Trakt, TMDB or Spotify (525): everything goes through the relay in `upstream/`, which allows only those hosts and only with the key the
   two share. A new source is: a parser and its test in `src/lib/`, a loader in `src/lib/sources.ts`, its host in `upstream/worker.ts` (and its test), its setting in `src/lib/settings.ts`, and a section.
+- The main picture of a page, and only it, is lit (design system, «Light and shadow»): a `Picture size="hero"` on its frame, and the front page's record on its surface; a page of a detail component mounts `<Lit client:idle />` (`src/pages/lit.test.ts`). Nothing is painted over a Spotify picture; the disc is made of Last.fm's cover.
 - The site is public: what is shown is what the owner is happy to show to anyone (what plays now included). A source is never given more permission than it needs (Spotify: `user-read-currently-playing` only).
 - Check before saying done: `npm test`, `npm run typecheck`, `npm run build`, and look at the page in a browser (`npm run dev`, or `npm run preview` for the Worker as it runs), phone width too.
