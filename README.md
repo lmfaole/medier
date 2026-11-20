@@ -22,6 +22,10 @@ Hva jeg hører på og ser: en side på Cloudflare Workers, <https://medier.lmfao
 - Spotify asks one permission, to see what plays (`user-read-currently-playing`). The song shows first on the front page and on Musikk, marked «nå». Where Spotify is not set up, Last.fm's
   own «now playing» (a scrobble of the same song) is shown instead.
 
+## The sleeve of an album
+
+On the page of an album the cover is a **sleeve in 3D** (`Head` with `sleeve`, the design system's `AlbumSleeve`): the cover whole on a slab of plastic with a record half out of it, the label in the cover's most vivid colour, tilting toward the page's light (the pointer, a phone's tilt) and catching it. It adds a record and a gleam to the cover, so it is only for **Last.fm's** covers: the album pages use Last.fm's, and a Spotify cover is never made a sleeve or a disc. Before WebGL is ready, where it is not there and under reduced motion it is the cover alone, as a sharp square, in the same place.
+
 ## The albums of an artist
 
 The page of an artist lists its most played albums (`artist.gettopalbums`, one call kept a day, `loadArtist`): ranked by Last.fm's plays with the design system's `RankedRows`, with Last.fm's covers, nameless and repeated albums left out, up to eight. An album the owner has played lately links to its page here and says so.
