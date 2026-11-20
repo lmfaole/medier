@@ -59,7 +59,7 @@ function Numbers({ stats, previousTotal, previous, truncated }: { stats: WeekSta
 }
 
 /** The top artists, each with its picture (Spotify's, by name), how many plays, and how its place moved since the week before. */
-function ArtistRows({ artists, pictures, links, base }: { artists: readonly TopArtist[]; pictures: ReadonlyMap<string, SpotifyArtist>; links: Linkable; base: string }) {
+function ArtistRows({ artists, pictures, linked, base }: { artists: readonly TopArtist[]; pictures: ReadonlyMap<string, SpotifyArtist>; linked: ReadonlySet<string>; base: string }) {
   const list = (
     <RankedRows
       {...SHAPES.artist}
@@ -68,7 +68,7 @@ function ArtistRows({ artists, pictures, links, base }: { artists: readonly TopA
         return {
           key: artist.name,
           sources: found?.images ?? [],
-          title: links.artists.has(artist.name) ? <TextLink href={artistHref(base, artist.name)}>{artist.name}</TextLink> : artist.name,
+          title: linked.has(artist.name) ? <TextLink href={artistHref(base, artist.name)}>{artist.name}</TextLink> : artist.name,
           detail: found === undefined ? null : <ExternalLink href={found.url}>Åpne i Spotify</ExternalLink>,
           value: count(artist.plays, "avspilling", "avspillinger"),
           amount: artist.plays,
@@ -80,14 +80,20 @@ function ArtistRows({ artists, pictures, links, base }: { artists: readonly TopA
   return pictures.size === 0 ? list : <Stack gap="md">{list}<FromSpotify /></Stack>
 }
 
-/** The top lists: artists, albums and songs, each in the shape of what it is. */
-function Tops({ stats, pictures, links, base }: { stats: WeekStats; pictures: ReadonlyMap<string, SpotifyArtist>; links: Linkable; base: string }) {
+/** The top artists, a section of its own: its pictures come from Spotify, which a page may ask for only as far as its limit goes, so the page puts this in a server island (`TopArtists.astro`) that has a budget of its own. */
+export function ArtistsSection({ artists, pictures, linked, base }: { artists: readonly TopArtist[]; pictures: ReadonlyMap<string, SpotifyArtist>; linked: ReadonlySet<string>; base: string }) {
+  return (
+    <PageSection id="toppartister" title="Toppartister" icon="person">
+      <ArtistRows artists={artists} pictures={pictures} linked={linked} base={base} />
+    </PageSection>
+  )
+}
+
+/** The top lists of albums and songs, each in the shape of what it is. */
+function Tops({ stats, links, base }: { stats: WeekStats; links: Linkable; base: string }) {
   if (stats.total === 0) return null
   return (
     <>
-      <PageSection id="toppartister" title="Toppartister" icon="person">
-        <ArtistRows artists={stats.topArtists} pictures={pictures} links={links} base={base} />
-      </PageSection>
       {stats.topAlbums.length === 0 ? null : (
         <PageSection id="toppalbum" title="Toppalbum" icon="music">
           <RankedRows
@@ -215,19 +221,27 @@ export function PeriodChips({ current, weekHref, monthHref }: { current: "week" 
   )
 }
 
-/** A week's or a month's wrapped: the numbers, the top lists, who is new, and what was watched. A source that gave nothing leaves out only its own part. `previous` is what the change is from. */
-export function PeriodView({ data, pictures, links, base, previous }: { data: PeriodData; pictures: ReadonlyMap<string, SpotifyArtist>; links: Linkable; base: string; previous: string }) {
+/**
+ * A week's or a month's wrapped, in two parts with the top artists between them (a server island, see `ArtistsSection`): `head` is the numbers, `tail` the lists of albums and songs, who is new and what was watched.
+ * A source that gave nothing leaves out only its own part. `previous` is what the change is from.
+ */
+export function PeriodView({ data, links, base, previous, part }: { data: PeriodData; links: Linkable; base: string; previous: string; part: "head" | "tail" }) {
   const { music, watched } = data
+  if (part === "head") {
+    if (music === null) return null
+    return music.stats.total === 0 ? (
+      <PageSection id="tall" title="Tall" icon="chart">
+        <EmptyState icon="music" title="Ingen avspillinger i perioden" />
+      </PageSection>
+    ) : (
+      <Numbers stats={music.stats} previousTotal={music.previousTotal} previous={previous} truncated={music.truncated} />
+    )
+  }
   return (
     <>
-      {music === null ? null : music.stats.total === 0 ? (
-        <PageSection id="tall" title="Tall" icon="chart">
-          <EmptyState icon="music" title="Ingen avspillinger i perioden" />
-        </PageSection>
-      ) : (
+      {music === null || music.stats.total === 0 ? null : (
         <>
-          <Numbers stats={music.stats} previousTotal={music.previousTotal} previous={previous} truncated={music.truncated} />
-          <Tops stats={music.stats} pictures={pictures} links={links} base={base} />
+          <Tops stats={music.stats} links={links} base={base} />
           <NewArtists names={music.newArtists} links={links} base={base} />
         </>
       )}
@@ -235,4 +249,3 @@ export function PeriodView({ data, pictures, links, base, previous }: { data: Pe
     </>
   )
 }
-

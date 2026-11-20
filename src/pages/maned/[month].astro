@@ -1,9 +1,10 @@
 ---
-import { OtherPeriods, PeriodChips, PeriodView } from '../../components/wrapped'
+import Period from '../../components/Period.astro'
+import { OtherPeriods, PeriodChips } from '../../components/wrapped'
 import Page from '../../layouts/Page.astro'
 import { monthAt, monthRange, monthShort, monthText, monthTitle, parseMonth, recentMonths } from '../../lib/months'
 import { albumPages, artistPages, titlePages, trackPages } from '../../lib/pages'
-import { artistPictures, month as loadMonth, music, watched } from '../../lib/runtime'
+import { month as loadMonth, music, watched } from '../../lib/runtime'
 import { PlaysChart } from '../../components/trend'
 import TrendSection from '../../components/TrendSection.astro'
 import { dayColumns, monthsUpTo, TREND_LENGTH } from '../../lib/trend'
@@ -22,7 +23,6 @@ const links = {
   tracks: new Set(listening === null ? [] : trackPages(listening).map((page) => page.slug)),
   titles: new Map(seen === null ? [] : titlePages(seen.items).map((page) => [page.title, page.slug] as const)),
 }
-const pictures = await artistPictures((data.music?.stats.topArtists ?? []).map((artist) => artist.name))
 const current = monthAt(now).id
 const months = recentMonths(now, 12).map((one) => ({ key: one.id, label: `${monthTitle(one)}${one.id === current ? ' (så langt)' : ''}`, range: monthRange(one), href: `${base}maned/${one.id}/` }))
 const complete = now >= month.end * 1000
@@ -34,6 +34,6 @@ const days = dayColumns(data.music?.stats.byDate ?? {}, month.first, month.days)
   <PeriodChips current="month" weekHref={`${base}uke/`} monthHref={`${base}maned/`} />
   <TrendSection server:defer periods={span} title={`Siste ${TREND_LENGTH} måneder`} description={`Avspillinger per måned, til og med ${monthText(month)}.`} ariaLabel="Avspillinger per måned" />
   {days.some((one) => one.value > 0) && <PlaysChart client:visible title="Dag for dag" description={`Avspillinger per dag i ${monthText(month)}.`} ariaLabel="Avspillinger per dag" columns={days} labelEvery={5} />}
-  <PeriodView data={data} pictures={pictures} links={links} base={base} previous="måneden før" />
+  <Period data={data} links={links} base={base} previous="måneden før" />
   <OtherPeriods id="maneder" title="Andre måneder" name="Måned" rows={months} current={month.id} />
 </Page>
