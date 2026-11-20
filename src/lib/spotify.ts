@@ -7,8 +7,8 @@ export const TOKEN_URL = "https://accounts.spotify.com/api/token"
 export const AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
 /** The one permission the site asks for: to see what plays. It cannot change anything in the account. */
 export const SCOPE = "user-read-currently-playing"
-/** The search for one artist by name: a few hits, because the first is not always the one (`parseArtistMatch` takes the one that is named the same). */
-export const searchArtistUrl = (name: string): string => `https://api.spotify.com/v1/search?type=artist&limit=5&q=${encodeURIComponent(`artist:"${name}"`)}`
+/** The search for one artist by name: ten hits (the most Spotify gives a search in Development Mode), because the first is not always the one (`parseArtistMatch` takes the one that is named the same). */
+export const searchArtistUrl = (name: string): string => `https://api.spotify.com/v1/search?type=artist&limit=10&q=${encodeURIComponent(`artist:"${name}"`)}`
 export const NOW_PLAYING_URL = "https://api.spotify.com/v1/me/player/currently-playing"
 
 export interface NowPlaying {

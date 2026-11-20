@@ -78,5 +78,5 @@ test("a search that only finds other artists gives no picture rather than the wr
 test("names are compared without case, accents or marks, and searched for by their own name in quotes", () => {
   assert.equal(plain("Beyoncé"), "beyonce")
   assert.equal(plain("The Sewing Club"), "thesewingclub")
-  assert.equal(searchArtistUrl("Dev Lemons"), "https://api.spotify.com/v1/search?type=artist&limit=5&q=artist%3A%22Dev%20Lemons%22")
+  assert.equal(searchArtistUrl("Dev Lemons"), "https://api.spotify.com/v1/search?type=artist&limit=10&q=artist%3A%22Dev%20Lemons%22")
 })

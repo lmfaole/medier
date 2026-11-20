@@ -145,7 +145,7 @@ test("a list's pictures are asked for in its order, each name once, and no more 
 
 test("pictures that are kept cost nothing against the limit, and without Spotify there are none", async () => {
   const names = Array.from({ length: 20 }, (_, index) => `Artist ${index}`)
-  const kept = new Set(names.map((name) => `https://api.spotify.com/v1/search?type=artist&limit=5&q=${encodeURIComponent(`artist:"${name}"`)}`))
+  const kept = new Set(names.map((name) => `https://api.spotify.com/v1/search?type=artist&limit=10&q=${encodeURIComponent(`artist:"${name}"`)}`))
   assert.equal((await loadArtistPictures(SPOTIFY, spotify([], kept).get, names)).size, 20)
   assert.equal((await loadArtistPictures({ LASTFM_API_KEY: "k" }, spotify().get, names)).size, 0)
 })
