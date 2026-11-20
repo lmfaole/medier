@@ -5,7 +5,7 @@
 
 import type { ChartArtist, Play } from "./lastfm.ts"
 import { groupViewings, type Viewing, type Watch } from "./trakt.ts"
-import { slotOf } from "./weeks.ts"
+import { dateAt, slotOf } from "./weeks.ts"
 
 /** How many of each the wrapped lists. */
 export const TOP = 5
@@ -49,6 +49,8 @@ export interface WeekStats {
   /** Plays on each day of the week, Monday first, and in each hour of the day. */
   byDay: number[]
   byHour: number[]
+  /** Plays on each calendar date (`YYYY-MM-DD`, Oslo time) that had any. */
+  byDate: Record<string, number>
   busiestDay: { day: number; plays: number } | null
   busiestHour: { hour: number; plays: number } | null
   topArtists: TopArtist[]
@@ -122,11 +124,15 @@ export function listeningTime(plays: readonly Play[], lengths: ReadonlyMap<strin
 export function weekStats(plays: readonly Play[], previous: readonly ChartArtist[] | null, lengths: ReadonlyMap<string, number>): WeekStats {
   const byDay = Array.from({ length: 7 }, () => 0)
   const byHour = Array.from({ length: 24 }, () => 0)
+  const byDate: Record<string, number> = {}
   for (const play of plays) {
     if (play.playedAt === null) continue
     const slot = slotOf(Date.parse(play.playedAt) / 1000)
     byDay[slot.day] = (byDay[slot.day] ?? 0) + 1
     byHour[slot.hour] = (byHour[slot.hour] ?? 0) + 1
+    const date = dateAt(Date.parse(play.playedAt))
+    const key = `${date.year}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`
+    byDate[key] = (byDate[key] ?? 0) + 1
   }
   const peak = (counts: readonly number[]): { index: number; plays: number } | null => {
     const plays = Math.max(0, ...counts)
@@ -141,6 +147,7 @@ export function weekStats(plays: readonly Play[], previous: readonly ChartArtist
     tracks: tracksByPlays(plays).length,
     byDay,
     byHour,
+    byDate,
     busiestDay: day === null ? null : { day: day.index, plays: day.plays },
     busiestHour: hour === null ? null : { hour: hour.index, plays: hour.plays },
     topArtists: artists.slice(0, TOP).map((artist, index) => ({ name: artist.name, plays: artist.plays, rank: index + 1, change: previous === null ? null : changeOf(index + 1, previous, artist.name) })),

@@ -4,7 +4,7 @@
  * first, and the rest are filled in by the next pages. Pure but for `get`, which is passed in, so a test hands it a fake one.
  */
 
-import { type ChartArtist, artistChartUrl, artistInfoUrl, type Play, parseArtistChart, parseArtistInfo, parseRecentPage, parseTrackInfo, playsInRangeUrl, trackInfoUrl } from "./lastfm.ts"
+import { type ChartArtist, artistChartUrl, artistInfoUrl, type Play, parseArtistChart, parseArtistInfo, parseRecentPage, parseTrackInfo, playsInRangeUrl, playsTotalUrl, trackInfoUrl } from "./lastfm.ts"
 import { type Env, type Get, lastfmBase, setting, settle, TTL, withPosters } from "./sources.ts"
 import { mergeHistory, parseHistory, type Watch } from "./trakt.ts"
 import { type Month, previousMonth } from "./months.ts"
@@ -188,4 +188,28 @@ export async function loadWeek(env: Env, get: Get, week: Week, nowMs: number): P
 /** A month's wrapped. */
 export async function loadMonth(env: Env, get: Get, month: Month, nowMs: number): Promise<MonthData> {
   return { month, ...(await loadPeriod(env, get, month, previousMonth(month), nowMs, PAGES.month)) }
+}
+
+/** One period of a trend: its id, and how many plays it had (`null` where Last.fm did not answer). */
+export interface TrendPoint {
+  id: string
+  total: number | null
+}
+
+/**
+ * How many plays each of the periods had, oldest first: one small question each (ended periods are kept a day, the one still running five minutes). A question that fails is asked once more, one at a time, and
+ * then its period is `null`, so a gap shows as a gap and never as a period with no plays.
+ */
+export async function loadTrend(env: Env, get: Get, periods: readonly (Range & { id: string })[], nowMs: number): Promise<TrendPoint[]> {
+  const base = lastfmBase(env)
+  if (base === null) return []
+  const totals = new Map<string, number>()
+  const ask = async (period: Range & { id: string }): Promise<void> => {
+    const ttl = nowMs >= period.end * 1000 ? TTL.weekDone : TTL.weekLive
+    const answer = await settle(get(playsTotalUrl(base, period.start, period.end), { ttl }))
+    if (answer !== null) totals.set(period.id, parseRecentPage(answer.data).total)
+  }
+  for (let start = 0; start < periods.length; start += BATCH) await Promise.all(periods.slice(start, start + BATCH).map(ask))
+  for (const period of periods) if (!totals.has(period.id)) await ask(period)
+  return periods.map((period) => ({ id: period.id, total: totals.get(period.id) ?? null }))
 }

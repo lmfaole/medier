@@ -204,3 +204,5 @@ export function parseArtistChart(answer: unknown): ChartArtist[] {
 /** The addresses of the weekly wrapped's questions to Last.fm: `base` is the one with the key and the user (`sources.ts`); times are unix seconds, and `to` is not included. */
 export const playsInRangeUrl = (base: string, from: number, to: number, page: number): string => `${base}&method=user.getrecenttracks&from=${from}&to=${to - 1}&limit=200&page=${page}`
 export const artistChartUrl = (base: string, from: number, to: number): string => `${base}&method=user.getweeklyartistchart&from=${from}&to=${to}`
+/** The same question with one play to a page: Last.fm still says how many there are in all, which is all a trend needs. */
+export const playsTotalUrl = (base: string, from: number, to: number): string => `${base}&method=user.getrecenttracks&from=${from}&to=${to - 1}&limit=1&page=1`

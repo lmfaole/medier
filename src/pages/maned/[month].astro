@@ -1,9 +1,11 @@
 ---
 import { OtherPeriods, PeriodChips, PeriodView } from '../../components/wrapped'
 import Page from '../../layouts/Page.astro'
-import { monthAt, monthRange, monthText, monthTitle, parseMonth, recentMonths } from '../../lib/months'
+import { monthAt, monthRange, monthShort, monthText, monthTitle, parseMonth, recentMonths } from '../../lib/months'
 import { albumPages, artistPages, titlePages, trackPages } from '../../lib/pages'
-import { artistPictures, month as loadMonth, music, watched } from '../../lib/runtime'
+import { artistPictures, month as loadMonth, music, trend, watched } from '../../lib/runtime'
+import { PlaysChart } from '../../components/trend'
+import { dayColumns, monthsUpTo, TREND_LENGTH, trendColumns } from '../../lib/trend'
 
 const base = import.meta.env.BASE_URL
 const now = Date.now()
@@ -23,10 +25,16 @@ const pictures = await artistPictures((data.music?.stats.topArtists ?? []).map((
 const current = monthAt(now).id
 const months = recentMonths(now, 12).map((one) => ({ key: one.id, label: `${monthTitle(one)}${one.id === current ? ' (så langt)' : ''}`, range: monthRange(one), href: `${base}maned/${one.id}/` }))
 const complete = now >= month.end * 1000
+const span = monthsUpTo(month, TREND_LENGTH)
+const points = await trend(span)
+const columns = trendColumns(points ?? [], (id) => { const found = span.find((one) => one.id === id); return found === undefined ? id : monthShort(found) })
+const days = dayColumns(data.music?.stats.byDate ?? {}, month.first, month.days)
 ---
 
 <Page current="week" width="reading" title={monthTitle(month)} lead={`${monthRange(month)}${complete ? '' : ' · så langt'}`} crumbs={[{ label: 'Medier', href: base }, { label: monthTitle(month), href: `${base}maned/${month.id}/` }]}>
   <PeriodChips current="month" weekHref={`${base}uke/`} monthHref={`${base}maned/`} />
+  {columns.length > 1 && <PlaysChart client:visible title={`Siste ${TREND_LENGTH} måneder`} description={`Avspillinger per måned, til og med ${monthText(month)}.`} ariaLabel="Avspillinger per måned" columns={columns} />}
+  {days.some((one) => one.value > 0) && <PlaysChart client:visible title="Dag for dag" description={`Avspillinger per dag i ${monthText(month)}.`} ariaLabel="Avspillinger per dag" columns={days} labelEvery={5} />}
   <PeriodView data={data} pictures={pictures} links={links} base={base} previous="måneden før" />
   <OtherPeriods id="maneder" title="Andre måneder" name="Måned" rows={months} current={month.id} />
 </Page>

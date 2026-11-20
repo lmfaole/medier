@@ -30,6 +30,8 @@ moved since the week before, **new artists** (those among the ten most played th
 
 **The month** is the same, `/maned/<year>-<month>/` (calendar months in Oslo time, `src/lib/months.ts`), reached from the wrapped of a week by the chips Uke and Måned, with this month so far and the twelve before it listed on its page. It has the same numbers and
 lists, the change is from the month before, up to 2 800 plays are read (14 pages) and Trakt's history up to three pages of a hundred for films and for episodes. Both are made by one loader (`loadPeriod` in `week-source.ts`) over any range of time.
+**Charts of change over time** (`src/components/trend.tsx`, the design system's column chart, drawn in the browser): the page of a week shows plays per week for the twelve weeks up to it, and the page of a month shows plays per month for the twelve months up to it and plays per day in the month.
+The totals cost one small question to Last.fm each (a page of one play, whose `total` is the count, `loadTrend`), kept a day once the period is over; a period that could not be told is a gap, never a zero. The days come from plays already read.
 There are no notifications: the site is public, so there is nobody to notify but whoever happens to open it.
 
 Nothing is stored: every week is made when it is asked for, from Last.fm (`user.getrecenttracks` with the week's range, read page by page up to 1 600 plays; the week before's `getweeklyartistchart`; the chart of everything before the

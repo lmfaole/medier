@@ -64,6 +64,9 @@ const monthName = (number: number): string => NAME.format(new Date(Date.UTC(2000
 /** «november 2026». */
 export const monthText = (month: Month): string => `${monthName(month.number)} ${month.year}`
 
+/** «okt.»: the month's short name, for under a column (twelve months in a row never repeat one). */
+export const monthShort = (month: Month): string => new Intl.DateTimeFormat("nb-NO", { month: "short", timeZone: "UTC" }).format(new Date(Date.UTC(2000, month.number - 1, 15)))
+
 /** «November 2026», for a title. */
 export const monthTitle = (month: Month): string => monthText(month).replace(/^./, (letter) => letter.toUpperCase())
 
