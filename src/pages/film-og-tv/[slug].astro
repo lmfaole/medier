@@ -1,6 +1,7 @@
 ---
 import { TitleDetail } from '../../components/detail'
-import { Lit } from '../../components/lit'
+import { Head } from '../../components/head'
+import { sourcesOf } from '../../lib/image-sources'
 import Page from '../../layouts/Page.astro'
 import { titleHref, titlePages } from '../../lib/pages'
 import { watched } from '../../lib/runtime'
@@ -12,12 +13,12 @@ const base = import.meta.env.BASE_URL
 const kind = page.kind === 'film' ? 'Film' : 'Serie'
 ---
 
-<Page current="film"
+<Page bare current="film"
   width="pane"
   title={page.title}
   lead={page.year === null ? kind : `${kind} · ${page.year}`}
   crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: `${base}film-og-tv/` }, { label: page.title, href: titleHref(base, page.slug) }]}
 >
-  <Lit client:idle />
+  <Head client:idle kind={page.year === null ? kind : `${kind} · ${page.year}`} title={page.title} sources={sourcesOf(page.poster)} shape="film" />
   <TitleDetail page={page} base={base} />
 </Page>

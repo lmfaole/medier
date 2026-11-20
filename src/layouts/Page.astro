@@ -17,8 +17,10 @@ interface Props {
   width?: 'reading' | 'pane'
   /** The place of the app this page is in (for a detail page, the list it belongs to); none for a page that is in none (the offline page). */
   current?: Place
+  /** A page whose own head (`DetailHeader`) is its `<h1>`: the title and the lead are in the document's head and its description, and not drawn here. */
+  bare?: boolean
 }
-const { title, lead, crumbs, width = 'reading', current } = Astro.props
+const { title, lead, crumbs, width = 'reading', current, bare = false } = Astro.props
 const base = import.meta.env.BASE_URL
 ---
 
@@ -45,7 +47,7 @@ const base = import.meta.env.BASE_URL
       <Stack gap="xl">
         <ConnectionBanner client:idle />
         {crumbs === undefined ? null : <Breadcrumbs items={crumbs} />}
-        <PageHeader title={title} lead={lead} />
+        {bare ? null : <PageHeader title={title} lead={lead} />}
         <slot />
         <Credits />
       </Stack>

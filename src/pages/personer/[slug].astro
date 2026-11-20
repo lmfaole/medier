@@ -1,6 +1,7 @@
 ---
 import { PersonDetail } from '../../components/detail'
-import { Lit } from '../../components/lit'
+import { Head } from '../../components/head'
+import { profileSources } from '../../lib/tmdb'
 import Page from '../../layouts/Page.astro'
 import { personHref, personId, personIn } from '../../lib/pages'
 import { person as loadPerson, watched } from '../../lib/runtime'
@@ -15,7 +16,7 @@ const base = import.meta.env.BASE_URL
 const name = person?.name ?? found.name
 ---
 
-<Page current="film" width="pane" title={name} lead={person?.department ?? 'Fra rollelisten'} crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: `${base}film-og-tv/` }, { label: name, href: personHref(base, id, name) }]}>
-  <Lit client:idle />
+<Page bare current="film" width="pane" title={name} lead={person?.department ?? 'Fra rollelisten'} crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: `${base}film-og-tv/` }, { label: name, href: personHref(base, id, name) }]}>
+  <Head client:idle kind={person?.department ?? 'Fra rollelisten'} title={name} sources={profileSources(person?.profile ?? found.profile)} shape="person" />
   <PersonDetail id={id} person={person} found={found} base={base} />
 </Page>

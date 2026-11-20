@@ -7,11 +7,11 @@ import { Text } from "@lmfaole/designsystem/components/text"
  * Where Spotify's content comes from: their mark in the text colour (one colour, never over artwork), 28 px, above Spotify's 21 px minimum. Content from Spotify is
  * attributed to Spotify and links back to it (their developer policy), so every part that shows it has this and an «Åpne i Spotify» link or a title that is one.
  */
-export function FromSpotify() {
+export function FromSpotify({ tone = "muted" }: { /** `default` on a tinted ground (the head of a page): muted text would fall under 4.5:1 there. */ tone?: "muted" | "default" }) {
   return (
     <Inline gap="sm">
       <BrandIcon name="spotify" size="xl" decorative />
-      <Text size="sm" tone="muted">
+      <Text size="sm" tone={tone}>
         Fra Spotify
       </Text>
     </Inline>

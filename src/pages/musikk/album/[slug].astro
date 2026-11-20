@@ -1,6 +1,7 @@
 ---
 import { AlbumDetail } from '../../../components/detail'
-import { Lit } from '../../../components/lit'
+import { Head } from '../../../components/head'
+import { sourcesOf } from '../../../lib/image-sources'
 import Page from '../../../layouts/Page.astro'
 import { albumHref, albumPages, artistHref, trackPages } from '../../../lib/pages'
 import { album, music } from '../../../lib/runtime'
@@ -14,12 +15,13 @@ const base = import.meta.env.BASE_URL
 ---
 
 <Page
+  bare
   current="music"
   width="pane"
   title={page.title}
   lead={`Album av ${page.artist}`}
   crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.artist, href: artistHref(base, page.artist) }, { label: page.title, href: albumHref(base, page.artist, page.title) }]}
 >
-  <Lit client:idle />
+  <Head client:idle kind="Album" title={page.title} sources={sourcesOf(page.image)} shape="album" by={{ name: page.artist, href: artistHref(base, page.artist) }} />
   <AlbumDetail page={page} base={base} info={info} played={played} />
 </Page>

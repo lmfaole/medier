@@ -2,7 +2,6 @@ import { FactList } from "@lmfaole/designsystem/components/fact-list"
 import { LinkButton } from "@lmfaole/designsystem/components/link-button"
 import { Split, Stack } from "@lmfaole/designsystem/components/layout"
 import { PageSection } from "@lmfaole/designsystem/components/page-section"
-import { Picture } from "@lmfaole/designsystem/components/picture"
 import { details, PictureRows } from "@lmfaole/designsystem/components/picture-rows"
 import { Rows } from "@lmfaole/designsystem/components/rows"
 import { Text, TextLink } from "@lmfaole/designsystem/components/text"
@@ -12,7 +11,7 @@ import { firstSentences } from "../lib/lastfm.ts"
 import { type AlbumPage, type Appearance, type ArtistPage, artistHref, albumHref, personHref, titleHref, type TitlePage, type TrackPage, trackSlug, trackHref } from "../lib/pages.ts"
 import type { SpotifyAlbum, SpotifyArtist, SpotifyTrack } from "../lib/spotify.ts"
 import { sourcesOf } from "../lib/image-sources.ts"
-import { SHAPES, type Shape } from "../lib/shapes.ts"
+import { SHAPES } from "../lib/shapes.ts"
 import { type Person, profileSources } from "../lib/tmdb.ts"
 import { episodesCode } from "../lib/trakt.ts"
 import { ageOn, lengthText, longDay, releaseText } from "../lib/days.ts"
@@ -33,8 +32,6 @@ export function TitleDetail({ page, base }: { page: TitlePage; base: string }) {
   const episodes = page.viewings.flatMap((watch) => (watch.episode === null ? [] : [watch.episode]))
   const facts = (
     <Stack gap="lg">
-      {/* The picture that leads the page: fetched first, at the width it is drawn. */}
-      <Picture src={null} sources={sourcesOf(page.poster)} priority ratio="poster" size="hero" />
       <FactList
         facts={[
           ["Sjanger", page.info === null || page.info.genres.length === 0 ? null : page.info.genres.join(", ")],
@@ -88,12 +85,6 @@ export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: str
   const genres = lastfm !== null && lastfm.tags.length > 0 ? lastfm.tags : (spotify?.genres ?? [])
   const rail = (
     <Stack gap="lg">
-      {spotify === null || spotify.images.length === 0 ? null : (
-        <Stack gap="sm">
-          <Picture src={null} sources={spotify.images} priority size="hero" {...SHAPES.artist} />
-          <FromSpotify />
-        </Stack>
-      )}
       <FactList
         facts={[
           ["Sjangere", genres.length === 0 ? null : genres.join(", ")],
@@ -133,13 +124,10 @@ export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: str
  * to them on TMDB. `person` is TMDB's page of them (`null` where it did not answer), `found` what the credits of the titles seen say, which is enough for a page without it.
  */
 export function PersonDetail({ id, person, found, base }: { id: number; person: Person | null; found: { name: string; profile: string | null; appearances: Appearance[] }; base: string }) {
-  const profile = person?.profile ?? found.profile
   const until = person?.deathday ?? new Date().toISOString().slice(0, 10)
   const age = person?.birthday == null ? null : ageOn(person.birthday, until)
   const rail = (
     <Stack gap="lg">
-      {/* The picture that leads the page: fetched first, at the width it is drawn. */}
-      <Picture src={null} sources={profileSources(profile)} priority size="hero" {...SHAPES.person} />
       <FactList
         facts={[
           ["Født", person?.birthday == null ? null : `${longDay(person.birthday)}${person.deathday == null && age !== null ? ` (${age} år)` : ""}`],
@@ -168,12 +156,6 @@ export function PersonDetail({ id, person, found, base }: { id: number; person: 
   )
 }
 
-/** The facts the pages of an album and of a track share: their cover leads, and the facts follow. `cover` is Last.fm's, so no attribution is needed for it. */
-function Cover({ image, shape }: { image: string | null; shape: Shape }) {
-  // The picture that leads the page: fetched first, at the width it is drawn. The shape is the kind of thing the page is of: a record's sleeve, or a single's tile.
-  return <Picture src={null} sources={sourcesOf(image)} priority size="hero" {...shape} />
-}
-
 const tagsText = (tags: readonly string[]): string | null => (tags.length === 0 ? null : tags.join(", "))
 const listeners = (n: number | null | undefined): string | null => (n == null ? null : n.toLocaleString("nb-NO"))
 
@@ -195,7 +177,6 @@ export function TrackDetail({ page, base, info }: { page: TrackPage; base: strin
   const { lastfm, spotify } = info
   const rail = (
     <Stack gap="lg">
-      <Cover image={page.image} shape={SHAPES.track} />
       <FactList
         facts={[
           ["Artist", <TextLink href={artistHref(base, page.artist)}>{page.artist}</TextLink>],
@@ -238,7 +219,6 @@ export function AlbumDetail({ page, base, info, played }: { page: AlbumPage; bas
   const fromSpotify = released !== null || spotify?.tracks != null
   const rail = (
     <Stack gap="lg">
-      <Cover image={page.image} shape={SHAPES.album} />
       <FactList
         facts={[
           ["Artist", <TextLink href={artistHref(base, page.artist)}>{page.artist}</TextLink>],
