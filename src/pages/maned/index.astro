@@ -1,6 +1,0 @@
----
-import { lastCompletedMonth } from '../../lib/months'
-
-// The month chosen opens the last month that is over: the wrapped of the month that has just ended. The months before it, and this one so far, are on its page.
-return Astro.redirect(`${import.meta.env.BASE_URL}maned/${lastCompletedMonth(Date.now()).id}/`)
----

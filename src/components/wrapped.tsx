@@ -18,6 +18,8 @@ import type { SpotifyArtist } from "../lib/spotify.ts"
 import type { PeriodData } from "../lib/week-source.ts"
 import { WEEKDAY_NAMES } from "../lib/weeks.ts"
 import { hourText, rankChange, longLength, playsChange, signed, type TopArtist, type WatchStats, type WeekStats } from "../lib/wrapped.ts"
+import type { ReactNode } from "react"
+
 import { FromSpotify } from "./credits.tsx"
 
 /** What has a page of its own to link to: the slugs of the artists, albums and songs among the recent plays, and the address of each title among the films and shows seen. */
@@ -147,50 +149,66 @@ function NewArtists({ names, links, base }: { names: readonly { name: string; pl
   )
 }
 
-/** What was watched: the counts, the shows most watched, and the runs that were a binge. */
-function Watched({ stats, links, base }: { stats: WatchStats; links: Linkable; base: string }) {
-  const nothing = stats.films === 0 && stats.episodes === 0
-  const title = (name: string) => {
-    const slug = links.titles.get(name)
-    return slug === undefined ? name : <TextLink href={titleHref(base, slug)}>{name}</TextLink>
+/** A film or a show as its page here, where it has one (among the titles seen lately), else its name. */
+const titleOf = (links: Linkable, base: string, name: string): ReactNode => {
+  const slug = links.titles.get(name)
+  return slug === undefined ? name : <TextLink href={titleHref(base, slug)}>{name}</TextLink>
+}
+
+/**
+ * The wrapped of film and TV for a week or a month, from Trakt: the numbers (films, episodes, shows, how long, an estimate, and when), then the shows most watched, the films and the binges.
+ * `perDay` is the sparkline of the weekdays, for a week; a month has its own chart of the days.
+ */
+export function FilmPeriod({ stats, links, base, perDay }: { stats: WatchStats; links: Linkable; base: string; perDay: boolean }) {
+  if (stats.films === 0 && stats.episodes === 0) {
+    return (
+      <PageSection id="tall" title="Tall" icon="chart">
+        <EmptyState icon="film" title="Ingenting sett i perioden" description="Oppsummeringen lages av filmene og episodene du markerer som sett på Trakt i perioden. Velg en annen periode, eller se det du har sett sist." action={{ href: `${base}film-og-tv/`, label: "Se det du har sett sist" }} />
+      </PageSection>
+    )
   }
   return (
-    <PageSection id="film-og-tv" title="Film og TV" icon="film">
-      {nothing ? (
-        <EmptyState icon="film" title="Ingenting sett i perioden" description="Filmer og episoder du markerer som sett på Trakt i perioden, telles her." action={{ href: `${base}film-og-tv/`, label: "Se det du har sett sist" }} />
-      ) : (
-        <Stack gap="lg">
-          <FactList facts={[["Filmer", number(stats.films)], ["Episoder", number(stats.episodes)]]} />
-          {stats.filmItems.length === 0 ? null : (
-            <Stack gap="sm">
-              <Text size="sm" tone="muted">Filmer</Text>
-              <PictureRows
-                {...SHAPES.film}
-                rows={stats.filmItems.map((film) => ({ key: `${film.title}-${film.watchedAt}`, picture: null, sources: sourcesOf(film.poster), title: title(film.title), detail: details([film.year]), aside: shortWhen(film.watchedAt) }))}
-              />
-            </Stack>
-          )}
-          {stats.shows.length === 0 ? null : (
-            <Stack gap="sm">
-              <Text size="sm" tone="muted">Serier</Text>
-            <PictureRows
-              {...SHAPES.film}
-              rows={stats.shows.map((show, index) => ({ key: show.title, picture: null, sources: sourcesOf(show.poster), title: title(show.title), detail: details([count(show.episodes, "episode", "episoder")]), aside: `Nr. ${index + 1}` }))}
-            />
-            </Stack>
-          )}
-          {stats.binges.length === 0 ? null : (
-            <Stack gap="sm">
-              <Text size="sm" tone="muted">Tre episoder eller flere av samme serie på én dag</Text>
-              <Rows
-                columns={{ name: "Serie", value: "Episoder" }}
-                rows={stats.binges.map((binge) => ({ key: binge.key, body: title(binge.title), trailing: <Text as="span" size="sm" tone="muted" numeric>{number(binge.episodes.length)}</Text> }))}
-              />
-            </Stack>
-          )}
-        </Stack>
+    <>
+      <PageSection id="tall" title="Tall" icon="chart">
+        <FactList
+          facts={[
+            ["Filmer", number(stats.films)],
+            ["Episoder", number(stats.episodes)],
+            ["Ulike serier", stats.showCount === 0 ? null : number(stats.showCount)],
+            ["Seertid, anslag", `≈ ${longLength(stats.minutes * 60)}`],
+            ["Travleste dag", stats.busiestDay === null ? null : `${capital(WEEKDAY_NAMES[stats.busiestDay.day] ?? "")} (${count(stats.busiestDay.viewings, "visning", "visninger")})`],
+            ["Per dag, mandag til søndag", perDay ? <Sparkline values={stats.byDay} label={`Visninger per dag, mandag til søndag: ${stats.byDay.join(", ")}`} /> : null],
+          ]}
+        />
+      </PageSection>
+      {stats.shows.length === 0 ? null : (
+        <PageSection id="toppserier" title="Mest sette serier" icon="film">
+          <RankedRows
+            {...SHAPES.film}
+            rows={stats.shows.map((show) => ({ key: show.title, sources: sourcesOf(show.poster), title: titleOf(links, base, show.title), value: count(show.episodes, "episode", "episoder"), amount: show.episodes }))}
+          />
+        </PageSection>
       )}
-    </PageSection>
+      {stats.filmItems.length === 0 ? null : (
+        <PageSection id="filmer" title="Filmer" icon="film">
+          <PictureRows
+            {...SHAPES.film}
+            rows={stats.filmItems.map((one) => ({ key: `${one.title}-${one.watchedAt}`, picture: null, sources: sourcesOf(one.poster), title: titleOf(links, base, one.title), detail: details([one.year]), aside: shortWhen(one.watchedAt) }))}
+          />
+        </PageSection>
+      )}
+      {stats.binges.length === 0 ? null : (
+        <PageSection id="maraton" title="Maraton" icon="play">
+          <Stack gap="sm">
+            <Text size="sm" tone="muted">Tre episoder eller flere av samme serie på én dag.</Text>
+            <Rows
+              columns={{ name: "Serie", value: "Episoder" }}
+              rows={stats.binges.map((binge) => ({ key: binge.key, body: titleOf(links, base, binge.title), trailing: <Text as="span" size="sm" tone="muted" numeric>{number(binge.episodes.length)}</Text> }))}
+            />
+          </Stack>
+        </PageSection>
+      )}
+    </>
   )
 }
 
@@ -222,11 +240,11 @@ export function PeriodChips({ current, weekHref, monthHref }: { current: "week" 
 }
 
 /**
- * A week's or a month's wrapped, in two parts with the top artists between them (a server island, see `ArtistsSection`): `head` is the numbers, `tail` the lists of albums and songs, who is new and what was watched.
- * A source that gave nothing leaves out only its own part. `previous` is what the change is from.
+ * A week's or a month's wrapped of the music, in two parts with the top artists between them (a server island, see `ArtistsSection`): `head` is the numbers, `tail` the lists of albums and songs and who is
+ * new. `previous` is what the change is from. Film and TV has its own (`FilmPeriod`).
  */
 export function PeriodView({ data, links, base, previous, part }: { data: PeriodData; links: Linkable; base: string; previous: string; part: "head" | "tail" }) {
-  const { music, watched } = data
+  const { music } = data
   if (part === "head") {
     if (music === null) return null
     return music.stats.total === 0 ? (
@@ -237,15 +255,11 @@ export function PeriodView({ data, links, base, previous, part }: { data: Period
       <Numbers stats={music.stats} previousTotal={music.previousTotal} previous={previous} truncated={music.truncated} />
     )
   }
+  if (music === null || music.stats.total === 0) return null
   return (
     <>
-      {music === null || music.stats.total === 0 ? null : (
-        <>
-          <Tops stats={music.stats} links={links} base={base} />
-          <NewArtists names={music.newArtists} links={links} base={base} />
-        </>
-      )}
-      {watched === null ? null : <Watched stats={watched.stats} links={links} base={base} />}
+      <Tops stats={music.stats} links={links} base={base} />
+      <NewArtists names={music.newArtists} links={links} base={base} />
     </>
   )
 }

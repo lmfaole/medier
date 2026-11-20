@@ -9,7 +9,7 @@ import type { AstroCookies } from "astro"
 
 import { type Env, forUsers, type Get, lastfmError, lastfmUserExists, type Listening, loadAlbum, loadArtist, loadArtistPictures, loadLastfmNow, loadMusic, loadPerson, loadTrack, loadWatched, settle, traktUserExists } from "./sources.ts"
 import { MOCK_VERSION, mockFetch, mockSettings } from "./mock.ts"
-import { loadMonth, loadTrend, loadWeek } from "./week-source.ts"
+import { loadMonth, loadTrend, loadWeek, type Medium } from "./week-source.ts"
 import type { Month } from "./months.ts"
 import type { Week } from "./weeks.ts"
 import type { NowPlaying } from "./spotify.ts"
@@ -79,8 +79,8 @@ export const artistPictures = (names: readonly string[]) => loadArtistPictures(s
 export const person = (id: number) => settle(loadPerson(settings(), get, id))
 export const album = (users: Users, artist: string, title: string) => loadAlbum(settingsFor(users), get, artist, title)
 export const track = (users: Users, artist: string, title: string) => loadTrack(settingsFor(users), get, artist, title)
-export const week = (users: Users, which: Week) => settle(loadWeek(settingsFor(users), get, which, Date.now()))
-export const month = (users: Users, which: Month) => settle(loadMonth(settingsFor(users), get, which, Date.now()))
+export const week = (users: Users, which: Week, medium: Medium) => settle(loadWeek(settingsFor(users), get, which, Date.now(), medium))
+export const month = (users: Users, which: Month, medium: Medium) => settle(loadMonth(settingsFor(users), get, which, Date.now(), medium))
 export const trend = (users: Users, periods: readonly { id: string; start: number; end: number }[]) => settle(loadTrend(settingsFor(users), get, periods, Date.now()))
 
 /** Whether the services have this username (a Trakt profile must be public); in a run on made-up data every name is one. */

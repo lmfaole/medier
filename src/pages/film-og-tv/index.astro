@@ -2,6 +2,8 @@
 import Intro from '../../components/Intro.astro'
 import { INTROS } from '../../lib/onboarding'
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
+import { SubPages } from '@lmfaole/designsystem/components/sub-pages'
+import { mediumHref } from '../../lib/media'
 
 import { Fetched, WatchRows } from '../../components/sections'
 import UsernameGate from '../../components/UsernameGate.astro'
@@ -19,6 +21,13 @@ const seen = users.trakt === null ? null : await watched(users)
       <UsernameGate services={['trakt']} />
     ) : (
       <>
+        <SubPages
+          label="Mer om film og TV"
+          pages={[
+            { href: mediumHref(base, 'film', 'historikk/'), label: 'Historikk', icon: 'history', description: 'Alt du har sett, dag for dag, og hvor lenge du så.' },
+            { href: mediumHref(base, 'film', 'uke/'), label: 'Wrapped', icon: 'calendar', description: 'Oppsummeringen av hver uke og måned: filmer, serier, maraton og tall.' },
+          ]}
+        />
         <Intro intro={INTROS.film} />
         <PageSection id="sett" title="Sist sett">
           <WatchRows items={seen?.items ?? []} base={base} />

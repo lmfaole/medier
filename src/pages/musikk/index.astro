@@ -2,6 +2,8 @@
 import Intro from '../../components/Intro.astro'
 import { INTROS } from '../../lib/onboarding'
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
+import { SubPages } from '@lmfaole/designsystem/components/sub-pages'
+import { mediumHref } from '../../lib/media'
 
 import { Fetched, PlayRows, TopArtistRows } from '../../components/sections'
 import UsernameGate from '../../components/UsernameGate.astro'
@@ -21,6 +23,13 @@ const now = playingNow(listening?.now ?? null)
       <UsernameGate services={['lastfm']} />
     ) : (
       <>
+        <SubPages
+          label="Mer om musikken"
+          pages={[
+            { href: mediumHref(base, 'music', 'historikk/'), label: 'Historikk', icon: 'history', description: 'Alt du har hørt på, dag for dag, og hvor lenge du lyttet.' },
+            { href: mediumHref(base, 'music', 'uke/'), label: 'Wrapped', icon: 'calendar', description: 'Oppsummeringen av hver uke og måned: toppartister, album, låter og tall.' },
+          ]}
+        />
         <Intro intro={INTROS.musikk} />
         <PageSection id="siste" title="Siste avspillinger">
           <PlayRows plays={listening?.recent ?? []} now={now} base={base} />

@@ -12,6 +12,13 @@ export const TOP = 5
 /** The length of a song nobody knows the length of, in seconds: what a song is, about, until a better one is known. */
 export const TYPICAL_SECONDS = 210
 
+/** A viewing's length where TMDB does not tell it: a show's info has no episode length, and a film's may be missing. */
+export const TYPICAL_EPISODE_MINUTES = 45
+export const TYPICAL_FILM_MINUTES = 110
+
+/** How long a viewing took, in minutes: the film's runtime from TMDB, or the typical length. */
+export const watchMinutes = (watch: Watch): number => (watch.episode === null ? (watch.info?.runtime ?? TYPICAL_FILM_MINUTES) : TYPICAL_EPISODE_MINUTES)
+
 /** A song as one key, for the lengths known of songs. */
 export const trackKey = (artist: string, track: string): string => `${artist}\u0000${track}`
 
@@ -173,6 +180,14 @@ export const BINGE = 3
 export interface WatchStats {
   films: number
   episodes: number
+  /** How many shows had an episode watched. */
+  showCount: number
+  /** How long was watched, an estimate (`watchMinutes`). */
+  minutes: number
+  /** Viewings on each day of the week, Monday first, and on each calendar date (`YYYY-MM-DD`, Oslo time) that had any. */
+  byDay: number[]
+  byDate: Record<string, number>
+  busiestDay: { day: number; viewings: number } | null
   /** The films watched, newest first, with the day: what a count of films does not say. */
   filmItems: { title: string; year: number | null; poster: string | null; watchedAt: string }[]
   /** The shows watched, most episodes first (up to the top five), with a poster. */
@@ -191,8 +206,25 @@ export function watchStats(items: readonly Watch[]): WatchStats {
     show.poster ??= watch.poster
     shows.set(watch.title, show)
   }
+  const byDay = Array.from({ length: 7 }, () => 0)
+  const byDate: Record<string, number> = {}
+  for (const watch of items) {
+    const at = Date.parse(watch.watchedAt)
+    if (Number.isNaN(at)) continue
+    const slot = slotOf(at / 1000)
+    byDay[slot.day] = (byDay[slot.day] ?? 0) + 1
+    const date = dateAt(at)
+    const key = `${date.year}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`
+    byDate[key] = (byDate[key] ?? 0) + 1
+  }
+  const most = Math.max(0, ...byDay)
   return {
     films: items.filter((watch) => watch.kind === "film").length,
+    showCount: shows.size,
+    minutes: items.reduce((sum, watch) => sum + watchMinutes(watch), 0),
+    byDay,
+    byDate,
+    busiestDay: most === 0 ? null : { day: byDay.indexOf(most), viewings: most },
     filmItems: items.filter((watch) => watch.kind === "film").map((watch) => ({ title: watch.title, year: watch.year, poster: watch.poster, watchedAt: watch.watchedAt })),
     episodes: items.filter((watch) => watch.kind === "episode").length,
     shows: [...shows.values()].sort((a, b) => b.episodes - a.episodes || a.title.localeCompare(b.title, "nb")).slice(0, TOP),

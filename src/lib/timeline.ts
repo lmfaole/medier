@@ -8,7 +8,7 @@ import type { DurationSpan, TimelineEvent, TimelineTone } from "@lmfaole/designs
 import type { Play } from "./lastfm.ts"
 import { albumSlug, slugify } from "./pages.ts"
 import { episodeCode, type Watch } from "./trakt.ts"
-import { trackKey, TYPICAL_SECONDS } from "./wrapped.ts"
+import { trackKey, TYPICAL_SECONDS, watchMinutes } from "./wrapped.ts"
 
 export type { DurationSpan, TimelineEvent, TimelineTone }
 
@@ -17,9 +17,6 @@ export const MUSIC_ROW = "Musikk"
 export const WATCH_ROW = "Film og TV"
 /** A pause this long or longer ends a session. */
 export const SESSION_GAP_MINUTES = 30
-/** A viewing's length where TMDB does not tell it: a show's info has no episode length, and a film's may be missing. */
-export const TYPICAL_EPISODE_MINUTES = 45
-export const TYPICAL_FILM_MINUTES = 110
 
 const MINUTE = 60_000
 
@@ -134,7 +131,7 @@ export function playIntervals(plays: readonly Play[], lengths: ReadonlyMap<strin
 /** Each viewing up to when it was marked as seen (Trakt's time is the end): a film's runtime where TMDB has it, a typical length where not. */
 export function watchIntervals(watches: readonly Watch[]): Interval[] {
   return watches.map((watch) => {
-    const minutes = watch.episode === null ? (watch.info?.runtime ?? TYPICAL_FILM_MINUTES) : TYPICAL_EPISODE_MINUTES
+    const minutes = watchMinutes(watch)
     const end = Date.parse(watch.watchedAt)
     return { start: new Date(end - minutes * MINUTE).toISOString(), end: new Date(end).toISOString(), label: watch.title }
   })

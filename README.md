@@ -7,7 +7,7 @@ Hva du hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaol
 
 - **Whose data.** The visitor's own: they give their Last.fm and Trakt usernames in a form (the design system's `UsernameForm`, in `src/components/UsernameGate.astro`, posted to `src/pages/api/brukernavn.ts`, no JS needed), which checks each with its
   service (Last.fm's `user.getinfo`; Trakt's profile, which must be public) and keeps it in a cookie for a year (`lastfm_user`, `trakt_user`; path `/`, `SameSite=Lax`, `Secure`, `HttpOnly`). An empty field forgets it.
-  Without a username a page shows the form instead of data: Musikk and its pages need Last.fm, Film og TV and its pages Trakt, and the front page, Historikk and Wrapped show what has a username and ask for the rest.
+  Without a username a page shows the form instead of data: Musikk and its pages (its Historikk and Wrapped too) need Last.fm, Film og TV and its pages Trakt, and the front page shows what has a username and asks for the rest.
   «Viser data for … · Bytt» at the foot of every page leads to Innstillinger (`/brukernavn/` is a redirect there now).
 - **The first run.** A first visit opens a full-screen wizard over whatever page it landed on (the design system's `FirstRun`, in `src/components/FirstRunWizard.astro` and `src/components/settings-fields.tsx`):
   welcome · Last.fm · Trakt · the front page's sections · theme · effects · tilt · install, one question a step. The effects and the tilt are chosen by their live examples
@@ -17,8 +17,7 @@ Hva du hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaol
   A username not found sends back to its step (`?forste-gang=<step>` with the error); «Hopp over» (`skip=1`) only marks it seen. It is never drawn on Innstillinger or `/offline/`, and the intros wait until it is done.
 - **Innstillinger** (`/innstillinger/`, in the footer) has the same fields in sections and one «Lagre» to the same endpoint, and «Vis introen igjen» (`rerun=1`), which takes the wizard out of `seen`.
   The root layout spreads `htmlAttributes(prefs)` on `<html>` (`data-theme`, `data-effects`, `data-tilt`), and the front page shows only the sections chosen (all until some are; none says so).
-- **The first visit.** Historikk, Musikk and Film og TV each have a short intro (`IntroCallout`, the texts in `src/lib/onboarding.ts`), Historikk has «Nytt» in the navigation until
-  `NEW_HISTORIKK.until` or until it is opened, and the front page offers to install the app (`InstallPrompt`). What has been dismissed is kept in the design system's `seen` cookie
+- **The first visit.** Musikk, Film og TV and the Historikk of each have a short intro (`IntroCallout`, the texts in `src/lib/onboarding.ts`), and the front page offers to install the app (`InstallPrompt`). What has been dismissed is kept in the design system's `seen` cookie
   (path `/`), read by the server so nothing flashes; an intro is never shown where the page shows the username form instead. An empty list says why and what to do about it (`EmptyState` with one action). Only public data is shown: the site's keys are used, never a sign-in of the visitor's. The Worker has no username of its own.
   Every page is `Cache-Control: private` with `Vary: Cookie` (`src/middleware.ts`), the Worker's cache is keyed by the address (which has the username in it), and the service worker keeps one visitor's pages at a time.
 - A page asks its sources when it is asked for: Last.fm (plays and what plays now), Trakt (viewings), TMDB (posters) and Spotify (artists' pictures and links, found by name). Each answer is kept in the Worker's cache for a short while
@@ -37,9 +36,22 @@ Hva du hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaol
   workers.dev): only those four hosts, only GET (and Spotify's token), only with a key the site and the relay share.
 - What plays now is Last.fm's «now playing» (a scrobble of whatever plays) for the visitor's username; Spotify's «currently playing» is not used (it could only be the owner's).
 
+## Music and film, apart
+
+Music (Last.fm) and film og TV (Trakt) are kept apart: each has its own Historikk and its own Wrapped, under its own address (`src/lib/media.ts`), reached from the overview's cards (`SubPages`), never from the bar.
+
+| | Musikk | Film og TV |
+| --- | --- | --- |
+| History | `/musikk/historikk/` | `/film-og-tv/historikk/` |
+| Week | `/musikk/uke/<year>-<week>/` | `/film-og-tv/uke/<year>-<week>/` |
+| Month | `/musikk/maned/<year>-<month>/` | `/film-og-tv/maned/<year>-<month>/` |
+
+`/musikk/uke/` and `/musikk/maned/` (and the film ones) open the last week or month that is over. The old `/historikk/`, `/uke/…` and `/maned/…` are moved for good (301, by `src/middleware.ts`) to the music ones, with the week or month and the query kept.
+A page of music needs only the Last.fm username and asks only Last.fm; one of film only the Trakt username and asks only Trakt (`loadPeriod(…, medium)`).
+
 ## History
 
-`/historikk/` has the plays and the viewings on one timeline (the design system's `Timeline`), newest first under a heading for each day, with a run of one album's songs or one show's episodes folded away («Vis 9 spor til»), and the song playing now first, marked as going on. A song links to its page here, a viewing to the film's or the show's. Above it are the **sessions** of the last two days (`DurationBars`, a lane for Musikk and one for Film og TV): plays and viewings less than 30 minutes apart are one session, a song counted at a typical 3½ minutes and a viewing at its film's runtime (or 45 minutes for an episode, 110 for a film TMDB has none for), up to when Trakt marked it seen. It is made of what the front page already asks for (the last 50 plays and viewings), by `src/lib/timeline.ts`. The front page's Musikk and Film og TV link to it.
+The Historikk of each medium has its plays or its viewings on a timeline (the design system's `Timeline`), newest first under a heading for each day, with a run of one album's songs or one show's episodes folded away («Vis 9 spor til»), and, for music, the song playing now first, marked as going on. A song links to its page here, a viewing to the film's or the show's. Above it are the **sessions** of the last two days (`DurationBars`): plays or viewings less than 30 minutes apart are one session, a song counted at a typical 3½ minutes and a viewing at its film's runtime (or 45 minutes for an episode, 110 for a film TMDB has none for), up to when Trakt marked it seen. It is made of what the front page already asks for (the last 50 plays or viewings), by `src/lib/timeline.ts`. The front page's Musikk and Film og TV link to their own.
 
 ## The sleeve of an album
 
@@ -53,11 +65,12 @@ The page of an artist lists its most played albums (`artist.gettopalbums`, one c
 
 The head of a week's or a month's page is the same composed head as a detail page's (`Head`, the page `bare`): the most played album of the stretch leads it, its cover as the picture and its colours as the stage (WebGL, moving with the light), with the stretch and the album named under the title. The front page's card of what plays now stands on a stage of the cover's colours too, and when the song changes the colours go over to the new cover's in one move.
 
-The place **Wrapped** in the bar opens the last week that is over, `/uke/<year>-<week>/` (ISO weeks, Monday to Sunday in Oslo time, `src/lib/weeks.ts`); this week so far and the twelve before it are listed on the page.
+**Wrapped** (the card on Musikk) opens the last week that is over, `/musikk/uke/<year>-<week>/` (ISO weeks, Monday to Sunday in Oslo time, `src/lib/weeks.ts`); this week so far and the twelve before it are listed on the page.
 Only numbers and lists: **Tall** (plays, how many different artists and songs, listening time, the busiest day and hour, the shape of the days), **top artists, albums and songs** in the shapes of what they are, with how each artist's place
-moved since the week before, **new artists** (those among the ten most played that had no plays at all before the week) and **film og TV** (films, episodes, the shows most watched, and runs of three episodes or more of one show on a day).
+moved since the week before, and **new artists** (those among the ten most played that had no plays at all before the week).
+**The Wrapped of film og TV** (`/film-og-tv/uke/…`, `/film-og-tv/maned/…`, `FilmPeriod` in `src/components/wrapped.tsx`) has the same head (the most watched show's or film's poster), the films, episodes, different shows, the time watched (a guess: runtime, 45 minutes an episode), the busiest day and the shape of the week (a month: viewings per day), the shows most watched, the films, and runs of three episodes or more of one show on a day.
 
-**The month** is the same, `/maned/<year>-<month>/` (calendar months in Oslo time, `src/lib/months.ts`), reached from the wrapped of a week by the chips Uke and Måned, with this month so far and the twelve before it listed on its page. It has the same numbers and
+**The month** is the same, `/musikk/maned/<year>-<month>/` (calendar months in Oslo time, `src/lib/months.ts`), reached from the wrapped of a week by the chips Uke and Måned, with this month so far and the twelve before it listed on its page. It has the same numbers and
 lists, the change is from the month before, up to 2 800 plays are read (14 pages) and Trakt's history up to three pages of a hundred for films and for episodes. Both are made by one loader (`loadPeriod` in `week-source.ts`) over any range of time.
 **Charts of change over time** (`src/components/trend.tsx`, the trend as a server island that asks for its own page, so it has a budget of questions of its own, the design system's column chart, drawn in the browser): the page of a week shows plays per week for the twelve weeks up to it, and the page of a month shows plays per month for the twelve months up to it and plays per day in the month.
 The totals cost one small question to Last.fm each (a page of one play, whose `total` is the count, `loadTrend`), kept a day once the period is over; a period that could not be told is a gap, never a zero. The days come from plays already read.
@@ -84,7 +97,7 @@ The site installs on a phone or a computer and opens without the browser around 
 of our own). `public/manifest.webmanifest` is the identity (`id` and scope `/`, never changed once installed; dark colours, `any` and `maskable` icons at 192 and 512 drawn by `node scripts/icons.mjs`), and
 `public/sw.js` the service worker: a page from the network first with the last copy of each page when there is no network (the forty last, kept by address with the query, and only the current visitor's: a page for other usernames or other `prefs` or with the wizard open or closed, by the server's `X-Medier-Who`, drops the ones before), the front page and then `/offline/` when there
 is none; the built files and icons from the cache. Nothing from another site is kept (the covers are Spotify's, Last.fm's and TMDB's own), a redirect or an error is never kept as a page, and a new version waits until the
-app is closed (no `skipWaiting`) and then deletes the old caches: change `VERSION` in `sw.js` to make it. A bar at the foot on a phone, a rail from tablet width, goes between Forside, Musikk, Film, Historikk and Wrapped;
+app is closed (no `skipWaiting`) and then deletes the old caches: change `VERSION` in `sw.js` to make it. A bar at the foot on a phone, a rail from tablet width, goes between Forside, Musikk and Film;
 `ConnectionBanner` says so when the device is offline and the page is the last one fetched. `src/pwa.test.ts` pins the manifest and runs the worker against a cache and a network of its own.
 
 ## Shape language

@@ -2,6 +2,7 @@ import { defineMiddleware } from 'astro:middleware'
 
 import { parsePrefs, PREFS_COOKIE, serializePrefs } from '@lmfaole/designsystem/lib/preferences'
 
+import { oldAddress } from './lib/media'
 import { usersOf } from './lib/runtime'
 import { firstRunOpen } from './lib/visitor-cookies'
 import { WHO_HEADER, whoOf } from './lib/users'
@@ -18,6 +19,9 @@ const mark = (headers: Headers, who: string): void => {
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // The shared history and wrapped are the music's now; film and TV has its own under /film-og-tv/.
+  const moved = oldAddress(import.meta.env.BASE_URL, context.url.pathname, context.url.search)
+  if (moved !== null) return new Response(null, { status: 301, headers: { Location: moved, 'Cache-Control': 'public, max-age=3600' } })
   const response = await next()
   // Whose page, and as what it was drawn (the theme, the effects, the sections, the wizard open or not): a change of any of them and the service worker lets go of the pages it kept.
   const drawn = `${serializePrefs(parsePrefs(context.cookies.get(PREFS_COOKIE)?.value))}|${firstRunOpen(context.cookies, context.url) ? 'first-run' : ''}`

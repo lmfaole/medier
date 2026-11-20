@@ -42,6 +42,9 @@ export interface Range {
 }
 
 /** What a stretch of time has to tell: the music and what was watched, each `null` where its source is not set up or fails. */
+/** What a wrapped is of: the music (Last.fm) or the films and shows (Trakt). Each has its own pages, and asks only its own source. */
+export type Medium = "music" | "film"
+
 export interface PeriodData {
   /** The time is over: its numbers are final. */
   complete: boolean
@@ -172,22 +175,22 @@ async function watchedWeek(env: Env, get: Get, week: Range, ttl: number): Promis
   return { items, stats: watchStats(items) }
 }
 
-/** The sum of a stretch of time from Last.fm and Trakt. Each part leaves out only itself when its source is not set up or fails. */
-async function loadPeriod(env: Env, get: Get, range: Range, previous: Range, nowMs: number, maxPages: number): Promise<PeriodData> {
+/** The sum of a stretch of time of one medium: the music from Last.fm, or what was watched from Trakt (the other is `null`). `null` too where the source is not set up or fails. */
+async function loadPeriod(env: Env, get: Get, range: Range, previous: Range, nowMs: number, maxPages: number, medium: Medium): Promise<PeriodData> {
   const complete = nowMs >= range.end * 1000
   const ttl = complete ? TTL.weekDone : TTL.weekLive
-  const [music, watched] = await Promise.all([settle(musicWeek(env, get, range, previous, ttl, nowMs, maxPages)), settle(watchedWeek(env, get, range, ttl))])
+  const [music, watched] = await Promise.all([medium === "music" ? settle(musicWeek(env, get, range, previous, ttl, nowMs, maxPages)) : null, medium === "film" ? settle(watchedWeek(env, get, range, ttl)) : null])
   return { complete, music, watched }
 }
 
-/** A week's wrapped. */
-export async function loadWeek(env: Env, get: Get, week: Week, nowMs: number): Promise<WeekData> {
-  return { week, ...(await loadPeriod(env, get, week, previousWeek(week), nowMs, PAGES.week)) }
+/** A week's wrapped of one medium. */
+export async function loadWeek(env: Env, get: Get, week: Week, nowMs: number, medium: Medium): Promise<WeekData> {
+  return { week, ...(await loadPeriod(env, get, week, previousWeek(week), nowMs, PAGES.week, medium)) }
 }
 
-/** A month's wrapped. */
-export async function loadMonth(env: Env, get: Get, month: Month, nowMs: number): Promise<MonthData> {
-  return { month, ...(await loadPeriod(env, get, month, previousMonth(month), nowMs, PAGES.month)) }
+/** A month's wrapped of one medium. */
+export async function loadMonth(env: Env, get: Get, month: Month, nowMs: number, medium: Medium): Promise<MonthData> {
+  return { month, ...(await loadPeriod(env, get, month, previousMonth(month), nowMs, PAGES.month, medium)) }
 }
 
 /** One period of a trend: its id, and how many plays it had (`null` where Last.fm did not answer). */

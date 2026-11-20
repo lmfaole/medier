@@ -1,0 +1,38 @@
+---
+import { PageSection } from '@lmfaole/designsystem/components/page-section'
+
+import { HistoryTimeline, Sessions } from '../../../components/history'
+import Intro from '../../../components/Intro.astro'
+import { Fetched } from '../../../components/sections'
+import UsernameGate from '../../../components/UsernameGate.astro'
+import Page from '../../../layouts/Page.astro'
+import { mediumHref } from '../../../lib/media'
+import { playingNow } from '../../../lib/now'
+import { INTROS } from '../../../lib/onboarding'
+import { music, usersOf } from '../../../lib/runtime'
+
+const base = import.meta.env.BASE_URL
+const users = usersOf(Astro.cookies)
+const listening = users.lastfm === null ? null : await music(users)
+const playing = playingNow(listening?.now ?? null)
+const now = new Date().toISOString()
+---
+
+<Page current="music" title="Historikk" lead="Det du har hørt på, dag for dag, og hvor lenge du lyttet, fra Last.fm." crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: mediumHref(base, 'music') }, { label: 'Historikk', href: mediumHref(base, 'music', 'historikk/') }]}>
+  {
+    users.lastfm === null ? (
+      <UsernameGate services={['lastfm']} />
+    ) : (
+      <>
+        <Intro intro={INTROS.musikkHistorikk} />
+        <PageSection id="okter" title="Lytteøkter" icon="listen">
+          <Sessions medium="music" plays={listening?.recent ?? []} now={now} playing={playing} />
+        </PageSection>
+        <PageSection id="tidslinje" title="Tidslinje" icon="history">
+          <HistoryTimeline medium="music" plays={listening?.recent ?? []} now={now} playing={playing} base={base} />
+        </PageSection>
+        <Fetched sources={[{ at: listening?.at ?? null, source: 'Last.fm' }]} />
+      </>
+    )
+  }
+</Page>

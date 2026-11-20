@@ -111,10 +111,15 @@ test("what was watched is counted as films and episodes, with the shows most wat
   assert.equal(stats.shows[1]?.poster, "p6")
   assert.deepEqual(stats.binges.map((binge) => [binge.title, binge.episodes.length]), [["Andor", 3]])
   assert.equal(BINGE, 3)
+  // A film without TMDB's runtime is 110 minutes, an episode 45; Monday 16 November in Oslo.
+  assert.deepEqual([stats.showCount, stats.minutes], [2, 110 + 5 * 45])
+  assert.deepEqual(stats.byDay, [2, 1, 3, 0, 0, 0, 0])
+  assert.deepEqual(stats.byDate, { "2026-11-16": 2, "2026-11-17": 1, "2026-11-18": 3 })
+  assert.deepEqual(stats.busiestDay, { day: 2, viewings: 3 })
 })
 
 test("a week with nothing watched has nothing", () => {
-  assert.deepEqual(watchStats([]), { films: 0, episodes: 0, filmItems: [], shows: [], binges: [] })
+  assert.deepEqual(watchStats([]), { films: 0, episodes: 0, showCount: 0, minutes: 0, byDay: [0, 0, 0, 0, 0, 0, 0], byDate: {}, busiestDay: null, filmItems: [], shows: [], binges: [] })
 })
 
 test("a change in plays is written with its sign, the minus sign and not a hyphen, and zero is plus and minus", () => {

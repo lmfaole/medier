@@ -41,7 +41,7 @@ const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, 
     users.lastfm !== null ? (
       shown.has('musikk') && <PageSection id="musikk" title="Musikk" icon="music" more={{ href: `${base}musikk/`, label: 'Se all musikk' }}>
         <PlayRows plays={plays} base={base} limit={5} />
-        <TextLink href={`${base}historikk/`}>Se historikk</TextLink>
+        <TextLink href={`${base}musikk/historikk/`}>Se lyttehistorikken</TextLink>
       </PageSection>
     ) : missing.length === 1 ? (
       <UsernameGate services={['lastfm']} title="Hvem skal vi hente musikk for?" />
@@ -51,7 +51,7 @@ const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, 
     users.trakt !== null ? (
       shown.has('film-og-tv') && <PageSection id="film-og-tv" title="Film og TV" icon="film" more={{ href: `${base}film-og-tv/`, label: 'Se all film og TV' }}>
         <WatchRows items={seen?.items ?? []} base={base} limit={5} />
-        <TextLink href={`${base}historikk/`}>Se historikk</TextLink>
+        <TextLink href={`${base}film-og-tv/historikk/`}>Se seerhistorikken</TextLink>
       </PageSection>
     ) : missing.length === 1 ? (
       <UsernameGate services={['trakt']} title="Hvem skal vi hente film og TV for?" />
