@@ -49,7 +49,8 @@ export const get: Get = async (url, request) => {
   const data: unknown = response.status === 204 ? null : await response.json()
   const refused = lastfmError(data)
   if (refused !== null) throw new Error(`${new URL(url).host}: ${refused}`)
-  await cache.put(kept, new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json", "Cache-Control": `max-age=${request.ttl}` } }))
+  // Not being able to keep an answer (it is large, the cache is full) must not lose it: it is the answer, and the next ask simply asks again.
+  await cache.put(kept, new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json", "Cache-Control": `max-age=${request.ttl}` } })).catch(() => undefined)
   return { data, hit: false }
 }
 
