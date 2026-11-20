@@ -23,11 +23,11 @@
     "@astrojs/cloudflare": "^14.4.9",
     "@astrojs/react": "^7.1.2",
     "@lmfaole/designsystem": "github:lmfaole/designsystem#a72b56080bc71ba08c8a74b131e47132f529c14d",
-    "@tailwindcss/vite": "^4.3.3",
+    "@tailwindcss/vite": "^4.3.5",
     "astro": "^7.4.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "tailwindcss": "^4.3.3",
+    "tailwindcss": "^4.3.5",
     "wrangler": "^4.165.0"
   },
   "devDependencies": {
