@@ -22,6 +22,10 @@ Hva jeg hører på og ser: en side på Cloudflare Workers, <https://medier.lmfao
 - Spotify asks one permission, to see what plays (`user-read-currently-playing`). The song shows first on the front page and on Musikk, marked «nå». Where Spotify is not set up, Last.fm's
   own «now playing» (a scrobble of the same song) is shown instead.
 
+## History
+
+`/historikk/` has the plays and the viewings on one timeline (the design system's `Timeline`), newest first under a heading for each day, with a run of one album's songs or one show's episodes folded away («Vis 9 spor til»), and the song playing now first, marked as going on. A song links to its page here, a viewing to the film's or the show's. Above it are the **sessions** of the last two days (`DurationBars`, a lane for Musikk and one for Film og TV): plays and viewings less than 30 minutes apart are one session, a song counted at a typical 3½ minutes and a viewing at its film's runtime (or 45 minutes for an episode, 110 for a film TMDB has none for), up to when Trakt marked it seen. It is made of what the front page already asks for (the last 50 plays and viewings), by `src/lib/timeline.ts`. The front page's Musikk and Film og TV link to it.
+
 ## The sleeve of an album
 
 On the page of an album the cover is a **sleeve in 3D** (`Head` with `sleeve`, the design system's `AlbumSleeve`): the cover whole on a slab of plastic with a record half out of it, the label in the cover's most vivid colour, tilting toward the page's light (the pointer, a phone's tilt) and catching it. It adds a record and a gleam to the cover, so it is only for **Last.fm's** covers: the album pages use Last.fm's, and a Spotify cover is never made a sleeve or a disc. Before WebGL is ready, where it is not there and under reduced motion it is the cover alone, as a sharp square, in the same place.
@@ -65,7 +69,7 @@ The site installs on a phone or a computer and opens without the browser around 
 of our own). `public/manifest.webmanifest` is the identity (`id` and scope `/`, never changed once installed; dark colours, `any` and `maskable` icons at 192 and 512 drawn by `node scripts/icons.mjs`), and
 `public/sw.js` the service worker: a page from the network first with the last copy of each page when there is no network (the forty last, kept by address with the query), the front page and then `/offline/` when there
 is none; the built files and icons from the cache. Nothing from another site is kept (the covers are Spotify's, Last.fm's and TMDB's own), a redirect or an error is never kept as a page, and a new version waits until the
-app is closed (no `skipWaiting`) and then deletes the old caches: change `VERSION` in `sw.js` to make it. A bar at the foot on a phone, a rail from tablet width, goes between Forside, Musikk and Film;
+app is closed (no `skipWaiting`) and then deletes the old caches: change `VERSION` in `sw.js` to make it. A bar at the foot on a phone, a rail from tablet width, goes between Forside, Musikk, Film, Historikk and Wrapped;
 `ConnectionBanner` says so when the device is offline and the page is the last one fetched. `src/pwa.test.ts` pins the manifest and runs the worker against a cache and a network of its own.
 
 ## Shape language

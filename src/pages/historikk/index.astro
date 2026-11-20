@@ -1,0 +1,26 @@
+---
+import { PageSection } from '@lmfaole/designsystem/components/page-section'
+
+import { HistoryTimeline, Sessions } from '../../components/history'
+import { Fetched } from '../../components/sections'
+import Page from '../../layouts/Page.astro'
+import { playingNow } from '../../lib/now'
+import { music, spotifyNow, watched } from '../../lib/runtime'
+
+const base = import.meta.env.BASE_URL
+const [listening, seen, spotify] = await Promise.all([music(), watched(), spotifyNow()])
+const playing = playingNow(spotify, listening?.now ?? null)
+const plays = listening?.recent ?? []
+const watches = seen?.items ?? []
+const now = new Date().toISOString()
+---
+
+<Page current="history" title="Historikk" lead="Det jeg har hørt på og sett, dag for dag, og hvor lenge det varte, fra Last.fm, Spotify og Trakt." crumbs={[{ label: 'Medier', href: base }, { label: 'Historikk', href: `${base}historikk/` }]}>
+  <PageSection id="okter" title="Lytte- og titteøkter" icon="listen">
+    <Sessions plays={plays} watches={watches} now={now} playing={playing} />
+  </PageSection>
+  <PageSection id="tidslinje" title="Tidslinje" icon="history">
+    <HistoryTimeline plays={plays} watches={watches} now={now} playing={playing} base={base} />
+  </PageSection>
+  <Fetched sources={[{ at: listening?.at ?? null, source: 'Last.fm' }, { at: seen?.at ?? null, source: 'Trakt' }]} />
+</Page>

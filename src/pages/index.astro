@@ -1,5 +1,6 @@
 ---
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
+import { TextLink } from '@lmfaole/designsystem/components/text'
 
 import { NowPlayingLive } from '../components/now-playing-live'
 import { Fetched, PlayRows, TopArtistRows, WatchRows } from '../components/sections'
@@ -21,9 +22,11 @@ const plays = (listening?.recent ?? []).filter((play) => play.playedAt !== null)
   <NowPlayingLive client:load initial={now} endpoint={`${base}api/now/`} />
   <PageSection id="musikk" title="Musikk" icon="music" more={{ href: `${base}musikk/`, label: 'Se all musikk' }}>
     <PlayRows plays={plays} base={base} limit={5} />
+    <TextLink href={`${base}historikk/`}>Se historikk</TextLink>
   </PageSection>
   <PageSection id="film-og-tv" title="Film og TV" icon="film" more={{ href: `${base}film-og-tv/`, label: 'Se all film og TV' }}>
     <WatchRows items={seen?.items ?? []} base={base} limit={5} />
+    <TextLink href={`${base}historikk/`}>Se historikk</TextLink>
   </PageSection>
   <PageSection id="artister" title="Mest spilt siste måned" icon="trend-up">
     <TopArtistRows artists={(listening?.topArtists ?? []).slice(0, 5)} base={base} pictures={pictures} />

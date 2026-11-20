@@ -3,48 +3,14 @@
  * spans on a time axis. Pure, so a test pins it; a page only passes the result on.
  */
 
-import type { ReactNode } from "react"
-import type { IconName } from "@lmfaole/designsystem/lib/icons"
+import type { DurationSpan, TimelineEvent, TimelineTone } from "@lmfaole/designsystem/lib/timeline"
 
 import type { Play } from "./lastfm.ts"
 import { albumSlug, slugify } from "./pages.ts"
 import { episodeCode, type Watch } from "./trakt.ts"
 import { trackKey, TYPICAL_SECONDS } from "./wrapped.ts"
 
-// Mirror of @lmfaole/designsystem/components/timeline and …/duration-bars (designsystem 8.47.0), to be replaced by imports once that version is in.
-export type TimelineTone = "neutral" | "accent" | "success" | "warning" | "danger"
-
-export interface TimelineActor {
-  name: string
-  avatar?: string
-  href?: string
-}
-
-export interface TimelineEvent {
-  id: string
-  at: string
-  kind: "comment" | "event"
-  icon: IconName
-  tone?: TimelineTone
-  actor?: TimelineActor
-  summary: string
-  target?: { label: string; href?: string }
-  body?: ReactNode
-  href?: string
-  group?: string
-  /** Not in the contract yet: the disclosure's noun for this event's group («spor»), as group keys here are per album and cannot be listed up front. */
-  groupNoun?: string
-  badge?: string
-}
-
-export interface DurationSpan {
-  key: string
-  label: string
-  start: string
-  end?: string
-  tone?: TimelineTone
-  row?: string
-}
+export type { DurationSpan, TimelineEvent, TimelineTone }
 
 /** The lane of the spans of each kind. */
 export const MUSIC_ROW = "Musikk"
@@ -72,7 +38,8 @@ function uniqueIds(events: readonly TimelineEvent[]): TimelineEvent[] {
 
 /**
  * The plays as timeline events, newest first: «spilte <spor – artist>». Plays of one album that follow each other share a group, so a run of them collapses
- * («Vis 9 spor til»); a play with no album is grouped by its artist (`groupBy: "artist"` groups every play that way). What is playing now (no time) is left out.
+ * («Vis 9 spor til»); a play with no album is grouped by its artist (`groupBy: "artist"` groups every play that way). What is playing now (no time) is left out:
+ * it is `playingEvent`.
  * `href` is the track's link (the site's own page, say); the default is Last.fm's.
  */
 export function playsTimeline(plays: readonly Play[], options: { groupBy?: "album" | "artist"; href?: (play: Play) => string | undefined } = {}): TimelineEvent[] {
@@ -96,6 +63,23 @@ export function playsTimeline(plays: readonly Play[], options: { groupBy?: "albu
     ]
   })
   return uniqueIds(newestFirst(events))
+}
+
+/**
+ * The song playing now as the first event: «spiller <spor – artist>», ongoing (a live cue and «nå» for the time), at `now`. It has no group, so it stands
+ * on its own above the finished plays. `href` is where its title links (Spotify's page of the song, say); none, and it is not a link.
+ */
+export function playingEvent(playing: { track: string; artist: string; url: string }, now: string, href?: string): TimelineEvent {
+  return {
+    id: "spiller-na",
+    at: now,
+    kind: "event",
+    icon: "music",
+    summary: "spiller",
+    target: { label: `${playing.track} – ${playing.artist}`, ...(href === undefined ? {} : { href }) },
+    ...(playing.url === "" ? {} : { href: playing.url }),
+    ongoing: true,
+  }
 }
 
 /** «Heat», «Andor, S2 E5». */
@@ -177,9 +161,24 @@ export function sessions(intervals: readonly Interval[], gapMinutes: number, opt
   })
 }
 
-/** «Lytteøkt, 12 spor», in the music lane. */
-export function listeningSessions(plays: readonly Play[], options: { lengths?: ReadonlyMap<string, number>; gapMinutes?: number } = {}): DurationSpan[] {
-  return sessions(playIntervals(plays, options.lengths), options.gapMinutes ?? SESSION_GAP_MINUTES, { key: "lytteokt", row: MUSIC_ROW, name: (items) => `Lytteøkt, ${items.length} spor` })
+/**
+ * «Lytteøkt, 12 spor», in the music lane. `playingAt` is now, when a song plays: it is one more song of the last session (or the start of a new one), and that
+ * session goes on (no end).
+ */
+export function listeningSessions(plays: readonly Play[], options: { lengths?: ReadonlyMap<string, number>; gapMinutes?: number; playingAt?: string } = {}): DurationSpan[] {
+  const { playingAt } = options
+  const playing = playingAt === undefined ? [] : [{ start: playingAt, end: playingAt, label: "" }]
+  const spans = sessions([...playIntervals(plays, options.lengths), ...playing], options.gapMinutes ?? SESSION_GAP_MINUTES, { key: "lytteokt", row: MUSIC_ROW, name: (items) => `Lytteøkt, ${items.length} spor` })
+  const last = spans.at(-1)
+  if (playingAt === undefined || last === undefined) return spans
+  const { end: _end, ...ongoing } = last
+  return [...spans.slice(0, -1), ongoing]
+}
+
+/** The spans that are at least in part between `start` and `end`, so none is drawn as a sliver at an edge of the axis. */
+export function spansWithin(spans: readonly DurationSpan[], start: string, end: string): DurationSpan[] {
+  const [from, to] = [Date.parse(start), Date.parse(end)]
+  return spans.filter((span) => Date.parse(span.start) < to && (span.end === undefined || Date.parse(span.end) > from))
 }
 
 /** One title by itself («Heat»), one show's episodes («Andor, 3 episoder»), or a mix («Titteøkt, 3 titler»), in the film and TV lane. */

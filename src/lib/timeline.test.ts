@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
 import type { Play } from "./lastfm.ts"
-import { groupNounsOf, listeningSessions, playsTimeline, watchesTimeline, watchSessions } from "./timeline.ts"
+import { groupNounsOf, listeningSessions, playingEvent, playsTimeline, spansWithin, watchesTimeline, watchSessions } from "./timeline.ts"
 import type { Watch } from "./trakt.ts"
 import { trackKey } from "./wrapped.ts"
 
@@ -99,4 +99,39 @@ test("a viewing ends when Trakt marks it seen: a film's runtime, a show's episod
     { label: "Heat", start: "2026-11-19T19:10:00.000Z", end: "2026-11-19T22:00:00.000Z", row: "Film og TV" },
   ])
   assert.equal(watchSessions([watch(2, "2026-11-19T22:00:00.000Z", "Heat", null, 120), watch(1, "2026-11-19T19:50:00.000Z", "Andor", { season: 1, number: 1 })])[0]?.label, "Titteøkt, 2 titler")
+})
+
+test("the song playing now is an ongoing event at now, with no group", () => {
+  assert.deepEqual(playingEvent({ track: "River", artist: "Joni Mitchell", url: "https://open.spotify.com/track/1" }, "2026-11-20T12:00:00.000Z", "https://open.spotify.com/track/1"), {
+    id: "spiller-na",
+    at: "2026-11-20T12:00:00.000Z",
+    kind: "event",
+    icon: "music",
+    summary: "spiller",
+    target: { label: "River – Joni Mitchell", href: "https://open.spotify.com/track/1" },
+    href: "https://open.spotify.com/track/1",
+    ongoing: true,
+  })
+  assert.equal(playingEvent({ track: "River", artist: "Joni Mitchell", url: "" }, "2026-11-20T12:00:00.000Z").target?.href, undefined)
+})
+
+test("a song playing now carries on the last session, or starts one of its own, with no end", () => {
+  const plays = [play("2026-11-20T11:50:00.000Z", "A"), play("2026-11-20T09:00:00.000Z", "B")]
+  const near = listeningSessions(plays, { playingAt: "2026-11-20T12:00:00.000Z" })
+  assert.deepEqual(near.map(({ label, start, end }) => ({ label, start, end })), [
+    { label: "Lytteøkt, 1 spor", start: "2026-11-20T09:00:00.000Z", end: "2026-11-20T09:03:30.000Z" },
+    { label: "Lytteøkt, 2 spor", start: "2026-11-20T11:50:00.000Z", end: undefined },
+  ])
+  const far = listeningSessions(plays, { playingAt: "2026-11-20T15:00:00.000Z" })
+  assert.deepEqual(far.at(-1), { key: "lytteokt-2026-11-20T15:00:00.000Z", label: "Lytteøkt, 1 spor", start: "2026-11-20T15:00:00.000Z", row: "Musikk" })
+  assert.equal(far.length, 3)
+})
+
+test("only the spans that reach into the window are kept", () => {
+  const spans = [
+    { key: "a", label: "A", start: "2026-11-17T10:00:00.000Z", end: "2026-11-17T11:00:00.000Z" },
+    { key: "b", label: "B", start: "2026-11-18T11:30:00.000Z", end: "2026-11-18T12:30:00.000Z" },
+    { key: "c", label: "C", start: "2026-11-20T11:00:00.000Z" },
+  ]
+  assert.deepEqual(spansWithin(spans, "2026-11-18T12:00:00.000Z", "2026-11-20T12:00:00.000Z").map((span) => span.key), ["b", "c"])
 })
