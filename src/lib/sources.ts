@@ -1,15 +1,25 @@
 /**
- * What a page needs from Last.fm, Trakt, TMDB and Spotify, asked for when the page is asked for. Each answer is kept for a while (`TTL`), so a page
+ * What a page needs from Last.fm, Trakt, TMDB and Spotify, for the visitor's own usernames (`users.ts`), asked for when the page is asked for. Each answer is kept for a while (`TTL`), so a page
  * is quick and the sources are asked little. Pure: the asking is done by the `get` that is passed in (`runtime.ts`), so a test hands it a fake one.
  */
 
 import { type AlbumInfo, albumInfoUrl, type ArtistAlbum, type ArtistInfo, artistInfoUrl, artistTopAlbumsUrl, type Music, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopAlbums, parseTopArtists, parseTrackInfo, type TrackInfo, trackInfoUrl } from "./lastfm.ts"
-import { type NowPlaying, NOW_PLAYING_URL, parseAlbumMatch, parseArtistMatch, parseNowPlaying, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl, type SpotifyAlbum, type SpotifyArtist, type SpotifyTrack } from "./spotify.ts"
+import { type NowPlaying, parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl, type SpotifyAlbum, type SpotifyArtist, type SpotifyTrack } from "./spotify.ts"
 import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, type Person, personUrl, type TitleInfo } from "./tmdb.ts"
 import { mergeHistory, parseHistory, type Watch, type Watched } from "./trakt.ts"
+import type { Users } from "./users.ts"
 
-/** The settings a Worker has: its secrets and its variables (`settings.ts`). A source whose key is not set is left out, not an error. */
+/**
+ * The settings a request is asked with: the Worker's secrets (`settings.ts`), and the visitor's usernames as `LASTFM_USER` and `TRAKT_USER` (`forUsers`). A source whose key
+ * or username is not set is left out, not an error.
+ */
 export type Env = Readonly<Partial<Record<string, string>>>
+
+/** The Worker's settings with the visitor's usernames, and only theirs: a username the Worker itself has (an old variable) is never one. */
+export function forUsers(env: Env, users: Users): Env {
+  const { LASTFM_USER: _lastfm, TRAKT_USER: _trakt, ...rest } = env
+  return { ...rest, ...(users.lastfm === null ? {} : { LASTFM_USER: users.lastfm }), ...(users.trakt === null ? {} : { TRAKT_USER: users.trakt }) }
+}
 
 export interface Request {
   headers?: Record<string, string>
@@ -25,7 +35,7 @@ export interface Request {
 export type Get = (url: string, request: Request) => Promise<{ data: unknown; hit: boolean }>
 
 /** How long each kind of answer is kept, in seconds. A poster does not change; what is playing now does, quickly. */
-export const TTL = { nowPlaying: 15, token: 3000, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600, artist: 24 * 3600, weekDone: 24 * 3600, weekLive: 300, firsts: 7 * 24 * 3600, length: 7 * 24 * 3600 } as const
+export const TTL = { nowPlaying: 15, token: 3000, user: 3600, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600, artist: 24 * 3600, weekDone: 24 * 3600, weekLive: 300, firsts: 7 * 24 * 3600, length: 7 * 24 * 3600 } as const
 
 /** Most of a page's asks that are not kept already: a cold page must stay well under a Worker's limit on what it may ask for. */
 export const MAX_POSTER_LOOKUPS = 12
@@ -48,11 +58,41 @@ export interface Listening extends Music {
   now: NowPlaying | null
 }
 
-/** The start of every Last.fm address: the key and the user, or `null` where there is no key. */
+/** The start of every Last.fm address: the key and the user, or `null` where there is no key or no user. */
 export function lastfmBase(env: Env): string | null {
   const key = setting(env, "LASTFM_API_KEY")
-  if (key === "") return null
-  return `https://ws.audioscrobbler.com/2.0/?format=json&api_key=${encodeURIComponent(key)}&user=${encodeURIComponent(setting(env, "LASTFM_USER"))}`
+  const user = setting(env, "LASTFM_USER")
+  if (key === "" || user === "") return null
+  return `https://ws.audioscrobbler.com/2.0/?format=json&api_key=${encodeURIComponent(key)}&user=${encodeURIComponent(user)}`
+}
+
+/**
+ * Whether a username is one Last.fm has (`user.getinfo`; an unknown user is an error, which `get` throws). `true` where Last.fm is not set up: there is nothing to ask, and nothing
+ * will be shown for it either.
+ */
+export async function lastfmUserExists(env: Env, get: Get, user: string): Promise<boolean> {
+  const key = setting(env, "LASTFM_API_KEY")
+  if (key === "") return true
+  try {
+    const answer = await get(`https://ws.audioscrobbler.com/2.0/?format=json&method=user.getinfo&api_key=${encodeURIComponent(key)}&user=${encodeURIComponent(user)}`, { ttl: TTL.user })
+    const found = (answer.data as { user?: { name?: unknown } } | null)?.user?.name
+    return typeof found === "string" && found !== ""
+  } catch {
+    return false
+  }
+}
+
+/** Whether a username is one Trakt has with a public profile: a private or unknown one answers 401/403/404 (which `get` throws), or says `private`. `true` where Trakt is not set up. */
+export async function traktUserExists(env: Env, get: Get, user: string): Promise<boolean> {
+  const clientId = setting(env, "TRAKT_CLIENT_ID")
+  if (clientId === "") return true
+  try {
+    const answer = await get(`https://api.trakt.tv/users/${encodeURIComponent(user)}`, { headers: { "trakt-api-version": "2", "trakt-api-key": clientId }, ttl: TTL.user })
+    const profile = answer.data as { username?: unknown; private?: unknown } | null
+    return typeof profile?.username === "string" && profile.private !== true
+  } catch {
+    return false
+  }
 }
 
 export async function loadMusic(env: Env, get: Get): Promise<Listening | null> {
@@ -103,8 +143,8 @@ export async function withPosters(items: readonly Watch[], tmdbKey: string, get:
 
 export async function loadWatched(env: Env, get: Get): Promise<Watched | null> {
   const clientId = setting(env, "TRAKT_CLIENT_ID")
-  if (clientId === "") return null
   const user = setting(env, "TRAKT_USER")
+  if (clientId === "" || user === "") return null
   const headers = { "trakt-api-version": "2", "trakt-api-key": clientId }
   const page = async (kind: string) => parseHistory((await get(`https://api.trakt.tv/users/${encodeURIComponent(user)}/history/${kind}?limit=50`, { headers, ttl: TTL.history })).data)
   const [movies, episodes] = await Promise.all([page("movies"), page("episodes")])
@@ -120,20 +160,12 @@ export async function loadPerson(env: Env, get: Get, id: number): Promise<Person
   return parsePerson((await get(request.url, { headers: request.headers, ttl: TTL.poster })).data)
 }
 
-/** What Last.fm says plays now: one play asked for, kept for as short a time as Spotify's answer, so the song and its cover follow each other. `null` where nothing plays or Last.fm is not set up. */
+/** What Last.fm says plays now: one play asked for, kept for fifteen seconds. `null` where nothing plays, Last.fm is not set up or there is no username. */
 export async function loadLastfmNow(env: Env, get: Get): Promise<NowPlaying | null> {
   const base = lastfmBase(env)
   if (base === null) return null
   const playing = parseRecentTracks((await get(`${base}&method=user.getrecenttracks&limit=1`, { ttl: TTL.nowPlaying })).data).find((play) => play.playedAt === null)
   return playing === undefined ? null : { track: playing.track, artist: playing.artist, album: playing.album, image: playing.image, url: playing.url }
-}
-
-/** The song playing now on Spotify, or `null` (nothing plays, Spotify is not set up, or its token has run out: the page simply shows nothing). */
-export async function loadNowPlaying(env: Env, get: Get): Promise<NowPlaying | null> {
-  const token = await spotifyToken(env, get)
-  if (token === null) return null
-  const playing = await get(NOW_PLAYING_URL, { headers: { Authorization: `Bearer ${token}` }, ttl: TTL.nowPlaying, key: "spotify:now-playing" })
-  return parseNowPlaying(playing.data)
 }
 
 /** The access token (an hour), made from the refresh token and kept for 50 minutes under its own key; `null` where Spotify is not set up or its sign-in has run out. */

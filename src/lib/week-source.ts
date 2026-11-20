@@ -153,7 +153,7 @@ async function musicWeek(env: Env, get: Get, week: Range, previous: Range, ttl: 
 
 async function watchedWeek(env: Env, get: Get, week: Range, ttl: number): Promise<PeriodData["watched"]> {
   const clientId = setting(env, "TRAKT_CLIENT_ID")
-  if (clientId === "") return null
+  if (clientId === "" || setting(env, "TRAKT_USER") === "") return null
   const user = encodeURIComponent(setting(env, "TRAKT_USER"))
   const range = `start_at=${encodeURIComponent(new Date(week.start * 1000).toISOString())}&end_at=${encodeURIComponent(new Date((week.end - 1) * 1000).toISOString())}&limit=100`
   const headers = { "trakt-api-version": "2", "trakt-api-key": clientId }

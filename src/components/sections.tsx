@@ -10,7 +10,7 @@ import type { Playing } from "../lib/now.ts"
 import type { SpotifyArtist } from "../lib/spotify.ts"
 import { FromSpotify } from "./credits.tsx"
 import { sourcesOf } from "../lib/image-sources.ts"
-import { SHAPES, SPOTIFY_COVER } from "../lib/shapes.ts"
+import { SHAPES } from "../lib/shapes.ts"
 import { albumHref, artistHref, titleHref, titlePages, trackHref } from "../lib/pages.ts"
 import { episodesCode, groupViewings, type Viewing, type Watch } from "../lib/trakt.ts"
 import { shortWhen, when } from "../lib/when.ts"
@@ -21,24 +21,21 @@ import { shortWhen, when } from "../lib/when.ts"
  */
 export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = true, albumLinks = true, now = null }: { plays: readonly Play[]; base: string; limit?: number; artistLinks?: boolean; trackLinks?: boolean; albumLinks?: boolean; now?: Playing | null }) {
   const rows = [
-    ...(now === null ? [] : [{ key: `now-${now.url}`, artist: now.artist, track: now.track, album: now.album, image: now.image, aside: "Spilles nå", live: now.from !== "spotify", link: now.from === "spotify" ? now.url : null, played: false }]),
-    ...plays.map((play) => ({ key: `${play.playedAt}-${play.url}`, artist: play.artist, track: play.track, album: play.album, image: play.image, aside: play.playedAt === null ? "Spilles nå" : shortWhen(play.playedAt), live: play.playedAt === null, link: null, played: play.playedAt !== null })),
+    ...(now === null ? [] : [{ key: `now-${now.url}`, artist: now.artist, track: now.track, album: now.album, image: now.image, aside: "Spilles nå", live: true, played: false }]),
+    ...plays.map((play) => ({ key: `${play.playedAt}-${play.url}`, artist: play.artist, track: play.track, album: play.album, image: play.image, aside: play.playedAt === null ? "Spilles nå" : shortWhen(play.playedAt), live: play.playedAt === null, played: play.playedAt !== null })),
   ]
   const shown = limit === undefined ? rows : rows.slice(0, limit)
   if (shown.length === 0) return <EmptyState icon="music" title="Ingen avspillinger å vise" description="Last.fm svarte ikke, eller har ingen avspillinger ennå." />
   const known = new Set(plays.map((play) => play.artist))
-  // A cover from Spotify is attributed to Spotify and the title links back to it; Last.fm's covers are Last.fm's.
-  const fromSpotify = shown.some((row) => row.link !== null)
-  const list = (
+  return (
     <PictureRows
       {...SHAPES.track}
       rows={shown.map((row) => ({
         key: row.key,
         picture: null,
         sources: sourcesOf(row.image),
-        ...(row.link === null ? {} : { corners: SPOTIFY_COVER.corners }),
-        // A song that is playing now has no page of its own (it is not among the finished plays the pages are made of); one from Spotify links back to Spotify.
-        title: row.link !== null ? <ExternalLink href={row.link}>{row.track}</ExternalLink> : trackLinks && row.played ? <TextLink href={trackHref(base, row.artist, row.track)}>{row.track}</TextLink> : row.track,
+        // A song that is playing now has no page of its own (it is not among the finished plays the pages are made of).
+        title: trackLinks && row.played ? <TextLink href={trackHref(base, row.artist, row.track)}>{row.track}</TextLink> : row.track,
         detail: details([
           artistLinks && known.has(row.artist) ? <TextLink href={artistHref(base, row.artist)}>{row.artist}</TextLink> : row.artist,
           albumLinks && row.played && row.album !== "" ? <TextLink href={albumHref(base, row.artist, row.album)}>{row.album}</TextLink> : row.album,
@@ -48,31 +45,12 @@ export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = 
       }))}
     />
   )
-  return fromSpotify ? (
-    <Stack gap="md">
-      {list}
-      <FromSpotify />
-    </Stack>
-  ) : (
-    list
-  )
 }
 
-/**
- * What plays now, large: a disc of Last.fm's cover turning under the page's light. Spotify's own cover may not be cropped or have anything on it (its developer policy), so a song from Spotify gets a disc only where Last.fm has
- * the same song with a cover (`Playing.disc`); otherwise its cover is shown as it is, sharp and still. The title links to Spotify where the song is Spotify's (a page of its own does not exist for a song that has just started).
- */
+/** What plays now, large: a disc of Last.fm's cover turning under the page's light (the cover as it is where Last.fm has none). */
 export function NowPlayingSection({ now }: { now: Playing }) {
   const cover = now.disc ?? now.image
-  const card = <NowPlayingCard disc={now.disc !== null} sources={sourcesOf(cover)} title={now.from === "spotify" ? <ExternalLink href={now.url}>{now.track}</ExternalLink> : now.track} detail={details([now.artist, now.album === "" ? null : now.album])} />
-  return now.from === "spotify" ? (
-    <Stack gap="md">
-      {card}
-      <FromSpotify />
-    </Stack>
-  ) : (
-    card
-  )
+  return <NowPlayingCard disc={now.disc !== null} sources={sourcesOf(cover)} title={now.track} detail={details([now.artist, now.album === "" ? null : now.album])} />
 }
 
 /**

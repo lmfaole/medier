@@ -1,34 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { authorizeUrl, codeRequest, parseAlbumMatch, parseArtistMatch, parseTrackMatch, searchAlbumUrl, searchTrackUrl, parseNowPlaying, parseRefreshToken, parseToken, plain, refreshRequest, SCOPE, searchArtistUrl, TOKEN_URL } from "./spotify.ts"
-
-const PLAYING = {
-  is_playing: true,
-  currently_playing_type: "track",
-  item: {
-    name: "Submit",
-    artists: [{ name: "Shygirl" }, { name: "Arca" }],
-    album: { name: "SWALLOW!", images: [{ url: "https://i.scdn.co/image/large", width: 640 }, { url: "https://i.scdn.co/image/mid", width: 300 }, { url: "https://i.scdn.co/image/small", width: 64 }] },
-    external_urls: { spotify: "https://open.spotify.com/track/abc" },
-  },
-}
-
-test("the song playing is read with its artists, the smallest cover that is 300 wide, and where to open it", () => {
-  assert.deepEqual(parseNowPlaying(PLAYING), { track: "Submit", artist: "Shygirl, Arca", album: "SWALLOW!", image: "https://i.scdn.co/image/mid", url: "https://open.spotify.com/track/abc" })
-})
-
-test("nothing is playing for a pause, an episode, an ad, an empty answer or a link that is not Spotify's", () => {
-  assert.equal(parseNowPlaying({ ...PLAYING, is_playing: false }), null)
-  assert.equal(parseNowPlaying({ ...PLAYING, currently_playing_type: "episode" }), null)
-  assert.equal(parseNowPlaying({ ...PLAYING, currently_playing_type: "ad" }), null)
-  assert.equal(parseNowPlaying(null), null)
-  assert.equal(parseNowPlaying({ ...PLAYING, item: { ...PLAYING.item, external_urls: { spotify: "https://example.com/x" } } }), null)
-})
-
-test("a cover that is not there is null, not a broken picture", () => {
-  assert.equal(parseNowPlaying({ ...PLAYING, item: { ...PLAYING.item, album: { name: "A", images: [] } } })?.image, null)
-})
+import { authorizeUrl, codeRequest, parseAlbumMatch, parseArtistMatch, parseTrackMatch, searchAlbumUrl, searchTrackUrl, parseRefreshToken, parseToken, plain, refreshRequest, SCOPE, searchArtistUrl, TOKEN_URL } from "./spotify.ts"
 
 test("the refresh request signs in with the client and carries the user's token as the grant, in the body", () => {
   const request = refreshRequest("id", "secret", "refresh me")

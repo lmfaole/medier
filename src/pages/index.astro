@@ -4,32 +4,54 @@ import { TextLink } from '@lmfaole/designsystem/components/text'
 
 import { NowPlayingLive } from '../components/now-playing-live'
 import { Fetched, PlayRows, TopArtistRows, WatchRows } from '../components/sections'
+import UsernameGate from '../components/UsernameGate.astro'
 import Page from '../layouts/Page.astro'
 import { playingNow } from '../lib/now'
-import { artistPictures, music, spotifyNow, watched } from '../lib/runtime'
+import { artistPictures, music, usersOf, watched } from '../lib/runtime'
+import type { Service } from '../lib/users'
 
 const base = import.meta.env.BASE_URL
+const users = usersOf(Astro.cookies)
 // The music, and the pictures of the artists in its list: the pictures need the list, so they follow it while the other sources are asked.
-const withPictures = music().then(async (found) => ({ listening: found, pictures: await artistPictures((found?.topArtists ?? []).slice(0, 5).map((artist) => artist.name)) }))
-const [{ listening, pictures }, seen, spotify] = await Promise.all([withPictures, watched(), spotifyNow()])
-// Spotify knows what plays this second; Last.fm's scrobble is the same song a moment later, and the fallback where Spotify is not set up.
-const now = playingNow(spotify, listening?.now ?? null)
+const withPictures = music(users).then(async (found) => ({ listening: found, pictures: await artistPictures((found?.topArtists ?? []).slice(0, 5).map((artist) => artist.name)) }))
+const [{ listening, pictures }, seen] = await Promise.all([withPictures, watched(users)])
 // What plays now is the card at the top, which keeps asking for it while the page is open; the list is the finished plays.
+const now = playingNow(listening?.now ?? null)
 const plays = (listening?.recent ?? []).filter((play) => play.playedAt !== null)
+// The sections of a service with no username are a form asking for it: one form for both when neither is given.
+const missing: Service[] = [...(users.lastfm === null ? (['lastfm'] as const) : []), ...(users.trakt === null ? (['trakt'] as const) : [])]
+const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, source: 'Last.fm' }]), ...(users.trakt === null ? [] : [{ at: seen?.at ?? null, source: 'Trakt' }])]
 ---
 
-<Page current="front" title="Medier" lead="Hva jeg hører på og ser, hentet fra Last.fm, Spotify og Trakt.">
-  <NowPlayingLive client:load initial={now} endpoint={`${base}api/now/`} />
-  <PageSection id="musikk" title="Musikk" icon="music" more={{ href: `${base}musikk/`, label: 'Se all musikk' }}>
-    <PlayRows plays={plays} base={base} limit={5} />
-    <TextLink href={`${base}historikk/`}>Se historikk</TextLink>
-  </PageSection>
-  <PageSection id="film-og-tv" title="Film og TV" icon="film" more={{ href: `${base}film-og-tv/`, label: 'Se all film og TV' }}>
-    <WatchRows items={seen?.items ?? []} base={base} limit={5} />
-    <TextLink href={`${base}historikk/`}>Se historikk</TextLink>
-  </PageSection>
-  <PageSection id="artister" title="Mest spilt siste måned" icon="trend-up">
-    <TopArtistRows artists={(listening?.topArtists ?? []).slice(0, 5)} base={base} pictures={pictures} />
-  </PageSection>
-  <Fetched sources={[{ at: listening?.at ?? null, source: 'Last.fm' }, { at: seen?.at ?? null, source: 'Trakt' }]} />
+<Page current="front" title="Medier" lead="Hva du hører på og ser, hentet fra Last.fm og Trakt.">
+  {missing.length === 2 && <UsernameGate services={missing} />}
+  {users.lastfm !== null && <NowPlayingLive client:load initial={now} endpoint={`${base}api/now/`} />}
+  {
+    users.lastfm !== null ? (
+      <PageSection id="musikk" title="Musikk" icon="music" more={{ href: `${base}musikk/`, label: 'Se all musikk' }}>
+        <PlayRows plays={plays} base={base} limit={5} />
+        <TextLink href={`${base}historikk/`}>Se historikk</TextLink>
+      </PageSection>
+    ) : missing.length === 1 ? (
+      <UsernameGate services={['lastfm']} title="Hvem skal vi hente musikk for?" />
+    ) : null
+  }
+  {
+    users.trakt !== null ? (
+      <PageSection id="film-og-tv" title="Film og TV" icon="film" more={{ href: `${base}film-og-tv/`, label: 'Se all film og TV' }}>
+        <WatchRows items={seen?.items ?? []} base={base} limit={5} />
+        <TextLink href={`${base}historikk/`}>Se historikk</TextLink>
+      </PageSection>
+    ) : missing.length === 1 ? (
+      <UsernameGate services={['trakt']} title="Hvem skal vi hente film og TV for?" />
+    ) : null
+  }
+  {
+    users.lastfm !== null && (
+      <PageSection id="artister" title="Mest spilt siste måned" icon="trend-up">
+        <TopArtistRows artists={(listening?.topArtists ?? []).slice(0, 5)} base={base} pictures={pictures} />
+      </PageSection>
+    )
+  }
+  {sources.length > 0 && <Fetched sources={sources} />}
 </Page>

@@ -1,6 +1,6 @@
 /**
- * What the site keeps of Spotify's Web API: the song playing now, and how the token to ask for it is made. Pure, so a test pins it; `sources.ts` does the asking.
- * Only «currently playing» is used: a song that is playing (not an episode, not an ad), with its cover and where to open it.
+ * What the site keeps of Spotify's Web API: the search for an artist's picture and an album's or a track's link, and how the token to ask for them is made. Pure, so a test pins it;
+ * `sources.ts` does the asking. What plays now is not asked of Spotify (it would be the owner's, not the visitor's): it is Last.fm's, for the visitor's own username.
  */
 
 export const TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -12,13 +12,13 @@ export const searchArtistUrl = (name: string): string => `https://api.spotify.co
 /** The search for one album, or one track, by its name and its artist's: ten hits, the most Spotify gives (`parseAlbumMatch` and `parseTrackMatch` take the one named the same). */
 export const searchAlbumUrl = (album: string, artist: string): string => `https://api.spotify.com/v1/search?type=album&limit=10&q=${encodeURIComponent(`album:"${album}" artist:"${artist}"`)}`
 export const searchTrackUrl = (track: string, artist: string): string => `https://api.spotify.com/v1/search?type=track&limit=10&q=${encodeURIComponent(`track:"${track}" artist:"${artist}"`)}`
-export const NOW_PLAYING_URL = "https://api.spotify.com/v1/me/player/currently-playing"
 
+/** A song playing now (Last.fm's scrobble of it). */
 export interface NowPlaying {
   track: string
   artist: string
   album: string
-  /** The cover, as Spotify hosts it; `null` where it has none. */
+  /** The cover; `null` where there is none. */
   image: string | null
   url: string
 }
@@ -45,22 +45,6 @@ export function parseToken(answer: unknown): { accessToken: string; expiresIn: n
   const accessToken = text(token["access_token"])
   const expiresIn = typeof token["expires_in"] === "number" ? token["expires_in"] : 3600
   return accessToken === "" ? null : { accessToken, expiresIn }
-}
-
-/** The song playing now, or `null` when nothing plays, it is paused, or it is not a song (an episode, an ad). Spotify answers 204 with no body when nothing plays: that is `null` here too. */
-export function parseNowPlaying(answer: unknown): NowPlaying | null {
-  const state = object(answer)
-  if (state["is_playing"] !== true || state["currently_playing_type"] !== "track") return null
-  const item = object(state["item"])
-  const track = text(item["name"])
-  const url = text(object(item["external_urls"])["spotify"])
-  if (track === "" || !url.startsWith("https://open.spotify.com/")) return null
-  const artists = Array.isArray(item["artists"]) ? item["artists"].map((artist) => text(object(artist)["name"])).filter((name) => name !== "") : []
-  const album = object(item["album"])
-  // The images come largest first: the smallest one that is still 300 wide is plenty for a row.
-  const images = (Array.isArray(album["images"]) ? album["images"] : []).map(object).filter((image) => text(image["url"]) !== "")
-  const image = images.findLast((candidate) => typeof candidate["width"] === "number" && candidate["width"] >= 300) ?? images[0]
-  return { track, artist: artists.join(", "), album: text(album["name"]), image: image === undefined ? null : text(image["url"]), url }
 }
 
 /** The address the person approves at, once (`npm run spotify:auth`). `redirectUri` is one that is registered in the Spotify dashboard (a loopback one, `http://127.0.0.1:<port>/…`). */

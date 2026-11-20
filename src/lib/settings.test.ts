@@ -4,8 +4,8 @@ import { test } from "node:test"
 import { parseEnvFile, plan, required, SETTINGS } from "./settings.ts"
 
 test("an env file is read as the sync tools write it", () => {
-  const values = parseEnvFile('# keys\nLASTFM_API_KEY=abc\nexport TRAKT_USER="lmfaole"\n  \nBROKEN LINE\nEMPTY=\n')
-  assert.deepEqual([...values], [["LASTFM_API_KEY", "abc"], ["TRAKT_USER", "lmfaole"], ["EMPTY", ""]])
+  const values = parseEnvFile('# keys\nLASTFM_API_KEY=abc\nexport TRAKT_CLIENT_ID="c1d"\n  \nBROKEN LINE\nEMPTY=\n')
+  assert.deepEqual([...values], [["LASTFM_API_KEY", "abc"], ["TRAKT_CLIENT_ID", "c1d"], ["EMPTY", ""]])
 })
 
 test("push sets what it finds and names what it lacks; nothing else in the files is taken", () => {

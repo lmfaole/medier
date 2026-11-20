@@ -1,18 +1,25 @@
 ---
 import { ArtistDetail } from '../../components/detail'
 import { Head } from '../../components/head'
+import NeedsUsername from '../../components/NeedsUsername.astro'
 import Page from '../../layouts/Page.astro'
 import { artistPages } from '../../lib/pages'
-import { artist, music } from '../../lib/runtime'
+import { artist, music, usersOf } from '../../lib/runtime'
 
-const listening = await music()
-const page = listening === null ? undefined : artistPages(listening).find((one) => one.slug === Astro.params.slug)
-if (page === undefined) return Astro.rewrite('/404/')
-const info = await artist(page.name)
 const base = import.meta.env.BASE_URL
+const users = usersOf(Astro.cookies)
+// Without a Last.fm username there are no plays to find the artist among: the page asks for it.
+const listening = users.lastfm === null ? null : await music(users)
+const page = listening === null ? undefined : artistPages(listening).find((one) => one.slug === Astro.params.slug)
+if (users.lastfm !== null && page === undefined) return Astro.rewrite('/404/')
+const info = page === undefined ? null : await artist(users, page.name)
 ---
 
+{page === undefined || info === null ? (
+  <NeedsUsername service="lastfm" />
+) : (
 <Page bare current="music" width="pane" title={page.name} lead="Artist" crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.name, href: `${base}musikk/${page.slug}/` }]}>
   <Head client:idle kind="Artist" title={page.name} sources={info.spotify?.images ?? []} shape="artist" fromSpotify={info.spotify !== null && info.spotify.images.length > 0} />
   <ArtistDetail page={page} base={base} info={info} />
 </Page>
+)}

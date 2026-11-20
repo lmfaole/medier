@@ -8,9 +8,9 @@
 import data from "./mock-data.json" with { type: "json" }
 import { plain } from "./spotify.ts"
 
-/** The settings of a run on made-up data: what is not set (no keys are) is given a name that is no key, so every source is «set up». */
+/** The settings of a run on made-up data: what is not set (no keys are) is given a name that is no key, so every source is «set up». The usernames are the visitor's, as always (any one is taken). */
 export function mockSettings(env: Readonly<Partial<Record<string, string>>>): Record<string, string> {
-  const defaults = { LASTFM_API_KEY: "mock", LASTFM_USER: "ola", TRAKT_CLIENT_ID: "mock", TRAKT_USER: "ola", TMDB_API_KEY: "mock", SPOTIFY_CLIENT_ID: "mock", SPOTIFY_CLIENT_SECRET: "mock", SPOTIFY_REFRESH_TOKEN: "mock" }
+  const defaults = { LASTFM_API_KEY: "mock", TRAKT_CLIENT_ID: "mock", TMDB_API_KEY: "mock", SPOTIFY_CLIENT_ID: "mock", SPOTIFY_CLIENT_SECRET: "mock", SPOTIFY_REFRESH_TOKEN: "mock" }
   return { ...defaults, ...Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1] !== "")) }
 }
 
@@ -322,9 +322,8 @@ function spotifyTrack(track: MockTrack): Record<string, unknown> {
   }
 }
 
-function spotify(url: URL, now: number): Response {
+function spotify(url: URL): Response {
   if (url.hostname === "accounts.spotify.com") return json({ access_token: "mock-access-token", token_type: "Bearer", expires_in: 3600, scope: "user-read-currently-playing" })
-  if (url.pathname === "/v1/me/player/currently-playing") return json({ is_playing: true, currently_playing_type: "track", item: spotifyTrack(nowTrack(now)) })
   if (url.pathname === "/v1/search") {
     const type = url.searchParams.get("type")
     const query = url.searchParams.get("q") ?? ""
@@ -359,7 +358,7 @@ export function mockFetch(url: string, _request: { headers?: Record<string, stri
       return tmdb(address)
     case "accounts.spotify.com":
     case "api.spotify.com":
-      return spotify(address, seconds)
+      return spotify(address)
     default:
       return json({ error: `mock: no fixtures for ${address.hostname}` }, 404)
   }

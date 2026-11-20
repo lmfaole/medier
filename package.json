@@ -2,7 +2,7 @@
   "name": "medier",
   "private": true,
   "type": "module",
-  "description": "Hva jeg hører på og ser: en side på Cloudflare Workers som spør Last.fm, Spotify og Trakt",
+  "description": "Hva du hører på og ser: en side på Cloudflare Workers som spør Last.fm, Trakt og Spotify for brukernavnene du gir den",
   "engines": {
     "node": ">=24"
   },

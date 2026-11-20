@@ -7,6 +7,8 @@ import { ConnectionBanner } from '@lmfaole/designsystem/components/connection-ba
 
 import { Credits } from '../components/credits'
 import { Frame, type Place } from '../components/frame'
+import { UserChip, usersText } from '../components/username-form'
+import { usersOf } from '../lib/runtime'
 
 interface Props {
   title: string
@@ -22,6 +24,9 @@ interface Props {
 }
 const { title, lead, crumbs, width = 'reading', current, bare = false } = Astro.props
 const base = import.meta.env.BASE_URL
+// Whose data the pages show, at the foot of every page once given, with the way to change it.
+const who = usersText(usersOf(Astro.cookies))
+const change = `${base}brukernavn/?tilbake=${encodeURIComponent(`${Astro.url.pathname}${Astro.url.search}`)}`
 ---
 
 <!doctype html>
@@ -49,6 +54,7 @@ const base = import.meta.env.BASE_URL
         {crumbs === undefined ? null : <Breadcrumbs items={crumbs} />}
         {bare ? null : <PageHeader title={title} lead={lead} />}
         <slot />
+        {who === null ? null : <UserChip user={who} href={change} />}
         <Credits />
       </Stack>
     </Frame>

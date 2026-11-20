@@ -5,13 +5,16 @@
 
 import { env } from "cloudflare:workers"
 
-import { type Env, type Get, lastfmError, type Listening, loadAlbum, loadArtist, loadArtistPictures, loadLastfmNow, loadMusic, loadNowPlaying, loadPerson, loadTrack, loadWatched, settle } from "./sources.ts"
+import type { AstroCookies } from "astro"
+
+import { type Env, forUsers, type Get, lastfmError, lastfmUserExists, type Listening, loadAlbum, loadArtist, loadArtistPictures, loadLastfmNow, loadMusic, loadPerson, loadTrack, loadWatched, settle, traktUserExists } from "./sources.ts"
 import { MOCK_VERSION, mockFetch, mockSettings } from "./mock.ts"
 import { loadMonth, loadTrend, loadWeek } from "./week-source.ts"
 import type { Month } from "./months.ts"
 import type { Week } from "./weeks.ts"
 import type { NowPlaying } from "./spotify.ts"
 import type { Watched } from "./trakt.ts"
+import { readUsers, type Users } from "./users.ts"
 
 const AGENT = "lmfaole-medier (https://github.com/lmfaole/medier)"
 /** A cache key is an address; an answer that is kept under a name (a token) gets one that no one can ask the Worker for. */
@@ -19,9 +22,14 @@ const KEY_HOST = "https://cache.medier.invalid/"
 
 /** The settings that are text: a secret or a variable that is not a string (a binding) is not one of ours. */
 const own = (): Env => Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === "string"))
-/** `MOCK_DATA=1` (`.dev.vars`, never a Worker's secret): the sources are answered by `mock.ts`, with no keys and no network. */
-const mocking = (): boolean => own()["MOCK_DATA"] === "1"
+/** `MOCK_DATA=1` (`.dev.vars`, never a Worker's secret): the sources are answered by `mock.ts`, with no keys and no network, and any username is one. */
+export const mocking = (): boolean => own()["MOCK_DATA"] === "1"
 export const settings = (): Env => (mocking() ? mockSettings(own()) : own())
+/** The settings for one visitor: the Worker's keys and the visitor's usernames, never anyone else's. */
+const settingsFor = (users: Users): Env => forUsers(settings(), users)
+
+/** The visitor's usernames, from the request's cookies (`users.ts`). */
+export const usersOf = (cookies: AstroCookies): Users => readUsers((name) => cookies.get(name)?.value)
 
 /**
  * Workers on this zone cannot reach an origin outside Cloudflare (every such fetch ends in 525), while a Worker on workers.dev can: the relay (`upstream/`) is that
@@ -62,16 +70,19 @@ export const get: Get = async (url, request) => {
   return { data, hit: false }
 }
 
-/** Each source on its own, `null` when it is not set up or is down: a page shows what it has. */
-export const music = (): Promise<Listening | null> => settle(loadMusic(settings(), get))
-export const watched = (): Promise<Watched | null> => settle(loadWatched(settings(), get))
-export const lastfmNow = (): Promise<NowPlaying | null> => settle(loadLastfmNow(settings(), get))
-export const spotifyNow = (): Promise<NowPlaying | null> => settle(loadNowPlaying(settings(), get))
-export const artist = (name: string) => loadArtist(settings(), get, name)
+/** Each source on its own, for the visitor's usernames; `null` when it is not set up, the visitor has not given the username, or it is down: a page shows what it has. */
+export const music = (users: Users): Promise<Listening | null> => settle(loadMusic(settingsFor(users), get))
+export const watched = (users: Users): Promise<Watched | null> => settle(loadWatched(settingsFor(users), get))
+export const lastfmNow = (users: Users): Promise<NowPlaying | null> => settle(loadLastfmNow(settingsFor(users), get))
+export const artist = (users: Users, name: string) => loadArtist(settingsFor(users), get, name)
 export const artistPictures = (names: readonly string[]) => loadArtistPictures(settings(), get, names)
 export const person = (id: number) => settle(loadPerson(settings(), get, id))
-export const album = (artist: string, title: string) => loadAlbum(settings(), get, artist, title)
-export const track = (artist: string, title: string) => loadTrack(settings(), get, artist, title)
-export const week = (which: Week) => settle(loadWeek(settings(), get, which, Date.now()))
-export const month = (which: Month) => settle(loadMonth(settings(), get, which, Date.now()))
-export const trend = (periods: readonly { id: string; start: number; end: number }[]) => settle(loadTrend(settings(), get, periods, Date.now()))
+export const album = (users: Users, artist: string, title: string) => loadAlbum(settingsFor(users), get, artist, title)
+export const track = (users: Users, artist: string, title: string) => loadTrack(settingsFor(users), get, artist, title)
+export const week = (users: Users, which: Week) => settle(loadWeek(settingsFor(users), get, which, Date.now()))
+export const month = (users: Users, which: Month) => settle(loadMonth(settingsFor(users), get, which, Date.now()))
+export const trend = (users: Users, periods: readonly { id: string; start: number; end: number }[]) => settle(loadTrend(settingsFor(users), get, periods, Date.now()))
+
+/** Whether the services have this username (a Trakt profile must be public); in a run on made-up data every name is one. */
+export const lastfmUserFound = (user: string): Promise<boolean> => (mocking() ? Promise.resolve(true) : lastfmUserExists(settings(), get, user))
+export const traktUserFound = (user: string): Promise<boolean> => (mocking() ? Promise.resolve(true) : traktUserExists(settings(), get, user))

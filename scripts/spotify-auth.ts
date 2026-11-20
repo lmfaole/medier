@@ -1,5 +1,5 @@
 /**
- * `npm run spotify:auth -- <env file>`: signs in to Spotify once, so the site can see what plays. The file has `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` and
+ * `npm run spotify:auth -- <env file>`: signs in to Spotify once, so the site can search Spotify (artist pictures, album and track links). The file has `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` and
  * `SPOTIFY_REDIRECT_URI` (a loopback address registered in the Spotify dashboard, `http://127.0.0.1:<port>/…`; `localhost` is not allowed): the monorepo's
  * `secrets/music-sync.env` has them. It prints the address to approve at, waits for the browser to come back to the redirect address, swaps the code for the refresh
  * token and writes it to `.spotify.env` (not committed, mode 600). It prints no token. The token lasts six months: run this again then.

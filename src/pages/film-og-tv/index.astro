@@ -2,16 +2,26 @@
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
 
 import { Fetched, WatchRows } from '../../components/sections'
+import UsernameGate from '../../components/UsernameGate.astro'
 import Page from '../../layouts/Page.astro'
-import { watched } from '../../lib/runtime'
+import { usersOf, watched } from '../../lib/runtime'
 
 const base = import.meta.env.BASE_URL
-const seen = await watched()
+const users = usersOf(Astro.cookies)
+const seen = users.trakt === null ? null : await watched(users)
 ---
 
-<Page current="film" title="Film og TV" lead="Filmene og episodene jeg har sett sist, fra Trakt." crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: `${base}film-og-tv/` }]}>
-  <PageSection id="sett" title="Sist sett">
-    <WatchRows items={seen?.items ?? []} base={base} />
-  </PageSection>
-  <Fetched sources={[{ at: seen?.at ?? null, source: 'Trakt' }]} />
+<Page current="film" title="Film og TV" lead="Filmene og episodene du har sett sist, fra Trakt." crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: `${base}film-og-tv/` }]}>
+  {
+    users.trakt === null ? (
+      <UsernameGate services={['trakt']} />
+    ) : (
+      <>
+        <PageSection id="sett" title="Sist sett">
+          <WatchRows items={seen?.items ?? []} base={base} />
+        </PageSection>
+        <Fetched sources={[{ at: seen?.at ?? null, source: 'Trakt' }]} />
+      </>
+    )
+  }
 </Page>

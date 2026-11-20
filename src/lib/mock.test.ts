@@ -3,7 +3,7 @@ import { test } from "node:test"
 
 import { artistChartUrl, artistInfoUrl, artistTopAlbumsUrl, albumInfoUrl, parseAlbumInfo, parseArtistChart, parseArtistInfo, parseRecentPage, parseRecentTracks, parseTopAlbums, parseTopArtists, parseTrackInfo, playsInRangeUrl, playsTotalUrl, trackInfoUrl } from "./lastfm.ts"
 import { MOCK_ARTISTS, mockFetch, mockSettings } from "./mock.ts"
-import { NOW_PLAYING_URL, parseAlbumMatch, parseArtistMatch, parseNowPlaying, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl } from "./spotify.ts"
+import { parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl } from "./spotify.ts"
 import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, personUrl } from "./tmdb.ts"
 import { parseHistory } from "./trakt.ts"
 
@@ -63,11 +63,9 @@ test("Trakt and TMDB: history in a range, then each title's poster, facts, credi
   assert.ok(person?.biography !== null && person?.department === "Skuespiller")
 })
 
-test("Spotify: the token, what plays, and the searches that find an artist, an album and a track by name", async () => {
+test("Spotify: the token, and the searches that find an artist, an album and a track by name", async () => {
   const request = refreshRequest("mock", "mock", "mock")
   assert.equal(parseToken(await ask(request.url, request))?.accessToken, "mock-access-token")
-  const playing = parseNowPlaying(await ask(NOW_PLAYING_URL))
-  assert.ok(playing !== null && playing.url.startsWith("https://open.spotify.com/"))
 
   const name = MOCK_ARTISTS[2] ?? ""
   assert.ok((parseArtistMatch(await ask(searchArtistUrl(name)), name)?.images.length ?? 0) > 0)
@@ -80,8 +78,9 @@ test("Spotify: the token, what plays, and the searches that find an artist, an a
   assert.equal(parseArtistMatch(await ask(searchArtistUrl("Ukjent")), "Ukjent"), null)
 })
 
-test("an address that is none of the sources' is 404, and made-up settings give every source a key without overriding one", () => {
+test("an address that is none of the sources' is 404, and made-up settings give every source a key without overriding one, and no username (the visitor gives it)", () => {
   assert.equal(mockFetch("https://example.com/", {}, NOW).status, 404)
-  assert.equal(mockSettings({ LASTFM_USER: "meg", TMDB_API_KEY: "x" })["LASTFM_USER"], "meg")
+  assert.equal(mockSettings({ LASTFM_API_KEY: "meg", TMDB_API_KEY: "x" })["LASTFM_API_KEY"], "meg")
+  assert.equal(mockSettings({})["LASTFM_USER"], undefined)
   assert.equal(mockSettings({})["TRAKT_CLIENT_ID"], "mock")
 })

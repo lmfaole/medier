@@ -1,13 +1,13 @@
 import type { APIRoute } from 'astro'
 
 import { playingNow } from '../../lib/now'
-import { lastfmNow, spotifyNow } from '../../lib/runtime'
+import { lastfmNow, usersOf } from '../../lib/runtime'
 
 /**
- * What plays now, for the front page to ask for again while it is open: Spotify's song if it has one, Last.fm's where it has not, with Last.fm's cover for the disc. Both sources keep their answer for
- * fifteen seconds in the Worker's cache, so any number of readers asks each of them about as often as one would. `null` when nothing plays.
+ * What plays now for the visitor's Last.fm username (its cookie), for the front page to ask for again while it is open. Last.fm's answer is kept for fifteen seconds in the Worker's cache, under its address,
+ * which has the username in it, so any number of readers of one user asks Last.fm about as often as one would. `null` when nothing plays or there is no username. The answer is the visitor's own: never kept by a shared cache.
  */
-export const GET: APIRoute = async () => {
-  const [spotify, lastfm] = await Promise.all([spotifyNow(), lastfmNow()])
-  return new Response(JSON.stringify(playingNow(spotify, lastfm)), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=10' } })
+export const GET: APIRoute = async ({ cookies }) => {
+  const playing = playingNow(await lastfmNow(usersOf(cookies)))
+  return new Response(JSON.stringify(playing), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
 }

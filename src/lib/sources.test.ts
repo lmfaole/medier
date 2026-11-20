@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { type Env, type Get, loadAlbum, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, lastfmError, loadPerson, loadTrack, loadWatched, MAX_POSTER_LOOKUPS, settle, TTL } from "./sources.ts"
+import { type Env, forUsers, type Get, lastfmUserExists, loadAlbum, loadArtist, loadArtistPictures, loadLastfmNow, loadMusic, lastfmError, loadPerson, loadTrack, loadWatched, MAX_POSTER_LOOKUPS, settle, traktUserExists, TTL } from "./sources.ts"
 
 /** A `get` that answers from a table by the start of the address and remembers what was asked. */
 function fake(answers: Record<string, unknown>, hits = new Set<string>()): { get: Get; asked: { url: string; ttl: number; method: string | undefined }[] } {
@@ -37,9 +37,45 @@ test("a source whose key is not set is left out, not an error", async () => {
   const { get, asked } = fake({})
   assert.equal(await loadMusic({}, get), null)
   assert.equal(await loadWatched({}, get), null)
-  assert.equal(await loadNowPlaying({}, get), null)
-  assert.equal(await loadNowPlaying({ SPOTIFY_CLIENT_ID: "i", SPOTIFY_CLIENT_SECRET: "s" }, get), null)
+  assert.equal(await loadLastfmNow({}, get), null)
   assert.deepEqual(asked, [])
+})
+
+test("a source with its key but without the visitor's username is left out: nothing is asked for anyone", async () => {
+  const { get, asked } = fake({})
+  const keys = forUsers(ENV, { lastfm: null, trakt: null })
+  assert.equal(await loadMusic(keys, get), null)
+  assert.equal(await loadWatched(keys, get), null)
+  assert.equal(await loadLastfmNow(keys, get), null)
+  assert.deepEqual(asked, [])
+})
+
+test("the usernames are the visitor's, threaded into every address, and never the Worker's own", async () => {
+  const env = forUsers({ ...ENV, LASTFM_USER: "owner", TRAKT_USER: "owner" }, { lastfm: "visitor", trakt: "seer" })
+  const { get, asked } = fake({ "https://ws.audioscrobbler.com/2.0/": RECENT, "https://api.trakt.tv/": [] })
+  await Promise.all([loadMusic(env, get), loadWatched(env, get), loadLastfmNow(env, get)])
+  assert.ok(asked.filter((one) => one.url.includes("audioscrobbler")).every((one) => one.url.includes("&user=visitor")))
+  assert.ok(asked.filter((one) => one.url.includes("trakt")).every((one) => one.url.includes("/users/seer/")))
+  assert.ok(asked.every((one) => !one.url.includes("owner")))
+  assert.equal(forUsers({ LASTFM_USER: "owner", TRAKT_USER: "owner", LASTFM_API_KEY: "k" }, { lastfm: null, trakt: null })["LASTFM_USER"], undefined)
+})
+
+test("a username is checked with the service: Last.fm's error and Trakt's refusal or private profile are not one", async () => {
+  const lastfm = (data: unknown): Get => async () => {
+    if (lastfmError(data) !== null) throw new Error("ws.audioscrobbler.com: User not found")
+    return { data, hit: false }
+  }
+  assert.equal(await lastfmUserExists(ENV, lastfm({ user: { name: "Ola" } }), "ola"), true)
+  assert.equal(await lastfmUserExists(ENV, lastfm({ error: 6, message: "User not found" }), "nobody"), false)
+  const trakt = (status: number, data: unknown = {}): Get => async (url) => {
+    assert.ok(url.startsWith("https://api.trakt.tv/users/a%20b"))
+    if (status !== 200) throw new Error(`api.trakt.tv: ${status}`)
+    return { data, hit: false }
+  }
+  assert.equal(await traktUserExists(ENV, trakt(200, { username: "a b", private: false }), "a b"), true)
+  assert.equal(await traktUserExists(ENV, trakt(200, { username: "a b", private: true }), "a b"), false)
+  assert.equal(await traktUserExists(ENV, trakt(404), "a b"), false)
+  assert.equal(await traktUserExists(ENV, trakt(401), "a b"), false)
 })
 
 function history(count: number) {
@@ -68,22 +104,7 @@ test("a poster that cannot be fetched is left out and does not fail the page", a
   assert.ok(watched?.items.every((item) => item.poster === null))
 })
 
-test("now playing swaps the refresh token for an access token (kept under its own key) and asks with it", async () => {
-  const calls: { url: string; method?: string; key?: string; auth?: string }[] = []
-  const get: Get = async (url, request) => {
-    calls.push({ url, ...(request.method === undefined ? {} : { method: request.method }), ...(request.key === undefined ? {} : { key: request.key }), ...(request.headers?.["Authorization"] === undefined ? {} : { auth: request.headers["Authorization"] }) })
-    if (request.method === "POST") return { data: { access_token: "tok", expires_in: 3600 }, hit: false }
-    return { data: { is_playing: true, currently_playing_type: "track", item: { name: "Submit", artists: [{ name: "Shygirl" }], album: { name: "S", images: [] }, external_urls: { spotify: "https://open.spotify.com/track/a" } } }, hit: false }
-  }
-  const playing = await loadNowPlaying({ SPOTIFY_CLIENT_ID: "i", SPOTIFY_CLIENT_SECRET: "s", SPOTIFY_REFRESH_TOKEN: "r" }, get)
-  assert.equal(playing?.track, "Submit")
-  assert.equal(calls[0]?.key, "spotify:token")
-  assert.equal(calls[1]?.auth, "Bearer tok")
-})
-
-test("a token that was refused gives nothing playing, and a source that throws is null for settle", async () => {
-  const refused: Get = async () => ({ data: { error: "invalid_grant" }, hit: false })
-  assert.equal(await loadNowPlaying({ SPOTIFY_CLIENT_ID: "i", SPOTIFY_CLIENT_SECRET: "s", SPOTIFY_REFRESH_TOKEN: "r" }, refused), null)
+test("a source that throws is null for settle", async () => {
   assert.equal(await settle(Promise.reject(new Error("down"))), null)
 })
 

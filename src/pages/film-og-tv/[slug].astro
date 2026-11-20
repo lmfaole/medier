@@ -2,17 +2,22 @@
 import { TitleDetail } from '../../components/detail'
 import { Head } from '../../components/head'
 import { sourcesOf } from '../../lib/image-sources'
+import NeedsUsername from '../../components/NeedsUsername.astro'
 import Page from '../../layouts/Page.astro'
 import { titleHref, titlePages } from '../../lib/pages'
-import { watched } from '../../lib/runtime'
+import { usersOf, watched } from '../../lib/runtime'
 
-const seen = await watched()
+const users = usersOf(Astro.cookies)
+const seen = users.trakt === null ? null : await watched(users)
 const page = seen === null ? undefined : titlePages(seen.items).find((one) => one.slug === Astro.params.slug)
-if (page === undefined) return Astro.rewrite('/404/')
+if (users.trakt !== null && page === undefined) return Astro.rewrite('/404/')
 const base = import.meta.env.BASE_URL
-const kind = page.kind === 'film' ? 'Film' : 'Serie'
+const kind = page?.kind === 'film' ? 'Film' : 'Serie'
 ---
 
+{page === undefined ? (
+  <NeedsUsername service="trakt" />
+) : (
 <Page bare current="film"
   width="pane"
   title={page.title}
@@ -22,3 +27,4 @@ const kind = page.kind === 'film' ? 'Film' : 'Serie'
   <Head client:idle kind={page.year === null ? kind : `${kind} · ${page.year}`} title={page.title} sources={sourcesOf(page.poster)} shape="film" />
   <TitleDetail page={page} base={base} />
 </Page>
+)}

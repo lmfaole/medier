@@ -1,6 +1,5 @@
 import { DurationBars } from "@lmfaole/designsystem/components/duration-bars"
 import { EmptyState } from "@lmfaole/designsystem/components/empty-state"
-import { Stack } from "@lmfaole/designsystem/components/layout"
 import { Text } from "@lmfaole/designsystem/components/text"
 import { Timeline } from "@lmfaole/designsystem/components/timeline"
 
@@ -9,7 +8,6 @@ import type { Playing } from "../lib/now.ts"
 import { titleHref, titlePages, trackHref } from "../lib/pages.ts"
 import { groupNounsOf, listeningSessions, playingEvent, playsTimeline, spansWithin, watchesTimeline, watchSessions } from "../lib/timeline.ts"
 import type { Watch } from "../lib/trakt.ts"
-import { FromSpotify } from "./credits.tsx"
 
 /** How far back the sessions go: two days, so last evening is there in the morning. */
 const SESSION_HOURS = 48
@@ -24,23 +22,15 @@ export function Sessions({ plays, watches, now, playing }: { plays: readonly Pla
 
 /**
  * Every play and viewing on one timeline, newest first, under a heading for each day; a run of one album's songs or one show's episodes folds away. A song links to its page
- * here and a viewing to the film's or the show's; the song playing now is first, marked as going on, and links to Spotify where Spotify says it plays (so it is attributed).
+ * here and a viewing to the film's or the show's; the song playing now is first, marked as going on.
  */
 export function HistoryTimeline({ plays, watches, now, playing, base }: { plays: readonly Play[]; watches: readonly Watch[]; now: string; playing: Playing | null; base: string }) {
   const pageOf = new Map(titlePages(watches).flatMap((page) => page.viewings.map((watch) => [watch.id, page.slug] as const)))
   const events = [
-    ...(playing === null ? [] : [playingEvent(playing, now, playing.from === "spotify" ? playing.url : undefined)]),
+    ...(playing === null ? [] : [playingEvent(playing, now)]),
     ...playsTimeline(plays, { href: (play) => trackHref(base, play.artist, play.track) }),
     ...watchesTimeline(watches, { href: (watch) => { const slug = pageOf.get(watch.id); return slug === undefined ? undefined : titleHref(base, slug) } }),
   ]
   if (events.length === 0) return <EmptyState icon="history" title="Ingen historikk å vise" description="Last.fm og Trakt svarte ikke, eller har ingenting ennå." />
-  const timeline = <Timeline label="Historikk" events={events} now={now} groupNouns={groupNounsOf(events)} />
-  return playing?.from === "spotify" ? (
-    <Stack gap="md">
-      {timeline}
-      <FromSpotify />
-    </Stack>
-  ) : (
-    timeline
-  )
+  return <Timeline label="Historikk" events={events} now={now} groupNouns={groupNounsOf(events)} />
 }

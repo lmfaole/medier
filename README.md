@@ -1,11 +1,16 @@
 # medier
 
-Hva jeg hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaole.party/>, laget med designsystemet
+Hva du hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaole.party/>, laget med designsystemet
 [`@lmfaole/designsystem`](https://github.com/lmfaole/designsystem).
 
 ## How it works
 
-- A page asks its sources when it is asked for: Last.fm (plays), Trakt (viewings), TMDB (posters) and Spotify (what plays now). Each answer is kept in the Worker's cache for a short while
+- **Whose data.** The visitor's own: they give their Last.fm and Trakt usernames in a form (`src/components/username-form.tsx`, posted to `src/pages/api/brukernavn.ts`, no JS needed), which checks each with its
+  service (Last.fm's `user.getinfo`; Trakt's profile, which must be public) and keeps it in a cookie for a year (`lastfm_user`, `trakt_user`; path `/`, `SameSite=Lax`, `Secure`, `HttpOnly`). An empty field forgets it.
+  Without a username a page shows the form instead of data: Musikk and its pages need Last.fm, Film og TV and its pages Trakt, and the front page, Historikk and Wrapped show what has a username and ask for the rest.
+  «Viser data for … · Bytt» at the foot of every page leads to `/brukernavn/`. Only public data is shown: the site's keys are used, never a sign-in of the visitor's. The Worker has no username of its own.
+  Every page is `Cache-Control: private` with `Vary: Cookie` (`src/middleware.ts`), the Worker's cache is keyed by the address (which has the username in it), and the service worker keeps one visitor's pages at a time.
+- A page asks its sources when it is asked for: Last.fm (plays and what plays now), Trakt (viewings), TMDB (posters) and Spotify (artists' pictures and links, found by name). Each answer is kept in the Worker's cache for a short while
   (`TTL` in `src/lib/sources.ts`: 15 s for what plays now, a minute for the plays, five minutes for the viewings, a month for a poster), so a page is quick and the sources are asked little.
   A source that is down, or not set up, leaves its part out; the rest of the page shows.
 - **Pictures and a little more.** An artist's page has its picture and a link to it from Spotify (found by searching the name, and only used where an artist is named exactly the same: a wrong
@@ -19,8 +24,7 @@ Hva jeg hører på og ser: en side på Cloudflare Workers, <https://medier.lmfao
 - There is no database and nothing is committed as data. `src/lib/` reads the APIs' answers (pure, with tests); `src/components/` and `src/pages/` show them.
 - A Worker on the lmfaole.party zone cannot reach origins outside Cloudflare (every such fetch ends in 525), so the site asks through a small relay, `upstream/` (`medier-upstream` on
   workers.dev): only those four hosts, only GET (and Spotify's token), only with a key the site and the relay share.
-- Spotify asks one permission, to see what plays (`user-read-currently-playing`). The song shows first on the front page and on Musikk, marked «nå». Where Spotify is not set up, Last.fm's
-  own «now playing» (a scrobble of the same song) is shown instead.
+- What plays now is Last.fm's «now playing» (a scrobble of whatever plays) for the visitor's username; Spotify's «currently playing» is not used (it could only be the owner's).
 
 ## History
 
@@ -48,8 +52,8 @@ lists, the change is from the month before, up to 2 800 plays are read (14 pages
 The totals cost one small question to Last.fm each (a page of one play, whose `total` is the count, `loadTrend`), kept a day once the period is over; a period that could not be told is a gap, never a zero. The days come from plays already read.
 **The light** follows the rules of the design system's «Foundations / Light and shadow»: the main picture of a page, and only it, is lit. On a page of a thing (artist, album, song, film or show, person) that is its `Picture size="hero"`, lit on its **frame** (a shadow away from the light and a rim towards it, outside the picture, so nothing is painted over Spotify's artist pictures); the page's head is the design system's `DetailHeader` as an island (`<Head client:idle … />`, `src/components/head.tsx`; the detail components are not hydrated, so the backdrop and the light need it): the picture and the name together, the picture beside the name on a phone, on four colours taken from the picture (never the picture) drawn in WebGL, moving with the light and drawn only when it changes. It is the page's `<h1>`, so the page is `bare` (`Page.astro`), and `src/pages/head.test.ts` fails on a page of a detail component without it. The head's text is the full text colour, never muted: the ground is tinted. The record on the front page is the one thing lit on its **surface**, and only with Last.fm's cover. A reader is asked to let the light follow the phone once, and the answer is kept in the browser.
 
-What is playing now is the card at the top of the front page (`NowPlayingSection`, the design system's `NowPlayingCard`): a disc drawn in WebGL, a real 3D object (a thickness with an edge and a deep hole, a studio reflected in its lacquer, the grooves' spectrum in bands that move with the light and the angle), that turns slowly under the page's one light, which follows the pointer and, on a phone, how it is held (the design system's `LightSource`; iOS asks first), with «● Spilles nå»; a tap on the disc pauses it. The disc is made of **Last.fm's** cover only: Spotify's developer policy does not allow its covers to be cropped or to have anything on them, so a song from Spotify gets a disc only where Last.fm has the same song with a cover (`Playing.disc`), and otherwise is a row with its cover as it is.
-The card **keeps up**: while the front page is open and visible it asks `/api/now/` (`src/pages/api/now.ts`, Spotify's song or Last.fm's, both kept fifteen seconds in the Worker's cache) every fifteen seconds, and a new song changes it; nothing is asked while the tab is hidden, and the card goes only after two empty answers in a row. It sits in the design system's `LiveRegion`, so a screen reader is told of a new song. The disc's reflections are shaped by the cover (its hue, vividness and lightness), so no two covers shine alike; a song whose only cover is Spotify's is shown with that cover as it is, sharp and still.
+What is playing now is the card at the top of the front page (`NowPlayingSection`, the design system's `NowPlayingCard`): a disc drawn in WebGL, a real 3D object (a thickness with an edge and a deep hole, a studio reflected in its lacquer, the grooves' spectrum in bands that move with the light and the angle), that turns slowly under the page's one light, which follows the pointer and, on a phone, how it is held (the design system's `LightSource`; iOS asks first), with «● Spilles nå»; a tap on the disc pauses it. The disc is made of Last.fm's cover (`Playing.disc`).
+The card **keeps up**: while the front page is open and visible it asks `/api/now/` (`src/pages/api/now.ts`, Last.fm's song for the username in the visitor's cookie, kept fifteen seconds in the Worker's cache, `private` to the browser) every fifteen seconds, and a new song changes it; nothing is asked while the tab is hidden, and the card goes only after two empty answers in a row. It sits in the design system's `LiveRegion`, so a screen reader is told of a new song. The disc's reflections are shaped by the cover (its hue, vividness and lightness), so no two covers shine alike.
 There are no notifications: the site is public, so there is nobody to notify but whoever happens to open it.
 
 Nothing is stored: every week is made when it is asked for, from Last.fm (`user.getrecenttracks` with the week's range, read page by page up to 1 600 plays; the week before's `getweeklyartistchart`; the chart of everything before the
@@ -67,7 +71,7 @@ are made of; both are tested.
 
 The site installs on a phone or a computer and opens without the browser around it: «Legg til på Hjem-skjerm» on iOS, the install offer in the address bar on Android and desktop Chrome (there is no install button
 of our own). `public/manifest.webmanifest` is the identity (`id` and scope `/`, never changed once installed; dark colours, `any` and `maskable` icons at 192 and 512 drawn by `node scripts/icons.mjs`), and
-`public/sw.js` the service worker: a page from the network first with the last copy of each page when there is no network (the forty last, kept by address with the query), the front page and then `/offline/` when there
+`public/sw.js` the service worker: a page from the network first with the last copy of each page when there is no network (the forty last, kept by address with the query, and only the current visitor's: a page for other usernames, by the server's `X-Medier-Who`, drops the ones before), the front page and then `/offline/` when there
 is none; the built files and icons from the cache. Nothing from another site is kept (the covers are Spotify's, Last.fm's and TMDB's own), a redirect or an error is never kept as a page, and a new version waits until the
 app is closed (no `skipWaiting`) and then deletes the old caches: change `VERSION` in `sw.js` to make it. A bar at the foot on a phone, a rail from tablet width, goes between Forside, Musikk, Film, Historikk and Wrapped;
 `ConnectionBanner` says so when the device is offline and the page is the last one fetched. `src/pwa.test.ts` pins the manifest and runs the worker against a cache and a network of its own.
@@ -104,7 +108,7 @@ row. The artists' pictures are Spotify's and are cropped to the circle, which it
 ## Made-up data (no keys, no network)
 
 `MOCK_DATA=1` in `.dev.vars` (see `.dev.vars.example`; it is a local setting, never one of `settings.ts`'s and never pushed) answers every source from `src/lib/mock.ts` instead of fetching: Last.fm, Trakt, TMDB and Spotify,
-shaped as the real ones are, from **real metadata**: albums, tracklists, films, shows and people in `src/lib/mock-data.json` (committed), with plays and viewings laid out relative to now, so every recent week and month has some and a couple of artists are new.
+shaped as the real ones are (any username is taken, and all get the same data), from **real metadata**: albums, tracklists, films, shows and people in `src/lib/mock-data.json` (committed), with plays and viewings laid out relative to now, so every recent week and month has some and a couple of artists are new.
 It sits in `ask()` in `runtime.ts`, so the loaders and parsers run as they do for real; made-up answers are cached under their own keys. Unset, nothing changes. Restart `npm run dev` after changing `.dev.vars`.
 
 The JSON and the pictures in `public/mock/` were fetched once by `node scripts/fetch-mock-data.mjs` from Deezer (albums, covers, artist pictures) and Wikipedia and Wikidata (texts, posters, portraits, dates); the texts are Wikipedia's (CC BY-SA).

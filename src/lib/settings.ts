@@ -1,7 +1,8 @@
 /**
  * Every setting the site needs, in one list. The sources' keys, Spotify's sign-in and the key the site shares with its relay are **secrets of the Worker**
  * (`wrangler secret put`); the two Cloudflare tokens the deploy uses are **secrets of this GitHub repository**. Nothing of it is ever in a file here.
- * `npm run settings:push` sets each from env files kept elsewhere (the private monorepo's `secrets/`), the value on stdin, never on a command line.
+ * `npm run settings:push` sets each from env files kept elsewhere (the private monorepo's `secrets/`), the value on stdin, never on a command line. Whose data is shown is not a setting: it is the
+ * visitor's usernames, from their cookies (`users.ts`).
  */
 
 export interface Setting {
@@ -18,9 +19,9 @@ export const SETTINGS: readonly Setting[] = [
   { name: "LASTFM_API_KEY", where: "worker", about: "Last.fm API key: https://www.last.fm/api/account/create" },
   { name: "TRAKT_CLIENT_ID", where: "worker", about: "Trakt app Client ID: https://trakt.tv/oauth/applications (the profile must be public)" },
   { name: "TMDB_API_KEY", where: "worker", optional: true, about: "TMDB API key or read access token, for the posters: https://www.themoviedb.org/settings/api" },
-  { name: "SPOTIFY_CLIENT_ID", where: "worker", optional: true, about: "Spotify app Client ID, for what is playing now: https://developer.spotify.com/dashboard" },
+  { name: "SPOTIFY_CLIENT_ID", where: "worker", optional: true, about: "Spotify app Client ID, for the artists' pictures and the links to albums and tracks: https://developer.spotify.com/dashboard" },
   { name: "SPOTIFY_CLIENT_SECRET", where: "worker", optional: true, about: "Spotify app Client Secret (same place)" },
-  { name: "SPOTIFY_REFRESH_TOKEN", where: "worker", optional: true, about: "made by `npm run spotify:auth`: the sign-in that lets the site read what plays (scope user-read-currently-playing); it lasts six months" },
+  { name: "SPOTIFY_REFRESH_TOKEN", where: "worker", optional: true, about: "made by `npm run spotify:auth`: the sign-in the site's searches are made with; it lasts six months" },
   { name: "UPSTREAM_URL", where: "worker", about: "the relay's address on workers.dev, https://medier-upstream.<your subdomain>.workers.dev (a Worker on this zone cannot reach Last.fm, Trakt, TMDB or Spotify itself)" },
   { name: "UPSTREAM_KEY", where: "worker", about: "the key the site and the relay share; made when it is not in the files, and set on both" },
   { name: "CLOUDFLARE_API_TOKEN", where: "github", about: "a Cloudflare API token that may edit Workers: https://dash.cloudflare.com/profile/api-tokens (the deploy uses it)" },

@@ -1,0 +1,21 @@
+---
+// The form a page shows in place of the data it has no username for: the services it needs, filled in with what the visitor has, back to this page when sent.
+import { usersOf } from '../lib/runtime'
+import { backWithoutError, formError, type Service } from '../lib/users'
+import { FORM_BODY, UsernameForm, usernameFields } from './username-form'
+
+interface Props {
+  services: Service[]
+  title?: string
+  headingLevel?: 2 | 3
+  /** Where the form goes back to; this page by default. */
+  back?: string
+}
+
+const { services, title = 'Hvem skal vi hente data for?', headingLevel = 2 } = Astro.props
+const users = usersOf(Astro.cookies)
+const error = formError(Astro.url.searchParams)
+const back = backWithoutError(Astro.props.back ?? `${Astro.url.pathname}${Astro.url.search}`)
+---
+
+<UsernameForm title={title} body={FORM_BODY} action={`${import.meta.env.BASE_URL}api/brukernavn/`} back={back} fields={usernameFields(services, users, error)} icon="person" headingLevel={headingLevel} />
