@@ -85,12 +85,16 @@ async function readPlays(base: string, week: Range, get: Get, ttl: number, maxPa
   const first = parseRecentPage((await get(playsInRangeUrl(base, week.start, week.end, 1), { ttl })).data)
   const last = Math.min(first.totalPages, maxPages)
   const rest = Array.from({ length: Math.max(0, last - 1) }, (_, index) => index + 2)
-  const pages: Play[][] = []
-  for (let start = 0; start < rest.length; start += BATCH) {
-    const answers = await Promise.all(rest.slice(start, start + BATCH).map((page) => settle(get(playsInRangeUrl(base, week.start, week.end, page), { ttl }))))
-    pages.push(...answers.map((answer) => (answer === null ? [] : parseRecentPage(answer.data).plays)))
+  const pages = new Map<number, Play[]>()
+  // A page that fails (a rate limit, the limit on questions) is asked again once, one at a time: dropping it silently would make the count too low.
+  const ask = async (page: number): Promise<void> => {
+    const answer = await settle(get(playsInRangeUrl(base, week.start, week.end, page), { ttl }))
+    if (answer !== null) pages.set(page, parseRecentPage(answer.data).plays)
   }
-  return { plays: [...first.plays, ...pages.flat()], truncated: first.totalPages > maxPages }
+  for (let start = 0; start < rest.length; start += BATCH) await Promise.all(rest.slice(start, start + BATCH).map(ask))
+  for (const page of rest) if (!pages.has(page)) await ask(page)
+  const missing = rest.some((page) => !pages.has(page))
+  return { plays: [...first.plays, ...rest.flatMap((page) => pages.get(page) ?? [])], truncated: missing || first.totalPages > maxPages }
 }
 
 /** The lengths in seconds of the most played songs, as far as the limit on new questions goes. */

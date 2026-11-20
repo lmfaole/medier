@@ -51,7 +51,7 @@ function Numbers({ stats, previousTotal, previous, truncated }: { stats: WeekSta
             ["Per dag, mandag til søndag", stats.total === 0 ? null : <Sparkline values={stats.byDay} label={`Avspillinger per dag, mandag til søndag: ${stats.byDay.join(", ")}`} />],
           ]}
         />
-        {truncated ? <Text size="sm" tone="muted">Perioden hadde flere avspillinger enn det som leses: tallene gjelder de nyeste.</Text> : null}
+        {truncated ? <Text size="sm" tone="muted">Ikke alle avspillingene ble lest, så tallene kan være litt for lave.</Text> : null}
       </Stack>
     </PageSection>
   )
