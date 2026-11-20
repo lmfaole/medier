@@ -4,25 +4,34 @@ import { Rows } from "@lmfaole/designsystem/components/rows"
 import { Text, TextLink } from "@lmfaole/designsystem/components/text"
 
 import type { Play, TopArtist } from "../lib/lastfm.ts"
+import type { NowPlaying } from "../lib/spotify.ts"
 import { sourcesOf } from "../lib/image-sources.ts"
 import { artistHref, titleHref, titlePages } from "../lib/pages.ts"
 import { episodesCode, groupViewings, type Viewing, type Watch } from "../lib/trakt.ts"
 import { shortWhen, when } from "../lib/when.ts"
 
-/** The plays, newest first, each with its cover; the artist links to the artist's page here (`artistLinks` off on that page itself). */
-export function PlayRows({ plays, base, limit, artistLinks = true }: { plays: readonly Play[]; base: string; limit?: number; artistLinks?: boolean }) {
-  const shown = limit === undefined ? plays : plays.slice(0, limit)
-  if (shown.length === 0) return <EmptyState icon="music" title="Ingen avspillinger ennå" description="De kommer når Last.fm er hentet første gang." />
+/**
+ * The plays, newest first, each with its cover; the artist links to the artist's page here (`artistLinks` off on that page itself). `now` is the song playing this
+ * moment, first, marked «nå»: its artist only links where there is a page for it, which is an artist among the plays.
+ */
+export function PlayRows({ plays, base, limit, artistLinks = true, now = null }: { plays: readonly Play[]; base: string; limit?: number; artistLinks?: boolean; now?: NowPlaying | null }) {
+  const rows = [
+    ...(now === null ? [] : [{ key: `now-${now.url}`, artist: now.artist, track: now.track, album: now.album, image: now.image, aside: "nå" }]),
+    ...plays.map((play) => ({ key: `${play.playedAt}-${play.url}`, artist: play.artist, track: play.track, album: play.album, image: play.image, aside: play.playedAt === null ? "nå" : shortWhen(play.playedAt) })),
+  ]
+  const shown = limit === undefined ? rows : rows.slice(0, limit)
+  if (shown.length === 0) return <EmptyState icon="music" title="Ingen avspillinger å vise" description="Last.fm svarte ikke, eller har ingen avspillinger ennå." />
+  const known = new Set(plays.map((play) => play.artist))
   return (
     <PictureRows
       ratio="square"
-      rows={shown.map((play) => ({
-        key: `${play.playedAt}-${play.url}`,
+      rows={shown.map((row) => ({
+        key: row.key,
         picture: null,
-        sources: sourcesOf(play.image),
-        title: play.track,
-        detail: details([artistLinks ? <TextLink href={artistHref(base, play.artist)}>{play.artist}</TextLink> : null, play.album]),
-        aside: play.playedAt === null ? "nå" : shortWhen(play.playedAt),
+        sources: sourcesOf(row.image),
+        title: row.track,
+        detail: details([artistLinks && known.has(row.artist) ? <TextLink href={artistHref(base, row.artist)}>{row.artist}</TextLink> : row.artist, row.album]),
+        aside: row.aside,
       }))}
     />
   )
@@ -46,7 +55,7 @@ export function WatchRows({ items, base, limit }: { items: readonly Watch[]; bas
   // Each viewing's page: the film's, or the show's for an episode.
   const pageOf = new Map(titlePages(items).flatMap((page) => page.viewings.map((watch) => [String(watch.id), page.slug] as const)))
   const shown = limit === undefined ? rows : rows.slice(0, limit)
-  if (shown.length === 0) return <EmptyState icon="film" title="Ingenting sett ennå" description="Det kommer når Trakt er hentet første gang." />
+  if (shown.length === 0) return <EmptyState icon="film" title="Ingenting å vise" description="Trakt svarte ikke, eller har ingenting sett ennå." />
   return (
     <PictureRows
       ratio="poster"
@@ -70,8 +79,8 @@ function viewingDetail(viewing: Viewing): (string | number | null)[] {
   return [episodesCode(viewing.episodes), only === undefined || only.title === "" ? null : only.title]
 }
 
-/** «Hentet fra Last.fm 19. nov. 2026, 14:05.», or that it has not been yet, for each source in one line. */
+/** «Hentet fra Last.fm 19. nov. 2026, 14:05.», or that the source did not answer, for each source in one line. */
 export function Fetched({ sources }: { sources: readonly { at: string | null; source: string }[] }) {
-  const parts = sources.map(({ at, source }) => (at === null ? `Ikke hentet fra ${source} ennå.` : `Hentet fra ${source} ${when(at)}.`))
+  const parts = sources.map(({ at, source }) => (at === null ? `${source} svarte ikke.` : `Hentet fra ${source} ${when(at)}.`))
   return <Text size="sm" tone="muted">{parts.join(" ")}</Text>
 }

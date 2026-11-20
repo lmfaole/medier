@@ -6,6 +6,6 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src", "scripts", "astro.config.ts", ".astro/types.d.ts"],
+  "include": ["src", "scripts", "upstream", "astro.config.ts", ".astro/types.d.ts"],
   "exclude": ["dist"]
 }

@@ -1,16 +1,12 @@
 ---
-import watched from '../../../data/watched.json'
 import { TitleDetail } from '../../components/detail'
 import Page from '../../layouts/Page.astro'
-import { titleHref, titlePages, type TitlePage } from '../../lib/pages'
-import type { Watched } from '../../lib/trakt'
+import { titleHref, titlePages } from '../../lib/pages'
+import { watched } from '../../lib/runtime'
 
-export function getStaticPaths() {
-  const seen: Watched = watched
-  return titlePages(seen.items).map((page) => ({ params: { slug: page.slug }, props: { page } }))
-}
-
-const { page } = Astro.props as { page: TitlePage }
+const seen = await watched()
+const page = seen === null ? undefined : titlePages(seen.items).find((one) => one.slug === Astro.params.slug)
+if (page === undefined) return Astro.rewrite('/404/')
 const base = import.meta.env.BASE_URL
 const kind = page.kind === 'film' ? 'Film' : 'Serie'
 ---

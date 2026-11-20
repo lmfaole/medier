@@ -1,16 +1,12 @@
 ---
-import music from '../../../data/music.json'
 import { ArtistDetail } from '../../components/detail'
 import Page from '../../layouts/Page.astro'
-import type { Music } from '../../lib/lastfm'
-import { artistPages, type ArtistPage } from '../../lib/pages'
+import { artistPages } from '../../lib/pages'
+import { music } from '../../lib/runtime'
 
-export function getStaticPaths() {
-  const listening: Music = music
-  return artistPages(listening).map((page) => ({ params: { slug: page.slug }, props: { page } }))
-}
-
-const { page } = Astro.props as { page: ArtistPage }
+const listening = await music()
+const page = listening === null ? undefined : artistPages(listening).find((one) => one.slug === Astro.params.slug)
+if (page === undefined) return Astro.rewrite('/404/')
 const base = import.meta.env.BASE_URL
 ---
 

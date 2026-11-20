@@ -1,0 +1,61 @@
+import { strict as assert } from "node:assert"
+import { afterEach, test } from "node:test"
+
+import relay from "./worker.ts"
+
+const ENV = { UPSTREAM_KEY: "shared" }
+const real = globalThis.fetch
+afterEach(() => {
+  globalThis.fetch = real
+})
+
+/** Replaces `fetch` with one that records what the relay asked for and answers 200. */
+function spy(): { url: string; init: RequestInit | undefined }[] {
+  const calls: { url: string; init: RequestInit | undefined }[] = []
+  globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+    calls.push({ url: String(url), init })
+    return new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } })
+  }) as typeof fetch
+  return calls
+}
+
+const ask = (path: string, init: RequestInit & { key?: string | null } = {}) => {
+  const { key = "shared", ...rest } = init
+  const headers = new Headers(rest.headers)
+  if (key !== null) headers.set("X-Upstream-Key", key)
+  return relay.fetch(new Request(`https://relay.example${path}`, { ...rest, headers }), ENV)
+}
+
+test("without the shared key the relay asks nothing", async () => {
+  const calls = spy()
+  assert.equal((await ask("/api.trakt.tv/users/me/history/movies", { key: null })).status, 403)
+  assert.equal((await ask("/api.trakt.tv/users/me/history/movies", { key: "guess" })).status, 403)
+  assert.equal((await relay.fetch(new Request("https://relay.example/api.trakt.tv/x", { headers: { "X-Upstream-Key": "" } }), {})).status, 403)
+  assert.equal(calls.length, 0)
+})
+
+test("only the hosts of the sources are asked, and only with GET", async () => {
+  const calls = spy()
+  assert.equal((await ask("/example.com/secrets")).status, 404)
+  assert.equal((await ask("/accounts.spotify.com/authorize")).status, 404)
+  assert.equal((await ask("/api.trakt.tv/users/me", { method: "POST", body: "x" })).status, 405)
+  assert.equal(calls.length, 0)
+  assert.equal((await ask("/api.trakt.tv/users/me/history/movies?limit=50")).status, 200)
+  assert.equal(calls[0]?.url, "https://api.trakt.tv/users/me/history/movies?limit=50")
+})
+
+test("the one POST is Spotify's token, with the sign-in that came with the ask forwarded and nothing else of the page's", async () => {
+  const calls = spy()
+  await ask("/accounts.spotify.com/api/token", { method: "POST", body: "grant_type=refresh_token", headers: { Authorization: "Basic abc", "Content-Type": "application/x-www-form-urlencoded", Cookie: "session=1" } })
+  const headers = new Headers(calls[0]?.init?.headers)
+  assert.equal(calls[0]?.url, "https://accounts.spotify.com/api/token")
+  assert.equal(headers.get("authorization"), "Basic abc")
+  assert.equal(headers.get("cookie"), null)
+  assert.equal(headers.get("x-upstream-key"), null)
+})
+
+test("an answer with no body (204, nothing is playing) passes through as that", async () => {
+  globalThis.fetch = (async () => new Response(null, { status: 204 })) as typeof fetch
+  const response = await ask("/api.spotify.com/v1/me/player/currently-playing")
+  assert.equal(response.status, 204)
+})

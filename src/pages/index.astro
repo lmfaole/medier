@@ -1,27 +1,25 @@
 ---
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
 
-import music from '../../data/music.json'
-import watched from '../../data/watched.json'
 import { Fetched, PlayRows, TopArtistRows, WatchRows } from '../components/sections'
 import Page from '../layouts/Page.astro'
-import type { Music } from '../lib/lastfm'
-import type { Watched } from '../lib/trakt'
+import { music, spotifyNow, watched } from '../lib/runtime'
 
 const base = import.meta.env.BASE_URL
-const listening: Music = music
-const seen: Watched = watched
+const [listening, seen, spotify] = await Promise.all([music(), watched(), spotifyNow()])
+// Spotify knows what plays this second; Last.fm's scrobble is the same song a moment later, and the fallback where Spotify is not set up.
+const now = spotify ?? listening?.now ?? null
 ---
 
-<Page title="Medier" lead="Hva jeg hører på og ser, hentet fra Last.fm og Trakt.">
+<Page title="Medier" lead="Hva jeg hører på og ser, hentet fra Last.fm, Spotify og Trakt.">
   <PageSection id="musikk" title="Musikk" icon="music" more={{ href: `${base}musikk/`, label: 'Se all musikk' }}>
-    <PlayRows plays={listening.recent} base={base} limit={5} />
+    <PlayRows plays={listening?.recent ?? []} now={now} base={base} limit={5} />
   </PageSection>
   <PageSection id="film-og-tv" title="Film og TV" icon="film" more={{ href: `${base}film-og-tv/`, label: 'Se all film og TV' }}>
-    <WatchRows items={seen.items} base={base} limit={5} />
+    <WatchRows items={seen?.items ?? []} base={base} limit={5} />
   </PageSection>
   <PageSection id="artister" title="Mest spilt siste måned" icon="trend-up">
-    <TopArtistRows artists={listening.topArtists.slice(0, 5)} base={base} />
+    <TopArtistRows artists={(listening?.topArtists ?? []).slice(0, 5)} base={base} />
   </PageSection>
-  <Fetched sources={[{ at: listening.at, source: 'Last.fm' }, { at: seen.at, source: 'Trakt' }]} />
+  <Fetched sources={[{ at: listening?.at ?? null, source: 'Last.fm' }, { at: seen?.at ?? null, source: 'Trakt' }]} />
 </Page>

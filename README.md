@@ -1,38 +1,49 @@
 # medier
 
-Hva jeg hører på og ser: en statisk side på GitHub Pages, <https://medier.lmfaole.party/>, laget med designsystemet
+Hva jeg hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaole.party/>, laget med designsystemet
 [`@lmfaole/designsystem`](https://github.com/lmfaole/designsystem).
 
 ## How it works
 
-- `.github/workflows/site.yml` runs every three hours: `npm run fetch` asks Last.fm and Trakt for the latest plays and viewings, writes
-  `data/music.json` and `data/watched.json`, commits them when they changed, builds the site with Astro and publishes it on Pages.
-- There is no server, no database and no machine of mine in it: the data is the JSON in `data/`, the pages are HTML made at build time.
-- `src/lib/` reads the APIs' answers (pure, with tests), `src/components/` and `src/pages/` show them.
+- A page asks its sources when it is asked for: Last.fm (plays), Trakt (viewings), TMDB (posters) and Spotify (what plays now). Each answer is kept in the Worker's cache for a short while
+  (`TTL` in `src/lib/sources.ts`: 15 s for what plays now, a minute for the plays, five minutes for the viewings, a month for a poster), so a page is quick and the sources are asked little.
+  A source that is down, or not set up, leaves its part out; the rest of the page shows.
+- There is no database and nothing is committed as data. `src/lib/` reads the APIs' answers (pure, with tests); `src/components/` and `src/pages/` show them.
+- A Worker on the lmfaole.party zone cannot reach origins outside Cloudflare (every such fetch ends in 525), so the site asks through a small relay, `upstream/` (`medier-upstream` on
+  workers.dev): only those four hosts, only GET (and Spotify's token), only with a key the site and the relay share.
+- Spotify asks one permission, to see what plays (`user-read-currently-playing`). The song shows first on the front page and on Musikk, marked «nå». Where Spotify is not set up, Last.fm's
+  own «now playing» (a scrobble of the same song) is shown instead.
 
 ## Set up once
 
-The keys live in GitHub, as Actions **secrets** of this repository, and the user names as **variables**; nothing of them is in a file here.
-The list is `src/lib/settings.ts`; the workflow checks it before every fetch (`npm run settings:check`) and fails naming what is missing.
-
-1. Settings → Pages → Source: **GitHub Actions**.
-2. Put the settings in GitHub, from the env files the private monorepo already has (only the names in the list are taken; values go to `gh` on
-   stdin and are never printed):
+1. **Cloudflare.** A Cloudflare API token that may edit Workers, and the account id, as GitHub Actions secrets of this repository: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+   (Settings → Secrets and variables → Actions). A push to `main` then deploys the relay and the site (`.github/workflows/site.yml`).
+2. **The address.** `medier.lmfaole.party` is the Worker's custom domain (`wrangler.jsonc`). Cloudflare makes its DNS record when the site is deployed, so the old record that pointed it at GitHub Pages
+   (a CNAME to `lmfaole.github.io`) must be gone first, and the custom domain under Settings → Pages removed.
+3. **Spotify, once.** The redirect address must be a loopback one registered in the Spotify dashboard (the monorepo's `SPOTIFY_REDIRECT_URI` is):
 
    ```sh
-   npm run settings:push -- ~/Applikasjoner/Documents/monorepo/secrets/music-sync.env ~/Applikasjoner/Documents/monorepo/secrets/film-sync.env
+   npm run spotify:auth -- ~/Applikasjoner/Documents/monorepo/secrets/music-sync.env   # approve in the browser; writes .spotify.env (not committed)
    ```
 
-   `-- … --dry-run` says what it would set. It needs the GitHub CLI signed in with admin rights to this repository. By hand instead: Settings →
-   Secrets and variables → Actions, secrets `LASTFM_API_KEY` and `TRAKT_CLIENT_ID`, variables `LASTFM_USER` and `TRAKT_USER`.
-3. Actions → Site → Run workflow, for the first fetch.
+   The token it makes lasts six months; run it again then (the page just shows no song when it has run out).
+4. **The Worker's settings**, from the env files the private monorepo already has, after the first deploy (a Worker has secrets only once it exists). Only the names in `src/lib/settings.ts` are taken;
+   each value goes to `wrangler` or `gh` on stdin and is never printed. `UPSTREAM_URL` is the relay's address on your workers.dev account, `https://medier-upstream.<subdomain>.workers.dev`: put it in
+   a file of your own (`UPSTREAM_URL=…`), and the key the two share is made if it is not in the files:
+
+   ```sh
+   npm run settings:push -- ~/Applikasjoner/Documents/monorepo/secrets/music-sync.env ~/Applikasjoner/Documents/monorepo/secrets/film-sync.env .spotify.env relay.env
+   ```
+
+   `-- … --dry-run` says what it would set. Signed in to Cloudflare with `CLOUDFLARE_API_TOKEN` in the environment, or `npx wrangler login`.
 
 ## Work on it
 
 ```sh
 npm install
-npm test && npm run typecheck   # the parsers' tests and the types
-LASTFM_API_KEY=… TRAKT_CLIENT_ID=… npm run fetch   # fresh data locally (a key not set is skipped here, an error in CI)
-npm run dev                      # http://localhost:4321/
+npm test && npm run typecheck   # the parsers', the loaders' and the relay's tests, and the types
+npm run dev                      # http://localhost:4321/ (keys in a .dev.vars file, not committed: LASTFM_API_KEY=… and so on; a source without its key is left out)
+npm run preview                  # the built Worker as it runs on Cloudflare
+npm run deploy                   # from here, instead of from the workflow
 npm run ds:bump                  # a newer design system and its skills
 ```

@@ -4,10 +4,10 @@ import { test } from "node:test"
 
 import { SETTINGS } from "./settings.ts"
 
-test("the workflow hands every setting to the fetch, a secret as a secret and a variable as a variable", () => {
+test("the workflow hands the deploy every GitHub secret, and no secret of the Worker", () => {
   const workflow = readFileSync(new URL("../../.github/workflows/site.yml", import.meta.url), "utf8")
   for (const setting of SETTINGS) {
-    const source = setting.kind === "secret" ? "secrets" : "vars"
-    assert.ok(workflow.includes(`${setting.name}: \${{ ${source}.${setting.name} }}`), `${setting.name} from ${source}`)
+    const handed = workflow.includes(`\${{ secrets.${setting.name} }}`)
+    assert.equal(handed, setting.where === "github", `${setting.name}: ${setting.where}`)
   }
 })

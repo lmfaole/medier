@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "medier",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // Only the custom domain: no workers.dev or preview address, so the site has one address.
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "routes": [{ "pattern": "medier.lmfaole.party", "custom_domain": true }],
+  // The users whose plays and viewings are shown; they are public on Last.fm and Trakt. The keys, and the address of the relay, are secrets (`src/lib/settings.ts`).
+  "vars": { "LASTFM_USER": "snowpony69", "TRAKT_USER": "lmfaole" }
+}

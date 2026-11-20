@@ -1,24 +1,30 @@
 /**
- * Every setting the site needs, in one list: the keys are GitHub Actions **secrets** of this repository, the user names **variables**. Nothing of
- * it is ever in a file here. `npm run settings:push` sets them from env files kept elsewhere (the private monorepo's `secrets/`), and the
- * workflow checks them before it fetches (`npm run settings:check`), so a missing one is a failed run that names it, not an empty page.
+ * Every setting the site needs, in one list. The sources' keys, Spotify's sign-in and the key the site shares with its relay are **secrets of the Worker**
+ * (`wrangler secret put`); the two Cloudflare tokens the deploy uses are **secrets of this GitHub repository**. Nothing of it is ever in a file here.
+ * `npm run settings:push` sets each from env files kept elsewhere (the private monorepo's `secrets/`), the value on stdin, never on a command line.
  */
 
 export interface Setting {
   name: string
-  kind: "secret" | "variable"
+  /** `worker` for the site's Worker (and its relay for the key they share), `github` for the repository's Actions secrets. */
+  where: "worker" | "github"
   /** What it is and where to get one. */
   about: string
-  /** Used when the variable is not set; a secret has none. */
-  fallback?: string
+  /** The site works without it: the part that needs it is left out. */
+  optional?: boolean
 }
 
 export const SETTINGS: readonly Setting[] = [
-  { name: "LASTFM_API_KEY", kind: "secret", about: "Last.fm API key: https://www.last.fm/api/account/create" },
-  { name: "LASTFM_USER", kind: "variable", about: "the Last.fm user whose plays are shown", fallback: "snowpony69" },
-  { name: "TRAKT_CLIENT_ID", kind: "secret", about: "Trakt app Client ID: https://trakt.tv/oauth/applications (the profile must be public)" },
-  { name: "TMDB_API_KEY", kind: "secret", about: "TMDB API key or read access token, for the posters: https://www.themoviedb.org/settings/api" },
-  { name: "TRAKT_USER", kind: "variable", about: "the Trakt user whose history is shown", fallback: "lmfaole" },
+  { name: "LASTFM_API_KEY", where: "worker", about: "Last.fm API key: https://www.last.fm/api/account/create" },
+  { name: "TRAKT_CLIENT_ID", where: "worker", about: "Trakt app Client ID: https://trakt.tv/oauth/applications (the profile must be public)" },
+  { name: "TMDB_API_KEY", where: "worker", optional: true, about: "TMDB API key or read access token, for the posters: https://www.themoviedb.org/settings/api" },
+  { name: "SPOTIFY_CLIENT_ID", where: "worker", optional: true, about: "Spotify app Client ID, for what is playing now: https://developer.spotify.com/dashboard" },
+  { name: "SPOTIFY_CLIENT_SECRET", where: "worker", optional: true, about: "Spotify app Client Secret (same place)" },
+  { name: "SPOTIFY_REFRESH_TOKEN", where: "worker", optional: true, about: "made by `npm run spotify:auth`: the sign-in that lets the site read what plays (scope user-read-currently-playing); it lasts six months" },
+  { name: "UPSTREAM_URL", where: "worker", about: "the relay's address on workers.dev, https://medier-upstream.<your subdomain>.workers.dev (a Worker on this zone cannot reach Last.fm, Trakt, TMDB or Spotify itself)" },
+  { name: "UPSTREAM_KEY", where: "worker", about: "the key the site and the relay share; made when it is not in the files, and set on both" },
+  { name: "CLOUDFLARE_API_TOKEN", where: "github", about: "a Cloudflare API token that may edit Workers: https://dash.cloudflare.com/profile/api-tokens (the deploy uses it)" },
+  { name: "CLOUDFLARE_ACCOUNT_ID", where: "github", about: "the Cloudflare account's id (the dashboard's sidebar)" },
 ]
 
 /** `KEY=value` lines, as the env files are written: comments and blank lines skipped, one pair of quotes around a value taken off. */
@@ -45,7 +51,7 @@ export function plan(settings: readonly Setting[], values: ReadonlyMap<string, s
   return { set, missing }
 }
 
-/** The secrets a run lacks (a variable has its fallback, so it is never missing). */
-export function missingSecrets(settings: readonly Setting[], env: Readonly<Record<string, string | undefined>>): Setting[] {
-  return settings.filter((setting) => setting.kind === "secret" && (env[setting.name] ?? "") === "")
+/** The settings that are neither in the files nor optional: what a push cannot do and says so. */
+export function required(missing: readonly Setting[]): Setting[] {
+  return missing.filter((setting) => setting.optional !== true && setting.name !== "UPSTREAM_KEY")
 }

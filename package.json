@@ -2,31 +2,33 @@
   "name": "medier",
   "private": true,
   "type": "module",
-  "description": "Hva jeg hører på og ser: en statisk side bygget av GitHub Actions fra Last.fm og Trakt",
+  "description": "Hva jeg hører på og ser: en side på Cloudflare Workers som spør Last.fm, Spotify og Trakt",
   "engines": {
     "node": ">=24"
   },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
-    "fetch": "node scripts/fetch.ts",
+    "preview": "astro build && wrangler dev",
+    "deploy": "astro build && wrangler deploy && wrangler deploy --config upstream/wrangler.jsonc",
     "test": "node --test",
     "typecheck": "tsc --noEmit",
     "skills": "designsystem-skills",
     "skills:check": "designsystem-skills --check",
     "ds:bump": "designsystem-bump",
     "settings:push": "node scripts/settings.ts push",
-    "settings:check": "node scripts/settings.ts check"
+    "spotify:auth": "node scripts/spotify-auth.ts"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^14.4.9",
     "@astrojs/react": "^7.1.2",
     "@lmfaole/designsystem": "github:lmfaole/designsystem#6e117d15a842e8a0b426c6956fe0c99ed7f9218d",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.4.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "wrangler": "^4.165.0"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",

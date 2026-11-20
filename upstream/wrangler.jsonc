@@ -1,0 +1,11 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "medier-upstream",
+  "main": "worker.ts",
+  "compatibility_date": "2026-11-01",
+  // The site reaches it on workers.dev (see worker.ts); no preview addresses.
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true }
+  // Secret: UPSTREAM_KEY (the same as the site's).
+}
