@@ -16,7 +16,7 @@ const info = page === undefined ? null : await artist(users, page.name)
 ---
 
 {page === undefined || info === null ? (
-  <NeedsUsername service="lastfm" />
+  <NeedsUsername medium="music" />
 ) : (
 <Page bare current="music" width="pane" title={page.name} lead="Artist" crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.name, href: `${base}musikk/${page.slug}/` }]}>
   <Head client:idle kind="Artist" title={page.name} sources={info.spotify?.images ?? []} shape="artist" fromSpotify={info.spotify !== null && info.spotify.images.length > 0} />

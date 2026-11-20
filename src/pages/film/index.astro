@@ -13,24 +13,25 @@ import { usersOf, watched } from '../../lib/runtime'
 const base = import.meta.env.BASE_URL
 const users = usersOf(Astro.cookies)
 const seen = users.trakt === null ? null : await watched(users)
+const films = (seen?.items ?? []).filter((watch) => watch.kind === 'film')
 ---
 
-<Page current="film" title="Film og TV" lead="Filmene og episodene du har sett sist, fra Trakt." crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: `${base}film-og-tv/` }]}>
+<Page current="film" title="Film" lead="Filmene du har sett sist, fra Trakt." crumbs={[{ label: 'Medier', href: base }, { label: 'Film', href: mediumHref(base, 'film') }]}>
   {
     users.trakt === null ? (
       <UsernameGate services={['trakt']} />
     ) : (
       <>
         <SubPages
-          label="Mer om film og TV"
+          label="Mer om film"
           pages={[
-            { href: mediumHref(base, 'film', 'historikk/'), label: 'Historikk', icon: 'history', description: 'Alt du har sett, dag for dag, og hvor lenge du så.' },
-            { href: mediumHref(base, 'film', 'uke/'), label: 'Wrapped', icon: 'calendar', description: 'Oppsummeringen av hver uke og måned: filmer, serier, maraton og tall.' },
+            { href: mediumHref(base, 'film', 'historikk/'), label: 'Historikk', icon: 'history', description: 'Alle filmene du har sett, dag for dag, og hvor lenge du så.' },
+            { href: mediumHref(base, 'film', 'uke/'), label: 'Wrapped', icon: 'calendar', description: 'Oppsummeringen av hver uke og måned: filmer, sjangere, regissører og tall.' },
           ]}
         />
         <Intro intro={INTROS.film} />
-        <PageSection id="sett" title="Sist sett">
-          <WatchRows items={seen?.items ?? []} base={base} />
+        <PageSection id="sett" title="Sist sett" icon="film">
+          <WatchRows items={films} base={base} kind="film" />
         </PageSection>
         <Fetched sources={[{ at: seen?.at ?? null, source: 'Trakt' }]} />
       </>

@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { albumHref, albumPages, albumSlug, artistHref, artistPages, personHref, personId, personIn, slugify, titlePages, trackHref, trackPages } from "./pages.ts"
+import { albumHref, albumPages, albumSlug, artistHref, artistPages, personHref, personId, personIn, slugify, titleHref, titlePages, trackHref, trackPages } from "./pages.ts"
 import type { Play } from "./lastfm.ts"
 import type { Watch } from "./trakt.ts"
 
@@ -16,7 +16,7 @@ test("a name becomes an address with the Norwegian letters spelled out", () => {
   assert.equal(slugify("!!!"), "uten-navn")
 })
 
-test("a show's episodes are one page with every viewing, at Trakt's slug, and a film with the same slug gets its own", () => {
+test("a show's episodes are one page with every viewing, at Trakt's slug, and a film with the same slug is its own page under Film", () => {
   const pages = titlePages([
     watch(1, "https://trakt.tv/shows/silo/seasons/1/episodes/2", "Silo", "episode"),
     watch(2, "https://trakt.tv/shows/silo/seasons/1/episodes/1", "Silo", "episode", "p"),
@@ -24,8 +24,9 @@ test("a show's episodes are one page with every viewing, at Trakt's slug, and a 
   ])
   assert.deepEqual(pages.map((page) => [page.slug, page.kind, page.viewings.length, page.poster, page.traktUrl]), [
     ["silo", "episode", 2, "p", "https://trakt.tv/shows/silo"],
-    ["silo-film", "film", 1, null, "https://trakt.tv/movies/silo"],
+    ["silo", "film", 1, null, "https://trakt.tv/movies/silo"],
   ])
+  assert.deepEqual(pages.map((page) => titleHref("/", page.slug, page.kind)), ["/tv/silo/", "/film/silo/"])
 })
 
 test("an artist page has the recent plays and the place among the month's most played, and the link to it matches its address", () => {

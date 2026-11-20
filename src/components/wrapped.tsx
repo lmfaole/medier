@@ -12,7 +12,7 @@ import { Text, TextLink } from "@lmfaole/designsystem/components/text"
 
 import { sourcesOf } from "../lib/image-sources.ts"
 import { shortWhen } from "../lib/when.ts"
-import { albumHref, albumSlug, artistHref, titleHref, trackHref, trackSlug } from "../lib/pages.ts"
+import { albumHref, albumSlug, artistHref, personHref, trackHref, trackSlug } from "../lib/pages.ts"
 import { SHAPES } from "../lib/shapes.ts"
 import type { SpotifyArtist } from "../lib/spotify.ts"
 import type { PeriodData } from "../lib/week-source.ts"
@@ -150,20 +150,24 @@ function NewArtists({ names, links, base }: { names: readonly { name: string; pl
 }
 
 /** A film or a show as its page here, where it has one (among the titles seen lately), else its name. */
-const titleOf = (links: Linkable, base: string, name: string): ReactNode => {
-  const slug = links.titles.get(name)
-  return slug === undefined ? name : <TextLink href={titleHref(base, slug)}>{name}</TextLink>
+const titleOf = (links: Linkable, name: string): ReactNode => {
+  const href = links.titles.get(name)
+  return href === undefined ? name : <TextLink href={href}>{name}</TextLink>
 }
 
+/** The shape of the viewings over the week, Monday to Sunday: for a week only, a month has its own chart of the days. */
+const perDayFact = (stats: WatchStats, perDay: boolean): [string, ReactNode] => ["Per dag, mandag til søndag", perDay ? <Sparkline values={stats.byDay} label={`Visninger per dag, mandag til søndag: ${stats.byDay.join(", ")}`} /> : null]
+const busiestFact = (stats: WatchStats, one: string, many: string): [string, string | null] => ["Travleste dag", stats.busiestDay === null ? null : `${capital(WEEKDAY_NAMES[stats.busiestDay.day] ?? "")} (${count(stats.busiestDay.viewings, one, many)})`]
+
 /**
- * The wrapped of film and TV for a week or a month, from Trakt: the numbers (films, episodes, shows, how long, an estimate, and when), then the shows most watched, the films and the binges.
+ * The wrapped of the films of a week or a month, from Trakt: the numbers (films, how long, an estimate, and when), the genres and the directors (from TMDB, where it has been asked), and the films.
  * `perDay` is the sparkline of the weekdays, for a week; a month has its own chart of the days.
  */
 export function FilmPeriod({ stats, links, base, perDay }: { stats: WatchStats; links: Linkable; base: string; perDay: boolean }) {
-  if (stats.films === 0 && stats.episodes === 0) {
+  if (stats.films === 0) {
     return (
       <PageSection id="tall" title="Tall" icon="chart">
-        <EmptyState icon="film" title="Ingenting sett i perioden" description="Oppsummeringen lages av filmene og episodene du markerer som sett på Trakt i perioden. Velg en annen periode, eller se det du har sett sist." action={{ href: `${base}film-og-tv/`, label: "Se det du har sett sist" }} />
+        <EmptyState icon="film" title="Ingen filmer sett i perioden" description="Oppsummeringen lages av filmene du markerer som sett på Trakt i perioden. Velg en annen periode, eller se filmene du har sett sist." action={{ href: `${base}film/`, label: "Se filmene du har sett sist" }} />
       </PageSection>
     )
   }
@@ -173,37 +177,74 @@ export function FilmPeriod({ stats, links, base, perDay }: { stats: WatchStats; 
         <FactList
           facts={[
             ["Filmer", number(stats.films)],
-            ["Episoder", number(stats.episodes)],
-            ["Ulike serier", stats.showCount === 0 ? null : number(stats.showCount)],
             ["Seertid, anslag", `≈ ${longLength(stats.minutes * 60)}`],
-            ["Travleste dag", stats.busiestDay === null ? null : `${capital(WEEKDAY_NAMES[stats.busiestDay.day] ?? "")} (${count(stats.busiestDay.viewings, "visning", "visninger")})`],
-            ["Per dag, mandag til søndag", perDay ? <Sparkline values={stats.byDay} label={`Visninger per dag, mandag til søndag: ${stats.byDay.join(", ")}`} /> : null],
+            busiestFact(stats, "film", "filmer"),
+            perDayFact(stats, perDay),
           ]}
         />
       </PageSection>
-      {stats.shows.length === 0 ? null : (
-        <PageSection id="toppserier" title="Mest sette serier" icon="film">
-          <RankedRows
-            {...SHAPES.film}
-            rows={stats.shows.map((show) => ({ key: show.title, sources: sourcesOf(show.poster), title: titleOf(links, base, show.title), value: count(show.episodes, "episode", "episoder"), amount: show.episodes }))}
+      <PageSection id="filmer" title="Filmer" icon="film">
+        <PictureRows
+          {...SHAPES.film}
+          rows={stats.filmItems.map((one) => ({ key: `${one.title}-${one.watchedAt}`, picture: null, sources: sourcesOf(one.poster), title: titleOf(links, one.title), detail: details([one.year]), aside: shortWhen(one.watchedAt) }))}
+        />
+      </PageSection>
+      {stats.genres.length === 0 ? null : (
+        <PageSection id="sjangere" title="Sjangere" icon="tag">
+          <Rows columns={{ name: "Sjanger", value: "Filmer" }} rows={stats.genres.map((genre) => ({ key: genre.name, body: genre.name, trailing: <Text as="span" size="sm" tone="muted" numeric>{number(genre.films)}</Text> }))} />
+        </PageSection>
+      )}
+      {stats.directors.length === 0 ? null : (
+        <PageSection id="regi" title="Regi" icon="person">
+          <Rows
+            columns={{ name: "Regissør", value: "Filmer" }}
+            rows={stats.directors.map((director) => ({ key: String(director.id), body: <TextLink href={personHref(base, director.id, director.name)}>{director.name}</TextLink>, trailing: <Text as="span" size="sm" tone="muted" numeric>{number(director.films)}</Text> }))}
           />
         </PageSection>
       )}
-      {stats.filmItems.length === 0 ? null : (
-        <PageSection id="filmer" title="Filmer" icon="film">
-          <PictureRows
-            {...SHAPES.film}
-            rows={stats.filmItems.map((one) => ({ key: `${one.title}-${one.watchedAt}`, picture: null, sources: sourcesOf(one.poster), title: titleOf(links, base, one.title), detail: details([one.year]), aside: shortWhen(one.watchedAt) }))}
-          />
-        </PageSection>
-      )}
+    </>
+  )
+}
+
+/**
+ * The wrapped of the TV of a week or a month, from Trakt: the numbers (episodes, shows, how long, an estimate, and when), then the shows most watched and the binges.
+ * `perDay` is the sparkline of the weekdays, for a week; a month has its own chart of the days.
+ */
+export function TvPeriod({ stats, links, base, perDay }: { stats: WatchStats; links: Linkable; base: string; perDay: boolean }) {
+  if (stats.episodes === 0) {
+    return (
+      <PageSection id="tall" title="Tall" icon="chart">
+        <EmptyState icon="tv" title="Ingen episoder sett i perioden" description="Oppsummeringen lages av episodene du markerer som sett på Trakt i perioden. Velg en annen periode, eller se episodene du har sett sist." action={{ href: `${base}tv/`, label: "Se episodene du har sett sist" }} />
+      </PageSection>
+    )
+  }
+  return (
+    <>
+      <PageSection id="tall" title="Tall" icon="chart">
+        <FactList
+          facts={[
+            ["Episoder", number(stats.episodes)],
+            ["Ulike serier", number(stats.showCount)],
+            ["Maraton", stats.binges.length === 0 ? null : count(stats.binges.length, "dag", "dager")],
+            ["Seertid, anslag", `≈ ${longLength(stats.minutes * 60)}`],
+            busiestFact(stats, "episode", "episoder"),
+            perDayFact(stats, perDay),
+          ]}
+        />
+      </PageSection>
+      <PageSection id="toppserier" title="Mest sette serier" icon="tv">
+        <RankedRows
+          {...SHAPES.film}
+          rows={stats.shows.map((show) => ({ key: show.title, sources: sourcesOf(show.poster), title: titleOf(links, show.title), value: count(show.episodes, "episode", "episoder"), amount: show.episodes }))}
+        />
+      </PageSection>
       {stats.binges.length === 0 ? null : (
         <PageSection id="maraton" title="Maraton" icon="play">
           <Stack gap="sm">
             <Text size="sm" tone="muted">Tre episoder eller flere av samme serie på én dag.</Text>
             <Rows
               columns={{ name: "Serie", value: "Episoder" }}
-              rows={stats.binges.map((binge) => ({ key: binge.key, body: titleOf(links, base, binge.title), trailing: <Text as="span" size="sm" tone="muted" numeric>{number(binge.episodes.length)}</Text> }))}
+              rows={stats.binges.map((binge) => ({ key: binge.key, body: titleOf(links, binge.title), trailing: <Text as="span" size="sm" tone="muted" numeric>{number(binge.episodes.length)}</Text> }))}
             />
           </Stack>
         </PageSection>

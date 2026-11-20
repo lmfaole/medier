@@ -22,8 +22,13 @@ test("the sections are those ticked, in the front page's order; none ticked is n
 })
 
 test("the front page shows every section until some are chosen, and never one it does not know", () => {
-  assert.deepEqual([...shownSections({})], ["na", "musikk", "film-og-tv", "artister"])
-  assert.deepEqual([...shownSections({ sections: ["film-og-tv", "reklame"] })], ["film-og-tv"])
+  assert.deepEqual([...shownSections({})], ["na", "musikk", "film", "tv", "artister"])
+  assert.deepEqual([...shownSections({ sections: ["tv", "reklame"] })], ["tv"])
+})
+
+test("a cookie from before Film and TV were apart keeps working: «film-og-tv» is both", () => {
+  assert.deepEqual([...shownSections({ sections: ["artister", "film-og-tv"] })], ["film", "tv", "artister"])
+  assert.deepEqual([...shownSections({ sections: ["film-og-tv", "tv"] })], ["film", "tv"])
   assert.equal(shownSections({ sections: [] }).size, 0)
 })
 

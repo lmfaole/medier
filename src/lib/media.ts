@@ -1,6 +1,7 @@
 /**
- * The two halves of the site, kept apart: the music (Last.fm) and film and TV (Trakt). Each has its overview, its history and its wrapped (a week, a month) under its own address, and asks only for its
- * own username. Old addresses of the shared pages (`/historikk/`, `/uke/…`, `/maned/…`) lead to the music's (`oldAddress`).
+ * The three parts of the site, kept apart: the music (Last.fm), the films and the TV (both Trakt: the films, and the shows' episodes). Each has its overview, its history and its wrapped (a week, a
+ * month) under its own address, and asks only for its own username. Old addresses lead straight to the new ones (`oldAddress`): the shared pages (`/historikk/`, `/uke/…`, `/maned/…`) to the music's,
+ * and the pages of film and TV together (`/film-og-tv/…`) to the film's; a film's or a show's own page under `/film-og-tv/<slug>/` is found by its page (`src/pages/film-og-tv/[slug].astro`).
  */
 import type { Service } from "./users.ts"
 import type { Medium } from "./week-source.ts"
@@ -11,23 +12,34 @@ export interface MediumInfo {
   label: string
   service: Service
   /** Its place in the navigation (`Frame`). */
-  place: "music" | "film"
+  place: "music" | "film" | "tv"
 }
 
 export const MEDIA: Readonly<Record<Medium, MediumInfo>> = {
   music: { path: "musikk/", label: "Musikk", service: "lastfm", place: "music" },
-  film: { path: "film-og-tv/", label: "Film og TV", service: "trakt", place: "film" },
+  film: { path: "film/", label: "Film", service: "trakt", place: "film" },
+  tv: { path: "tv/", label: "TV", service: "trakt", place: "tv" },
 }
 
 /** The pages of a medium: its overview, history, and the wrapped of a week and a month (the address of one, or the place that opens the latest). */
 export const mediumHref = (base: string, medium: Medium, page: "" | "historikk/" | "uke/" | "maned/" = "", id?: string): string => `${base}${MEDIA[medium].path}${page}${id === undefined ? "" : `${id}/`}`
 
-/** The music's address of an old one (`/historikk/`, `/uke/2026-47/`, `/maned/2026-11/`), with its query; `null` for any other. */
+/** The medium a film or an episode (of a show) is in. */
+export const mediumOfKind = (kind: "film" | "episode"): Medium => (kind === "film" ? "film" : "tv")
+
+/** The page of a film (`/film/<slug>/`) or a show (`/tv/<slug>/`). */
+export const titleHref = (base: string, slug: string, kind: "film" | "episode"): string => mediumHref(base, mediumOfKind(kind)) + `${slug}/`
+
+/**
+ * The new address of an old one, with its query: the shared `/historikk/`, `/uke/2026-47/`, `/maned/2026-11/` are the music's, and `/film-og-tv/` with its history and wrapped the film's. `null` for any
+ * other (a title's old page, `/film-og-tv/<slug>/`, is told by its page, which knows whether it is a film or a show).
+ */
 export function oldAddress(base: string, pathname: string, search: string): string | null {
   const rest = pathname.startsWith(base) ? pathname.slice(base.length) : null
   if (rest === null) return null
-  const match = /^(historikk|uke|maned)(?:\/([^/]+))?\/?$/.exec(rest)
+  if (/^film-og-tv\/?$/.test(rest)) return `${mediumHref(base, "film")}${search}`
+  const match = /^(film-og-tv\/)?(historikk|uke|maned)(?:\/([^/]+))?\/?$/.exec(rest)
   if (match === null) return null
-  const [, page, id] = match
-  return `${mediumHref(base, "music", `${page}/` as "historikk/" | "uke/" | "maned/", id)}${search}`
+  const [, film, page, id] = match
+  return `${mediumHref(base, film === undefined ? "music" : "film", `${page}/` as "historikk/" | "uke/" | "maned/", id)}${search}`
 }

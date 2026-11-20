@@ -150,7 +150,7 @@ test("the films and episodes are asked for by the week's own range, and counted"
   assert.ok(trakt.includes("start_at=2026-11-15T23%3A00%3A00.000Z") && trakt.includes("end_at=2026-11-22T22%3A59%3A59.000Z"), trakt)
 })
 
-test("a wrapped of the music asks only Last.fm, and one of film and TV only Trakt", async () => {
+test("a wrapped of the music asks only Last.fm, one of film only Trakt's films, and one of TV only its episodes", async () => {
   const music = fake()
   const heard = await loadWeek(ENV, music.get, WEEK, AFTER, "music")
   assert.equal(heard.watched, null)
@@ -160,7 +160,13 @@ test("a wrapped of the music asks only Last.fm, and one of film and TV only Trak
   const seen = await loadWeek(ENV, film.get, WEEK, AFTER, "film")
   assert.equal(seen.music, null)
   assert.equal(seen.watched?.stats.films, 1)
-  assert.ok(!film.asked.some((one) => one.url.includes("audioscrobbler")))
+  assert.ok(!film.asked.some((one) => one.url.includes("audioscrobbler") || one.url.includes("/history/episodes")))
+  const tv = fake()
+  const episodes = await loadWeek(ENV, tv.get, WEEK, AFTER, "tv")
+  assert.equal(episodes.music, null)
+  assert.equal(episodes.watched?.stats.films, 0)
+  assert.ok(tv.asked.some((one) => one.url.includes("/history/episodes")))
+  assert.ok(!tv.asked.some((one) => one.url.includes("audioscrobbler") || one.url.includes("/history/movies")))
 })
 
 test("a source that is not set up or is down gives nothing of its own", async () => {
@@ -201,5 +207,5 @@ test("the history of a month is read by pages of a hundred, as long as a page is
   const got = await loadMonth({ TRAKT_CLIENT_ID: "c", TRAKT_USER: "me" }, get, MONTH, Date.parse("2026-11-02T08:00:00+01:00"), "film")
   assert.equal(got.watched?.stats.films, 100)
   assert.equal(asked.filter((url) => url.includes("/history/movies")).length, 2)
-  assert.equal(asked.filter((url) => url.includes("/history/episodes")).length, 1)
+  assert.equal(asked.filter((url) => url.includes("/history/episodes")).length, 0)
 })

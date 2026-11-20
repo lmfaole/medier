@@ -6,7 +6,7 @@ import { backWithError, backWithoutError, fieldAction, formError, readUsers, saf
 test("back is a path on this site, never another site's", () => {
   assert.equal(safeBack("/musikk/?a=1#x"), "/musikk/?a=1#x")
   for (const bad of ["//evil.example/", "/\\evil.example", "https://evil.example/", "javascript:alert(1)", "musikk/", "/a\nb", "", undefined, 42]) assert.equal(safeBack(bad), "/", String(bad))
-  assert.equal(safeBack("//x", "/film-og-tv/"), "/film-og-tv/")
+  assert.equal(safeBack("//x", "/film/"), "/film/")
 })
 
 test("an error goes on the way back and off again once the username is found", () => {

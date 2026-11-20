@@ -5,6 +5,7 @@ import { EmptyState } from '@lmfaole/designsystem/components/empty-state'
 import { parsePrefs, PREFS_COOKIE } from '@lmfaole/designsystem/lib/preferences'
 import { SEEN_PATH } from '../lib/onboarding'
 import { shownSections } from '../lib/settings-form'
+import { mediumHref } from '../lib/media'
 import { firstRunOpen } from '../lib/visitor-cookies'
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
 import { TextLink } from '@lmfaole/designsystem/components/text'
@@ -27,6 +28,8 @@ const [{ listening, pictures }, seen] = await Promise.all([withPictures, watched
 // What plays now is the card at the top, which keeps asking for it while the page is open; the list is the finished plays.
 const now = playingNow(listening?.now ?? null)
 const plays = (listening?.recent ?? []).filter((play) => play.playedAt !== null)
+const films = (seen?.items ?? []).filter((watch) => watch.kind === 'film')
+const episodes = (seen?.items ?? []).filter((watch) => watch.kind === 'episode')
 // The sections of a service with no username are a form asking for it: one form for both when neither is given.
 const missing: Service[] = [...(users.lastfm === null ? (['lastfm'] as const) : []), ...(users.trakt === null ? (['trakt'] as const) : [])]
 // The offer to install the app, once: «Ikke nå» or an install puts it away for good.
@@ -49,10 +52,16 @@ const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, 
   }
   {
     users.trakt !== null ? (
-      shown.has('film-og-tv') && <PageSection id="film-og-tv" title="Film og TV" icon="film" more={{ href: `${base}film-og-tv/`, label: 'Se all film og TV' }}>
-        <WatchRows items={seen?.items ?? []} base={base} limit={5} />
-        <TextLink href={`${base}film-og-tv/historikk/`}>Se seerhistorikken</TextLink>
-      </PageSection>
+      <>
+        {shown.has('film') && <PageSection id="film" title="Film" icon="film" more={{ href: mediumHref(base, 'film'), label: 'Se alle filmer' }}>
+          <WatchRows items={films} base={base} limit={5} kind="film" />
+          <TextLink href={mediumHref(base, 'film', 'historikk/')}>Se filmhistorikken</TextLink>
+        </PageSection>}
+        {shown.has('tv') && <PageSection id="tv" title="TV" icon="tv" more={{ href: mediumHref(base, 'tv'), label: 'Se all TV' }}>
+          <WatchRows items={episodes} base={base} limit={5} kind="episode" />
+          <TextLink href={mediumHref(base, 'tv', 'historikk/')}>Se TV-historikken</TextLink>
+        </PageSection>}
+      </>
     ) : missing.length === 1 ? (
       <UsernameGate services={['trakt']} title="Hvem skal vi hente film og TV for?" />
     ) : null
@@ -64,7 +73,7 @@ const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, 
       </PageSection>
     )
   }
-  {shown.size === 0 && <EmptyState icon="home" title="Forsiden er tom" description="Du har valgt bort alle seksjonene på forsiden. Musikk, Film og TV og Historikk finner du fortsatt i menyen." action={{ href: `${base}innstillinger/#forsiden`, label: 'Velg hva forsiden viser' }} />}
+  {shown.size === 0 && <EmptyState icon="home" title="Forsiden er tom" description="Du har valgt bort alle seksjonene på forsiden. Musikk, Film og TV finner du fortsatt i menyen." action={{ href: `${base}innstillinger/#forsiden`, label: 'Velg hva forsiden viser' }} />}
   {!installSeen && <InstallPrompt client:idle appName="Medier" seen={false} cookiePath={SEEN_PATH} />}
   {sources.length > 0 && <Fetched sources={sources} />}
 </Page>

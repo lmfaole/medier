@@ -29,7 +29,8 @@ export const STEP_OF: Record<Service, Step> = { lastfm: "lastfm", trakt: "trakt"
 export const FRONT_SECTIONS = [
   { value: "na", label: "Spilles nå", description: "Låten du hører på akkurat nå, fra Last.fm." },
   { value: "musikk", label: "Musikk", description: "De siste avspillingene." },
-  { value: "film-og-tv", label: "Film og TV", description: "Det du har sett sist." },
+  { value: "film", label: "Film", description: "Filmene du har sett sist." },
+  { value: "tv", label: "TV", description: "Episodene du har sett sist." },
   { value: "artister", label: "Mest spilt siste måned", description: "Artistene du har spilt mest." },
 ] as const
 export type FrontSection = (typeof FRONT_SECTIONS)[number]["value"]
@@ -37,9 +38,14 @@ export type FrontSection = (typeof FRONT_SECTIONS)[number]["value"]
 const SECTION_IDS: readonly string[] = FRONT_SECTIONS.map((section) => section.value)
 const isSection = (value: string): value is FrontSection => SECTION_IDS.includes(value)
 
-/** The sections the front page shows: those chosen (unknown ones ignored), or all where nothing has been chosen. */
+/** Sections of before that are more than one now: «film-og-tv» was film and TV together, so a choice of it is both. */
+const RENAMED: Readonly<Record<string, readonly FrontSection[]>> = { "film-og-tv": ["film", "tv"] }
+
+/** The sections the front page shows, in its order: those chosen (old ones as what they are now, unknown ones ignored), or all where nothing has been chosen. */
 export function shownSections(prefs: Pick<Prefs, "sections">): ReadonlySet<FrontSection> {
-  return new Set(prefs.sections === undefined ? FRONT_SECTIONS.map((section) => section.value) : prefs.sections.filter(isSection))
+  if (prefs.sections === undefined) return new Set(FRONT_SECTIONS.map((section) => section.value))
+  const chosen = new Set(prefs.sections.flatMap((value) => RENAMED[value] ?? (isSection(value) ? [value] : [])))
+  return new Set(FRONT_SECTIONS.map((section) => section.value).filter((section) => chosen.has(section)))
 }
 
 const THEMES: readonly Theme[] = ["system", "light", "dark"]

@@ -42,8 +42,8 @@ export interface Range {
 }
 
 /** What a stretch of time has to tell: the music and what was watched, each `null` where its source is not set up or fails. */
-/** What a wrapped is of: the music (Last.fm) or the films and shows (Trakt). Each has its own pages, and asks only its own source. */
-export type Medium = "music" | "film"
+/** What a wrapped is of: the music (Last.fm), the films or the shows' episodes (Trakt). Each has its own pages, and asks only its own source (the films only Trakt's films, the TV only its episodes). */
+export type Medium = "music" | "film" | "tv"
 
 export interface PeriodData {
   /** The time is over: its numbers are final. */
@@ -154,7 +154,7 @@ async function musicWeek(env: Env, get: Get, week: Range, previous: Range, ttl: 
   return { stats: weekStats(plays, chart, lengths), truncated, previousTotal: chart === null ? null : chart.reduce((sum, artist) => sum + artist.plays, 0), newArtists }
 }
 
-async function watchedWeek(env: Env, get: Get, week: Range, ttl: number): Promise<PeriodData["watched"]> {
+async function watchedWeek(env: Env, get: Get, week: Range, ttl: number, kind: "movies" | "episodes"): Promise<PeriodData["watched"]> {
   const clientId = setting(env, "TRAKT_CLIENT_ID")
   if (clientId === "" || setting(env, "TRAKT_USER") === "") return null
   const user = encodeURIComponent(setting(env, "TRAKT_USER"))
@@ -170,16 +170,16 @@ async function watchedWeek(env: Env, get: Get, week: Range, ttl: number): Promis
     }
     return found
   }
-  const [movies, episodes] = await Promise.all([pages("movies"), pages("episodes")])
-  const items = await withPosters(mergeHistory(movies, episodes), setting(env, "TMDB_API_KEY"), get)
+  const found = await pages(kind)
+  const items = await withPosters(mergeHistory(found), setting(env, "TMDB_API_KEY"), get)
   return { items, stats: watchStats(items) }
 }
 
-/** The sum of a stretch of time of one medium: the music from Last.fm, or what was watched from Trakt (the other is `null`). `null` too where the source is not set up or fails. */
+/** The sum of a stretch of time of one medium: the music from Last.fm, or the films or episodes watched from Trakt (the other is `null`). `null` too where the source is not set up or fails. */
 async function loadPeriod(env: Env, get: Get, range: Range, previous: Range, nowMs: number, maxPages: number, medium: Medium): Promise<PeriodData> {
   const complete = nowMs >= range.end * 1000
   const ttl = complete ? TTL.weekDone : TTL.weekLive
-  const [music, watched] = await Promise.all([medium === "music" ? settle(musicWeek(env, get, range, previous, ttl, nowMs, maxPages)) : null, medium === "film" ? settle(watchedWeek(env, get, range, ttl)) : null])
+  const [music, watched] = await Promise.all([medium === "music" ? settle(musicWeek(env, get, range, previous, ttl, nowMs, maxPages)) : null, medium === "music" ? null : settle(watchedWeek(env, get, range, ttl, medium === "film" ? "movies" : "episodes"))])
   return { complete, music, watched }
 }
 

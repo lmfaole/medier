@@ -28,7 +28,7 @@ function SectionsField({ prefs }: { prefs: Prefs }) {
     <>
       {/* Says the field was there, so none ticked is none shown (`formPrefs`). */}
       <input type="hidden" name="sections" value="" />
-      <CheckboxList name="sections" legend="Seksjoner på forsiden" hint="Det du ikke krysser av, blir borte fra forsiden. Sidene Musikk, Film og TV og Historikk er der uansett." values={[...shown]} options={FRONT_SECTIONS.map((section) => ({ ...section }))} />
+      <CheckboxList name="sections" legend="Seksjoner på forsiden" hint="Det du ikke krysser av, blir borte fra forsiden. Sidene Musikk, Film og TV er der uansett." values={[...shown]} options={FRONT_SECTIONS.map((section) => ({ ...section }))} />
     </>
   )
 }

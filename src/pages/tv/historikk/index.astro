@@ -13,21 +13,22 @@ import { usersOf, watched } from '../../../lib/runtime'
 const base = import.meta.env.BASE_URL
 const users = usersOf(Astro.cookies)
 const seen = users.trakt === null ? null : await watched(users)
+const items = (seen?.items ?? []).filter((watch) => watch.kind === 'episode')
 const now = new Date().toISOString()
 ---
 
-<Page current="film" title="Historikk" lead="Filmene og episodene du har sett, dag for dag, og hvor lenge du så, fra Trakt." crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: mediumHref(base, 'film') }, { label: 'Historikk', href: mediumHref(base, 'film', 'historikk/') }]}>
+<Page current="tv" title="Historikk" lead="Episodene du har sett, dag for dag, og hvor lenge du så, fra Trakt." crumbs={[{ label: 'Medier', href: base }, { label: 'TV', href: mediumHref(base, 'tv') }, { label: 'Historikk', href: mediumHref(base, 'tv', 'historikk/') }]}>
   {
     users.trakt === null ? (
       <UsernameGate services={['trakt']} />
     ) : (
       <>
-        <Intro intro={INTROS.filmHistorikk} />
-        <PageSection id="okter" title="Titteøkter" icon="film">
-          <Sessions medium="film" watches={seen?.items ?? []} now={now} />
+        <Intro intro={INTROS.tvHistorikk} />
+        <PageSection id="okter" title="Titteøkter" icon="tv">
+          <Sessions medium="tv" watches={items} now={now} />
         </PageSection>
         <PageSection id="tidslinje" title="Tidslinje" icon="history">
-          <HistoryTimeline medium="film" watches={seen?.items ?? []} now={now} base={base} />
+          <HistoryTimeline medium="tv" watches={items} now={now} base={base} />
         </PageSection>
         <Fetched sources={[{ at: seen?.at ?? null, source: 'Trakt' }]} />
       </>

@@ -19,7 +19,7 @@ const mark = (headers: Headers, who: string): void => {
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  // The shared history and wrapped are the music's now; film and TV has its own under /film-og-tv/.
+  // Old addresses, in one step: the shared history and wrapped are the music's now, and film and TV together (/film-og-tv/) is Film and TV apart.
   const moved = oldAddress(import.meta.env.BASE_URL, context.url.pathname, context.url.search)
   if (moved !== null) return new Response(null, { status: 301, headers: { Location: moved, 'Cache-Control': 'public, max-age=3600' } })
   const response = await next()

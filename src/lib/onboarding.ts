@@ -24,14 +24,24 @@ export const INTROS = {
     body: "Avspillingene fra Last.fm, nyeste først. Øktene øverst viser hvor lenge du lyttet: avspillinger med under 30 minutters mellomrom blir regnet som én økt.",
   },
   film: {
-    id: "intro-film-og-tv",
-    version: 2,
-    title: "Det du har sett, fra Trakt",
-    body: "Filmer og serier du har markert som sett på Trakt, med plakat og handling fra TMDB. Historikken og oppsummeringen av hver uke og måned finner du øverst. Trykk på en tittel for å se hvem som var med.",
+    id: "intro-film",
+    title: "Filmene du har sett, fra Trakt",
+    body: "Filmene du har markert som sett på Trakt, med plakat og handling fra TMDB. Historikken og oppsummeringen av hver uke og måned finner du øverst. Trykk på en film for å se hvem som var med.",
   },
   filmHistorikk: {
     id: "intro-film-historikk",
-    title: "Alt du har sett, dag for dag",
-    body: "Filmene og episodene fra Trakt, nyeste først. Øktene øverst viser hvor lenge du så: en film regnes med lengden sin, en episode som 45 minutter, og det som er sett med under 30 minutters mellomrom blir én økt.",
+    version: 2,
+    title: "Alle filmene du har sett, dag for dag",
+    body: "Filmene fra Trakt, nyeste først. Øktene øverst viser hvor lenge du så: en film regnes med lengden sin (110 minutter om TMDB ikke vet), og filmer med under 30 minutters mellomrom blir én økt.",
+  },
+  tv: {
+    id: "intro-tv",
+    title: "Seriene du følger, fra Trakt",
+    body: "Episodene du har markert som sett på Trakt, og seriene de hører til, med plakat fra TMDB. Historikken og oppsummeringen av hver uke og måned finner du øverst. Trykk på en serie for å se mer.",
+  },
+  tvHistorikk: {
+    id: "intro-tv-historikk",
+    title: "Alle episodene du har sett, dag for dag",
+    body: "Episodene fra Trakt, nyeste først, med flere episoder av samme serie samme dag samlet. Øktene øverst viser hvor lenge du så: en episode regnes som 45 minutter, og episoder med under 30 minutters mellomrom blir én økt.",
   },
 } as const satisfies Record<string, Intro>

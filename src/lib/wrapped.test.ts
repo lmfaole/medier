@@ -119,7 +119,7 @@ test("what was watched is counted as films and episodes, with the shows most wat
 })
 
 test("a week with nothing watched has nothing", () => {
-  assert.deepEqual(watchStats([]), { films: 0, episodes: 0, showCount: 0, minutes: 0, byDay: [0, 0, 0, 0, 0, 0, 0], byDate: {}, busiestDay: null, filmItems: [], shows: [], binges: [] })
+  assert.deepEqual(watchStats([]), { films: 0, episodes: 0, showCount: 0, minutes: 0, byDay: [0, 0, 0, 0, 0, 0, 0], byDate: {}, busiestDay: null, filmItems: [], shows: [], binges: [], genres: [], directors: [] })
 })
 
 test("a change in plays is written with its sign, the minus sign and not a hyphen, and zero is plus and minus", () => {
@@ -134,4 +134,17 @@ test("a place that entered the list is new, and an hour is told as the hour it i
   assert.deepEqual(rankChange({ kind: "up", by: 2 }), { kind: "up", by: 2 })
   assert.equal(hourText(9), "kl. 09–10")
   assert.equal(hourText(23), "kl. 23–00")
+})
+
+test("the films' genres and directors are counted once a film, most first, from what TMDB says of them", () => {
+  const info = (genres: string[], directors: [number, string][]) => ({ overview: null, genres, runtime: null, seasons: null, rating: null, cast: [], crew: directors.map(([id, name]) => ({ id, name, profile: null, role: "Regi" })) })
+  const items = [
+    { ...watch(3, "2026-11-18T20:00:00Z", "Heat", null), info: info(["Krim", "Drama"], [[1, "Michael Mann"]]) },
+    { ...watch(2, "2026-11-17T20:00:00Z", "Collateral", null), info: info(["Krim", "Krim"], [[1, "Michael Mann"], [1, "Michael Mann"]]) },
+    { ...watch(4, "2026-11-16T20:00:00Z", "Arrival", null), info: info(["Drama", "Sci-fi"], [[2, "Denis Villeneuve"]]) },
+    { ...watch(5, "2026-11-16T10:00:00Z", "Andor", 1), info: info(["Drama"], [[9, "Tony Gilroy"]]) },
+  ]
+  const stats = watchStats(items)
+  assert.deepEqual(stats.genres, [{ name: "Drama", films: 2 }, { name: "Krim", films: 2 }, { name: "Sci-fi", films: 1 }])
+  assert.deepEqual(stats.directors, [{ id: 1, name: "Michael Mann", films: 2 }, { id: 2, name: "Denis Villeneuve", films: 1 }])
 })

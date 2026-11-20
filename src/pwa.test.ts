@@ -121,59 +121,59 @@ async function visit(app: ReturnType<typeof worker>, path: string): Promise<Fake
 test("a page is fetched from the network and its copy kept by its address with the query; it is the network's answer that is shown", async () => {
   const app = worker((url) => response(`page ${url}`))
   assert.equal((await visit(app, "/musikk/?x=1")).body, `page ${ORIGIN}/musikk/?x=1`)
-  assert.ok(app.stores.get("medier-pages-v3")?.has(`${ORIGIN}/musikk/?x=1`))
-  assert.ok(!app.stores.get("medier-pages-v3")?.has(`${ORIGIN}/musikk/`))
+  assert.ok(app.stores.get("medier-pages-v4")?.has(`${ORIGIN}/musikk/?x=1`))
+  assert.ok(!app.stores.get("medier-pages-v4")?.has(`${ORIGIN}/musikk/`))
 })
 
 test("with no network the last copy of the page is shown, else the front page, else the offline page, else an error", async () => {
   const online = worker((url) => response(`page ${url}`))
   await visit(online, "/")
   await visit(online, "/musikk/")
-  const pages = online.stores.get("medier-pages-v3")
+  const pages = online.stores.get("medier-pages-v4")
   const offline = worker(() => "down")
-  for (const [key, value] of pages ?? []) offline.stores.set("medier-pages-v3", (offline.stores.get("medier-pages-v3") ?? new Map()).set(key, value))
-  offline.stores.get("medier-pages-v3")?.set(`${ORIGIN}/offline/`, response("offline page"))
+  for (const [key, value] of pages ?? []) offline.stores.set("medier-pages-v4", (offline.stores.get("medier-pages-v4") ?? new Map()).set(key, value))
+  offline.stores.get("medier-pages-v4")?.set(`${ORIGIN}/offline/`, response("offline page"))
   const shown = async (path: string) => ((await offline.dispatch("fetch", nav(path)).answer) as FakeResponse).body
   assert.equal(await shown("/musikk/"), `page ${ORIGIN}/musikk/`)
-  assert.equal(await shown("/film-og-tv/"), `page ${ORIGIN}/`)
-  offline.stores.get("medier-pages-v3")?.delete(`${ORIGIN}/`)
-  assert.equal(await shown("/film-og-tv/"), "offline page")
-  offline.stores.get("medier-pages-v3")?.delete(`${ORIGIN}/offline/`)
-  assert.equal(await shown("/film-og-tv/"), "error")
+  assert.equal(await shown("/film/"), `page ${ORIGIN}/`)
+  offline.stores.get("medier-pages-v4")?.delete(`${ORIGIN}/`)
+  assert.equal(await shown("/film/"), "offline page")
+  offline.stores.get("medier-pages-v4")?.delete(`${ORIGIN}/offline/`)
+  assert.equal(await shown("/film/"), "error")
 })
 
 test("an error, a redirect (a login) or a page from somewhere else is shown but never kept as the page", async () => {
   for (const bad of [{ ok: false }, { redirected: true }, { type: "opaque" }]) {
     const app = worker(() => response("x", bad))
     await visit(app, "/musikk/")
-    assert.ok(!app.stores.get("medier-pages-v3")?.has(`${ORIGIN}/musikk/`), JSON.stringify(bad))
+    assert.ok(!app.stores.get("medier-pages-v4")?.has(`${ORIGIN}/musikk/`), JSON.stringify(bad))
   }
 })
 
 test("only the last pages are kept: more than forty and the oldest go, and the offline page stays", async () => {
   const app = worker((url) => response(url))
-  const pages = await app.stores.set("medier-pages-v3", new Map([[`${ORIGIN}/offline/`, response("offline")]])).get("medier-pages-v3")
+  const pages = await app.stores.set("medier-pages-v4", new Map([[`${ORIGIN}/offline/`, response("offline")]])).get("medier-pages-v4")
   assert.ok(pages !== undefined)
   for (let index = 0; index < 45; index += 1) {
-    await visit(app, `/film-og-tv/t-${index}/`)
+    await visit(app, `/film/t-${index}/`)
   }
   // The pages, the offline page, and whose they are.
   assert.equal(pages.size, 42)
   assert.ok(pages.has(`${ORIGIN}/offline/`))
-  assert.ok(!pages.has(`${ORIGIN}/film-og-tv/t-0/`) && pages.has(`${ORIGIN}/film-og-tv/t-44/`))
+  assert.ok(!pages.has(`${ORIGIN}/film/t-0/`) && pages.has(`${ORIGIN}/film/t-44/`))
 })
 
 test("the pages kept are one visitor's: a page for other usernames drops the pages of the ones before, so they are never shown offline", async () => {
   let who = "ola|ola"
   const app = worker((url) => response(`${who} ${url}`, { who }))
-  app.stores.set("medier-pages-v3", new Map([[`${ORIGIN}/offline/`, response("offline")]]))
+  app.stores.set("medier-pages-v4", new Map([[`${ORIGIN}/offline/`, response("offline")]]))
   await visit(app, "/musikk/")
-  await visit(app, "/film-og-tv/")
-  const pages = app.stores.get("medier-pages-v3")
-  assert.ok(pages?.has(`${ORIGIN}/musikk/`) && pages.has(`${ORIGIN}/film-og-tv/`))
+  await visit(app, "/film/")
+  const pages = app.stores.get("medier-pages-v4")
+  assert.ok(pages?.has(`${ORIGIN}/musikk/`) && pages.has(`${ORIGIN}/film/`))
   who = "kari|"
   await visit(app, "/")
-  assert.ok(!pages?.has(`${ORIGIN}/musikk/`) && !pages?.has(`${ORIGIN}/film-og-tv/`))
+  assert.ok(!pages?.has(`${ORIGIN}/musikk/`) && !pages?.has(`${ORIGIN}/film/`))
   assert.ok(pages?.has(`${ORIGIN}/`) && pages.has(`${ORIGIN}/offline/`))
   assert.equal(pages?.get(`${ORIGIN}/`)?.body, `kari| ${ORIGIN}/`)
 })
@@ -199,10 +199,10 @@ test("a new version deletes the caches of the old one and takes over; installing
   app.stores.set("medier-static-v0", new Map())
   app.dispatch("install")
   await app.settle()
-  assert.ok(app.stores.get("medier-pages-v3")?.has(`${ORIGIN}/offline/`))
+  assert.ok(app.stores.get("medier-pages-v4")?.has(`${ORIGIN}/offline/`))
   app.dispatch("activate")
   await app.settle()
-  assert.deepEqual([...app.stores.keys()].sort(), ["medier-pages-v3"])
+  assert.deepEqual([...app.stores.keys()].sort(), ["medier-pages-v4"])
   assert.ok(app.claimed())
   assert.ok(!readFileSync(new URL("sw.js", PUBLIC), "utf8").includes("skipWaiting()"))
 })

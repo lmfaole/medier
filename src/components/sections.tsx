@@ -85,13 +85,18 @@ export function TopArtistRows({ artists, base, pictures }: { artists: readonly T
   )
 }
 
-/** Films and episodes, newest first, each with its poster and a link to it on Trakt. */
-export function WatchRows({ items, base, limit }: { items: readonly Watch[]; base: string; limit?: number }) {
+/** The films (`kind` film) or the episodes (`kind` episode), newest first, each with its poster and a link to its page here: the film's, or the show's. */
+export function WatchRows({ items, base, limit, kind }: { items: readonly Watch[]; base: string; limit?: number; kind: Watch["kind"] }) {
   const rows = groupViewings(items)
-  // Each viewing's page: the film's, or the show's for an episode.
-  const pageOf = new Map(titlePages(items).flatMap((page) => page.viewings.map((watch) => [String(watch.id), page.slug] as const)))
+  const pageOf = new Map(titlePages(items).flatMap((page) => page.viewings.map((watch) => [String(watch.id), titleHref(base, page.slug, page.kind)] as const)))
   const shown = limit === undefined ? rows : rows.slice(0, limit)
-  if (shown.length === 0) return <EmptyState icon="film" title="Ingenting sett ennå" description="Det du markerer som sett på Trakt, eller som en tilkoblet strømmetjeneste fører opp der, dukker opp her. Det kan også være at Trakt ikke svarte akkurat nå." action={{ href: "https://trakt.tv/", label: "Marker noe som sett på Trakt" }} />
+  if (shown.length === 0) {
+    return kind === "film" ? (
+      <EmptyState icon="film" title="Ingen filmer sett ennå" description="Filmene du markerer som sett på Trakt, eller som en tilkoblet strømmetjeneste fører opp der, dukker opp her. Det kan også være at Trakt ikke svarte akkurat nå." action={{ href: "https://trakt.tv/movies/trending", label: "Marker en film som sett på Trakt" }} />
+    ) : (
+      <EmptyState icon="tv" title="Ingen episoder sett ennå" description="Episodene du markerer som sett på Trakt, eller som en tilkoblet strømmetjeneste fører opp der, dukker opp her. Det kan også være at Trakt ikke svarte akkurat nå." action={{ href: "https://trakt.tv/shows/trending", label: "Marker en episode som sett på Trakt" }} />
+    )
+  }
   return (
     <PictureRows
       ratio="poster"
@@ -99,9 +104,27 @@ export function WatchRows({ items, base, limit }: { items: readonly Watch[]; bas
         key: viewing.key,
         picture: null,
         sources: sourcesOf(viewing.poster),
-        title: <TextLink href={titleHref(base, pageOf.get(viewing.key) ?? "")}>{viewing.title}</TextLink>,
+        title: pageOf.has(viewing.key) ? <TextLink href={pageOf.get(viewing.key) ?? ""}>{viewing.title}</TextLink> : viewing.title,
         detail: details(viewingDetail(viewing)),
         aside: shortWhen(viewing.watchedAt),
+      }))}
+    />
+  )
+}
+
+/** The shows among the episodes, the one watched last first, each with how many episodes of it were seen and a link to its page. */
+export function ShowRows({ items, base }: { items: readonly Watch[]; base: string }) {
+  const shows = titlePages(items).filter((page) => page.kind === "episode")
+  return (
+    <PictureRows
+      ratio="poster"
+      rows={shows.map((show) => ({
+        key: show.slug,
+        picture: null,
+        sources: sourcesOf(show.poster),
+        title: <TextLink href={titleHref(base, show.slug, show.kind)}>{show.title}</TextLink>,
+        detail: details([show.year, `${show.viewings.length} ${show.viewings.length === 1 ? "episode" : "episoder"} sett`]),
+        aside: shortWhen(show.viewings[0]?.watchedAt ?? ""),
       }))}
     />
   )

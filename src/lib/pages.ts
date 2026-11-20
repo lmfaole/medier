@@ -1,5 +1,5 @@
 /**
- * The detail pages: one for each film or show in the history (`/film-og-tv/<slug>/`) and one for each artist played (`/musikk/<slug>/`), with
+ * The detail pages: one for each film (`/film/<slug>/`) or show (`/tv/<slug>/`) in the history and one for each artist played (`/musikk/<slug>/`), with
  * what the data holds about it. Pure, so a test pins which pages there are and what each one holds; the pages in `src/pages/` only show it.
  */
 
@@ -29,10 +29,9 @@ export interface TitlePage {
 
 const TRAKT = /^https:\/\/trakt\.tv\/(movies|shows)\/([^/]+)/
 
-/** Trakt's own slug where the address has one, so a page keeps its address; a film and a show with the same slug are told apart. */
+/** Trakt's own slug where the address has one, so a page keeps its address; a film and a show with the same slug are two pages, one under Film and one under TV. */
 export function titlePages(items: readonly Watch[]): TitlePage[] {
   const byKey = new Map<string, TitlePage>()
-  const slugs = new Set<string>()
   for (const watch of items) {
     const match = TRAKT.exec(watch.url)
     const base = match?.[2] ?? slugify(watch.title)
@@ -44,10 +43,8 @@ export function titlePages(items: readonly Watch[]): TitlePage[] {
       found.info ??= watch.info
       continue
     }
-    const slug = slugs.has(base) ? `${base}-${watch.kind === "film" ? "film" : "serie"}` : base
-    slugs.add(slug)
     const traktUrl = match === null ? "https://trakt.tv" : `https://trakt.tv/${match[1]}/${base}`
-    byKey.set(key, { slug, kind: watch.kind, title: watch.title, year: watch.year, poster: watch.poster, info: watch.info, traktUrl, viewings: [watch] })
+    byKey.set(key, { slug: base, kind: watch.kind, title: watch.title, year: watch.year, poster: watch.poster, info: watch.info, traktUrl, viewings: [watch] })
   }
   return [...byKey.values()]
 }
@@ -148,7 +145,8 @@ export function trackPages(music: Pick<Music, "recent">): TrackPage[] {
   return [...pages.values()]
 }
 
-export const titleHref = (base: string, slug: string): string => `${base}film-og-tv/${slug}/`
+/** A film's page is under Film, a show's under TV. */
+export { titleHref } from "./media.ts"
 export const artistHref = (base: string, name: string): string => `${base}musikk/${slugify(name)}/`
 
 /** A person's page, `/personer/<id>-<name>/`: TMDB's id first, so two with the same name are two pages and a changed spelling of a name is the same page. */

@@ -1,18 +1,19 @@
 ---
 // The page a detail page is in place of its own when the visitor has not given the username its service needs: the list it belongs to, and the form asking for it.
 import Page from '../layouts/Page.astro'
-import type { Service } from '../lib/users'
+import { MEDIA, mediumHref } from '../lib/media'
+import type { Medium } from '../lib/week-source'
 import UsernameGate from './UsernameGate.astro'
 
 interface Props {
-  service: Service
+  medium: Medium
 }
 
-const { service } = Astro.props
+const { medium } = Astro.props
 const base = import.meta.env.BASE_URL
-const list = service === 'lastfm' ? { place: 'music' as const, label: 'Musikk', href: `${base}musikk/` } : { place: 'film' as const, label: 'Film og TV', href: `${base}film-og-tv/` }
+const info = MEDIA[medium]
 ---
 
-<Page current={list.place} title={list.label} lead={`Siden viser data fra ${service === 'lastfm' ? 'Last.fm' : 'Trakt'} for brukernavnet du oppgir.`} crumbs={[{ label: 'Medier', href: base }, { label: list.label, href: list.href }]}>
-  <UsernameGate services={[service]} />
+<Page current={info.place} title={info.label} lead={`Siden viser data fra ${info.service === 'lastfm' ? 'Last.fm' : 'Trakt'} for brukernavnet du oppgir.`} crumbs={[{ label: 'Medier', href: base }, { label: info.label, href: mediumHref(base, medium) }]}>
+  <UsernameGate services={[info.service]} />
 </Page>

@@ -179,10 +179,10 @@ export function spansWithin(spans: readonly DurationSpan[], start: string, end: 
 }
 
 /** One title by itself («Heat»), one show's episodes («Andor, 3 episoder»), or a mix («Titteøkt, 3 titler»), in the film and TV lane. */
-export function watchSessions(watches: readonly Watch[], options: { gapMinutes?: number } = {}): DurationSpan[] {
+export function watchSessions(watches: readonly Watch[], options: { gapMinutes?: number; row?: string } = {}): DurationSpan[] {
   return sessions(watchIntervals(watches), options.gapMinutes ?? SESSION_GAP_MINUTES, {
     key: "titteokt",
-    row: WATCH_ROW,
+    row: options.row ?? WATCH_ROW,
     name: (items) => {
       const titles = new Set(items.map((item) => item.label))
       const [only] = titles

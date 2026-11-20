@@ -1,30 +1,20 @@
 ---
-import { TitleDetail } from '../../components/detail'
-import { Head } from '../../components/head'
-import { sourcesOf } from '../../lib/image-sources'
-import NeedsUsername from '../../components/NeedsUsername.astro'
-import Page from '../../layouts/Page.astro'
+// The old page of a film or a show, from when film and TV were one place: it moves for good to the film's page under Film or the show's under TV, told by the visitor's history (a page there
+// had a «-film» or «-serie» after the slug where a film and a show shared it). Without a username, or for a title not in it, the film's address is the best guess. The other old addresses of
+// film and TV (the overview, history and wrapped) are moved by the middleware (`oldAddress`).
 import { titleHref, titlePages } from '../../lib/pages'
 import { usersOf, watched } from '../../lib/runtime'
 
-const users = usersOf(Astro.cookies)
-const seen = users.trakt === null ? null : await watched(users)
-const page = seen === null ? undefined : titlePages(seen.items).find((one) => one.slug === Astro.params.slug)
-if (users.trakt !== null && page === undefined) return Astro.rewrite('/404/')
 const base = import.meta.env.BASE_URL
-const kind = page?.kind === 'film' ? 'Film' : 'Serie'
+const slug = Astro.params.slug ?? ''
+const users = usersOf(Astro.cookies)
+const pages = users.trakt === null ? [] : titlePages((await watched(users))?.items ?? [])
+const suffix = /^(.+)-(film|serie)$/.exec(slug)
+const page =
+  pages.find((one) => one.slug === slug && one.kind === 'film') ??
+  pages.find((one) => one.slug === slug) ??
+  (suffix === null ? undefined : pages.find((one) => one.slug === suffix[1] && one.kind === (suffix[2] === 'film' ? 'film' : 'episode')))
+const target = page === undefined ? titleHref(base, suffix?.[1] ?? slug, suffix?.[2] === 'serie' ? 'episode' : 'film') : titleHref(base, page.slug, page.kind)
+// Which of the two it goes to depends on the visitor's history: never kept by a shared cache (the middleware makes it private).
+return Astro.redirect(`${target}${Astro.url.search}`, 301)
 ---
-
-{page === undefined ? (
-  <NeedsUsername service="trakt" />
-) : (
-<Page bare current="film"
-  width="pane"
-  title={page.title}
-  lead={page.year === null ? kind : `${kind} · ${page.year}`}
-  crumbs={[{ label: 'Medier', href: base }, { label: 'Film og TV', href: `${base}film-og-tv/` }, { label: page.title, href: titleHref(base, page.slug) }]}
->
-  <Head client:idle kind={page.year === null ? kind : `${kind} · ${page.year}`} title={page.title} sources={sourcesOf(page.poster)} shape="film" />
-  <TitleDetail page={page} base={base} />
-</Page>
-)}

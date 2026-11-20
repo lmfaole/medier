@@ -194,6 +194,15 @@ export interface WatchStats {
   shows: { title: string; episodes: number; poster: string | null }[]
   /** The runs of one show's episodes on one day that were `BINGE` or more, as the lists show them. */
   binges: Viewing[]
+  /** The genres of the films watched (TMDB's, where it has been asked), most films first, up to the top five. */
+  genres: { name: string; films: number }[]
+  /** Who directed the films watched (TMDB's credits), most films first, up to the top five. */
+  directors: { id: number; name: string; films: number }[]
+}
+
+/** The most common of some names, most first and then by name, up to the top five. */
+function mostOf<T extends { name: string; films: number }>(counted: Map<string, T>): T[] {
+  return [...counted.values()].sort((a, b) => b.films - a.films || a.name.localeCompare(b.name, "nb")).slice(0, TOP)
 }
 
 /** What was watched in a week, from the history in it (newest first). */
@@ -218,6 +227,15 @@ export function watchStats(items: readonly Watch[]): WatchStats {
     byDate[key] = (byDate[key] ?? 0) + 1
   }
   const most = Math.max(0, ...byDay)
+  const films = items.filter((watch) => watch.kind === "film")
+  const genres = new Map<string, { name: string; films: number }>()
+  const directors = new Map<string, { id: number; name: string; films: number }>()
+  for (const film of films) {
+    for (const name of new Set(film.info?.genres ?? [])) genres.set(name, { name, films: (genres.get(name)?.films ?? 0) + 1 })
+    for (const person of new Map((film.info?.crew ?? []).filter((one) => one.role === "Regi").map((one) => [one.id, one])).values()) {
+      directors.set(String(person.id), { id: person.id, name: person.name, films: (directors.get(String(person.id))?.films ?? 0) + 1 })
+    }
+  }
   return {
     films: items.filter((watch) => watch.kind === "film").length,
     showCount: shows.size,
@@ -229,6 +247,8 @@ export function watchStats(items: readonly Watch[]): WatchStats {
     episodes: items.filter((watch) => watch.kind === "episode").length,
     shows: [...shows.values()].sort((a, b) => b.episodes - a.episodes || a.title.localeCompare(b.title, "nb")).slice(0, TOP),
     binges: groupViewings(items).filter((viewing) => viewing.episodes.length >= BINGE),
+    genres: mostOf(genres),
+    directors: mostOf(directors),
   }
 }
 
