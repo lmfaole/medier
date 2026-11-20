@@ -1,6 +1,7 @@
 import { EmptyState } from "@lmfaole/designsystem/components/empty-state"
 import { details, PictureRows } from "@lmfaole/designsystem/components/picture-rows"
 import { ExternalLink } from "@lmfaole/designsystem/components/external-link"
+import { NowPlayingCard } from "@lmfaole/designsystem/components/now-playing-card"
 import { Stack } from "@lmfaole/designsystem/components/layout"
 import { Text, TextLink } from "@lmfaole/designsystem/components/text"
 
@@ -20,7 +21,7 @@ import { shortWhen, when } from "../lib/when.ts"
  */
 export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = true, albumLinks = true, now = null }: { plays: readonly Play[]; base: string; limit?: number; artistLinks?: boolean; trackLinks?: boolean; albumLinks?: boolean; now?: Playing | null }) {
   const rows = [
-    ...(now === null ? [] : [{ key: `now-${now.url}`, artist: now.artist, track: now.track, album: now.album, image: now.image, aside: "Spilles nå", live: true, link: now.from === "spotify" ? now.url : null, played: false }]),
+    ...(now === null ? [] : [{ key: `now-${now.url}`, artist: now.artist, track: now.track, album: now.album, image: now.image, aside: "Spilles nå", live: now.from !== "spotify", link: now.from === "spotify" ? now.url : null, played: false }]),
     ...plays.map((play) => ({ key: `${play.playedAt}-${play.url}`, artist: play.artist, track: play.track, album: play.album, image: play.image, aside: play.playedAt === null ? "Spilles nå" : shortWhen(play.playedAt), live: play.playedAt === null, link: null, played: play.playedAt !== null })),
   ]
   const shown = limit === undefined ? rows : rows.slice(0, limit)
@@ -54,6 +55,19 @@ export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = 
     </Stack>
   ) : (
     list
+  )
+}
+
+/** What plays now, large: a disc of Last.fm's cover turning under the page's light. Only where there is a cover for a disc (`Playing.disc`); the song's page of its own does not exist yet, so the title links to Spotify where it is Spotify's. */
+export function NowPlayingSection({ now }: { now: Playing }) {
+  const card = <NowPlayingCard sources={sourcesOf(now.disc)} title={now.from === "spotify" ? <ExternalLink href={now.url}>{now.track}</ExternalLink> : now.track} detail={details([now.artist, now.album === "" ? null : now.album])} />
+  return now.from === "spotify" ? (
+    <Stack gap="md">
+      {card}
+      <FromSpotify />
+    </Stack>
+  ) : (
+    card
   )
 }
 
