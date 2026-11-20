@@ -5,7 +5,7 @@
 
 import { env } from "cloudflare:workers"
 
-import { type Env, type Get, lastfmError, type Listening, loadAlbum, loadArtist, loadArtistPictures, loadMusic, loadNowPlaying, loadPerson, loadTrack, loadWatched, settle } from "./sources.ts"
+import { type Env, type Get, lastfmError, type Listening, loadAlbum, loadArtist, loadArtistPictures, loadLastfmNow, loadMusic, loadNowPlaying, loadPerson, loadTrack, loadWatched, settle } from "./sources.ts"
 import { loadMonth, loadTrend, loadWeek } from "./week-source.ts"
 import type { Month } from "./months.ts"
 import type { Week } from "./weeks.ts"
@@ -58,6 +58,7 @@ export const get: Get = async (url, request) => {
 /** Each source on its own, `null` when it is not set up or is down: a page shows what it has. */
 export const music = (): Promise<Listening | null> => settle(loadMusic(settings(), get))
 export const watched = (): Promise<Watched | null> => settle(loadWatched(settings(), get))
+export const lastfmNow = (): Promise<NowPlaying | null> => settle(loadLastfmNow(settings(), get))
 export const spotifyNow = (): Promise<NowPlaying | null> => settle(loadNowPlaying(settings(), get))
 export const artist = (name: string) => loadArtist(settings(), get, name)
 export const artistPictures = (names: readonly string[]) => loadArtistPictures(settings(), get, names)

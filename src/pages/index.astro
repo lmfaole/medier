@@ -1,7 +1,8 @@
 ---
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
 
-import { Fetched, NowPlayingSection, PlayRows, TopArtistRows, WatchRows } from '../components/sections'
+import { NowPlayingLive } from '../components/now-playing-live'
+import { Fetched, PlayRows, TopArtistRows, WatchRows } from '../components/sections'
 import Page from '../layouts/Page.astro'
 import { playingNow } from '../lib/now'
 import { artistPictures, music, spotifyNow, watched } from '../lib/runtime'
@@ -12,15 +13,14 @@ const withPictures = music().then(async (found) => ({ listening: found, pictures
 const [{ listening, pictures }, seen, spotify] = await Promise.all([withPictures, watched(), spotifyNow()])
 // Spotify knows what plays this second; Last.fm's scrobble is the same song a moment later, and the fallback where Spotify is not set up.
 const now = playingNow(spotify, listening?.now ?? null)
-// A song with a cover for a disc is the card at the top, and then it is not a row of the list as well.
-const card = now !== null && now.disc !== null ? now : null
-const plays = (listening?.recent ?? []).filter((play) => card === null || play.playedAt !== null)
+// What plays now is the card at the top, which keeps asking for it while the page is open; the list is the finished plays.
+const plays = (listening?.recent ?? []).filter((play) => play.playedAt !== null)
 ---
 
 <Page current="front" title="Medier" lead="Hva jeg hører på og ser, hentet fra Last.fm, Spotify og Trakt.">
-  {card !== null && <NowPlayingSection client:visible now={card} />}
+  <NowPlayingLive client:load initial={now} endpoint={`${base}api/now/`} />
   <PageSection id="musikk" title="Musikk" icon="music" more={{ href: `${base}musikk/`, label: 'Se all musikk' }}>
-    <PlayRows plays={plays} now={card === null ? now : null} base={base} limit={5} />
+    <PlayRows plays={plays} base={base} limit={5} />
   </PageSection>
   <PageSection id="film-og-tv" title="Film og TV" icon="film" more={{ href: `${base}film-og-tv/`, label: 'Se all film og TV' }}>
     <WatchRows items={seen?.items ?? []} base={base} limit={5} />

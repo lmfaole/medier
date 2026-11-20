@@ -120,6 +120,14 @@ export async function loadPerson(env: Env, get: Get, id: number): Promise<Person
   return parsePerson((await get(request.url, { headers: request.headers, ttl: TTL.poster })).data)
 }
 
+/** What Last.fm says plays now: one play asked for, kept for as short a time as Spotify's answer, so the song and its cover follow each other. `null` where nothing plays or Last.fm is not set up. */
+export async function loadLastfmNow(env: Env, get: Get): Promise<NowPlaying | null> {
+  const base = lastfmBase(env)
+  if (base === null) return null
+  const playing = parseRecentTracks((await get(`${base}&method=user.getrecenttracks&limit=1`, { ttl: TTL.nowPlaying })).data).find((play) => play.playedAt === null)
+  return playing === undefined ? null : { track: playing.track, artist: playing.artist, album: playing.album, image: playing.image, url: playing.url }
+}
+
 /** The song playing now on Spotify, or `null` (nothing plays, Spotify is not set up, or its token has run out: the page simply shows nothing). */
 export async function loadNowPlaying(env: Env, get: Get): Promise<NowPlaying | null> {
   const token = await spotifyToken(env, get)

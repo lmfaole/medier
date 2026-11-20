@@ -58,9 +58,13 @@ export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = 
   )
 }
 
-/** What plays now, large: a disc of Last.fm's cover turning under the page's light. Only where there is a cover for a disc (`Playing.disc`); the song's page of its own does not exist yet, so the title links to Spotify where it is Spotify's. */
+/**
+ * What plays now, large: a disc of Last.fm's cover turning under the page's light. Spotify's own cover may not be cropped or have anything on it (its developer policy), so a song from Spotify gets a disc only where Last.fm has
+ * the same song with a cover (`Playing.disc`); otherwise its cover is shown as it is, sharp and still. The title links to Spotify where the song is Spotify's (a page of its own does not exist for a song that has just started).
+ */
 export function NowPlayingSection({ now }: { now: Playing }) {
-  const card = <NowPlayingCard sources={sourcesOf(now.disc)} title={now.from === "spotify" ? <ExternalLink href={now.url}>{now.track}</ExternalLink> : now.track} detail={details([now.artist, now.album === "" ? null : now.album])} />
+  const cover = now.disc ?? now.image
+  const card = <NowPlayingCard disc={now.disc !== null} sources={sourcesOf(cover)} title={now.from === "spotify" ? <ExternalLink href={now.url}>{now.track}</ExternalLink> : now.track} detail={details([now.artist, now.album === "" ? null : now.album])} />
   return now.from === "spotify" ? (
     <Stack gap="md">
       {card}
