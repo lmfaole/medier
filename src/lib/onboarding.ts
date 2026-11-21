@@ -16,7 +16,7 @@ export const INTROS = {
     id: "intro-musikk",
     version: 2,
     title: "Musikken din fra Last.fm",
-    body: "Her er de siste avspillingene og artistene du har spilt mest den siste måneden. Historikken og oppsummeringen av hver uke og måned finner du øverst. Trykk på en artist, et album eller en låt for å se mer.",
+    body: "Her er de siste avspillingene og artistene du har spilt mest den siste måneden. Historikken og oppsummeringen av måneden finner du nederst i kortene. Trykk på en artist, et album eller en låt for å se mer.",
   },
   musikkHistorikk: {
     id: "intro-musikk-historikk",
@@ -26,7 +26,7 @@ export const INTROS = {
   film: {
     id: "intro-film",
     title: "Filmene du har sett, fra Trakt",
-    body: "Filmene du har markert som sett på Trakt, med plakat og handling fra TMDB. Historikken og oppsummeringen av hver uke og måned finner du øverst. Trykk på en film for å se hvem som var med.",
+    body: "Filmene du har markert som sett på Trakt, med plakat og handling fra TMDB. Historikken og oppsummeringen av måneden finner du nederst i kortene. Trykk på en film for å se hvem som var med.",
   },
   filmHistorikk: {
     id: "intro-film-historikk",
@@ -37,7 +37,7 @@ export const INTROS = {
   tv: {
     id: "intro-tv",
     title: "Seriene du følger, fra Trakt",
-    body: "Episodene du har markert som sett på Trakt, og seriene de hører til, med plakat fra TMDB. Historikken og oppsummeringen av hver uke og måned finner du øverst. Trykk på en serie for å se mer.",
+    body: "Episodene du har markert som sett på Trakt, og seriene de hører til, med plakat fra TMDB. Historikken og oppsummeringen av måneden finner du nederst i kortene. Trykk på en serie for å se mer.",
   },
   tvHistorikk: {
     id: "intro-tv-historikk",
