@@ -1,11 +1,12 @@
 ---
-import { ArtistDetail } from '../../components/detail'
+import { ArtistDetail, SimilarArtists } from '../../components/detail'
 import { Head } from '../../components/head'
 import NeedsUsername from '../../components/NeedsUsername.astro'
+import SimilarArtistsIsland from '../../components/SimilarArtistsIsland.astro'
 import { ListeningChart } from '../../components/trend'
 import Page from '../../layouts/Page.astro'
 import { artistFigures, artistKind, listeningChartText } from '../../lib/artist-listening'
-import { artistPages, trackPages } from '../../lib/pages'
+import { artistPages, slugify, trackPages } from '../../lib/pages'
 import { artist, artistListening, music, usersOf } from '../../lib/runtime'
 
 const base = import.meta.env.BASE_URL
@@ -21,6 +22,8 @@ const links = { tracks: new Set(listening === null ? [] : trackPages(listening).
 const tags = info?.lastfm !== null && info?.lastfm !== undefined && info.lastfm.tags.length > 0 ? info.lastfm.tags : (info?.spotify?.genres ?? [])
 const plays = info?.lastfm?.userPlays ?? own?.place?.plays ?? null
 const timeline = own?.timeline ?? null
+const similar = own?.similar ?? []
+const similarLinked = similar.filter((one) => links.artists.has(slugify(one.name))).map((one) => one.name)
 const chart = timeline === null ? null : listeningChartText(timeline.unit, timeline.series)
 ---
 
@@ -40,6 +43,11 @@ const chart = timeline === null ? null : listeningChartText(timeline.unit, timel
         ariaLabel={`Avspillinger av ${page.name} over tid`}
         points={timeline.series.map((one) => ({ label: one.label, value: one.plays }))}
       />
+    )}
+    {similar.length > 0 && (
+      <SimilarArtistsIsland slot="similar" server:defer similar={similar} linked={similarLinked} base={base} url={page.url}>
+        <SimilarArtists slot="fallback" similar={similar} pictures={new Map()} linked={new Set(similarLinked)} base={base} url={page.url} />
+      </SimilarArtistsIsland>
     )}
   </ArtistDetail>
 </Page>

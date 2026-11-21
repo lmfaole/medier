@@ -304,7 +304,9 @@ test("an artist's listening: plays over time (a stretch over kept long, this one
   assert.deepEqual(found?.timeline?.series.at(-1), { label: "4. kv. 2026", long: "4. kvartal 2026", plays: 7 })
   assert.deepEqual(found?.place, { rank: 2, plays: 310, share: 0.031 })
   assert.deepEqual(found?.tracks?.map((track) => track.title), ["Take On Me"])
-  assert.deepEqual(found?.similar, [{ name: "Aurora", plays: 20, url: "", spotify: null }])
+  assert.deepEqual(found?.similar, [{ name: "Aurora", plays: 20, url: "" }])
+  // The pictures are the island's to ask for: asked here, after the charts, they found the Worker's limit of questions used up.
+  assert.ok(!asked.some((one) => one.url.includes("spotify.com/")))
   const charts = asked.filter((one) => one.url.includes("getweeklyartistchart"))
   assert.equal(charts.find((one) => one.url.includes(`from=${Date.UTC(2024, 3, 1) / 1000 - 7200}&`))?.ttl, TTL.periodDone)
   assert.equal(charts.find((one) => one.url.includes(`from=${Date.UTC(2026, 9, 1) / 1000 - 7200}&`))?.ttl, TTL.periodLive)

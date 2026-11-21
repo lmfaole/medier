@@ -12,7 +12,7 @@ import { Text, TextLink } from "@lmfaole/designsystem/components/text"
 
 import type { AlbumInfo, ArtistAlbum, ArtistInfo, TrackInfo } from "../lib/lastfm.ts"
 import { firstSentences } from "../lib/lastfm.ts"
-import { type AlbumPage, type Appearance, type ArtistPage, artistHref, slugify, albumHref, personHref, titleHref, type TitlePage, type TrackPage, trackSlug, trackHref } from "../lib/pages.ts"
+import { type AlbumPage, type Appearance, type ArtistPage, artistHref, albumHref, personHref, titleHref, type TitlePage, type TrackPage, trackSlug, trackHref } from "../lib/pages.ts"
 import type { SpotifyAlbum, SpotifyArtist, SpotifyTrack } from "../lib/spotify.ts"
 import { albumKey } from "../lib/albums.ts"
 import type { AlbumsFrom, ArtistListening } from "../lib/sources.ts"
@@ -84,38 +84,49 @@ export function TitleDetail({ page, base }: { page: TitlePage; base: string }) {
 }
 
 /**
+ * The artists like one that the visitor plays too, with Spotify's pictures (`pictures`, by name; the page's server island asks for them with a budget of its own, and its fallback has none). `url` is
+ * the artist on Last.fm, which found them.
+ */
+export function SimilarArtists({ similar, pictures, linked, base, url }: { similar: ArtistListening["similar"]; pictures: ReadonlyMap<string, SpotifyArtist>; /** The names that have a page of their own here. */ linked: ReadonlySet<string>; base: string; url: string }) {
+  if (similar.length === 0) return null
+  return (
+    <PageSection id="lignende" title="Lignende artister du også hører" icon="person">
+      <PictureRows
+        {...SHAPES.artist}
+        rows={similar.map((one) => {
+          const spotify = pictures.get(one.name) ?? null
+          return {
+            key: one.name,
+            picture: null,
+            sources: spotify?.images ?? [],
+            title: linked.has(one.name) ? <TextLink href={artistHref(base, one.name)}>{one.name}</TextLink> : one.name,
+            detail: spotify === null ? null : <ExternalLink href={spotify.url}>Åpne i Spotify</ExternalLink>,
+            aside: count(one.plays, "avspilling", "avspillinger"),
+          }
+        })}
+      />
+      <Text size="sm" tone="muted">
+        Artistene <TextLink href={url} external>Last.fm</TextLink> finner lignende, blant dem du har hørt mest på.
+      </Text>
+    </PageSection>
+  )
+}
+
+/**
  * An artist: what Last.fm's users write of it first, then the visitor's own listening to it (their plays over time, their most played songs by it), its albums, its recent plays, the artists like it
  * that they play too, and last the ways to it on Last.fm and Spotify. The picture and the link to it are Spotify's; the tags, the listeners and the text are Last.fm's (its text is the users', CC BY-SA, with
  * the link back where it is shown). `chart` is the chart of the plays over time, an island the page puts in.
  */
-export function ArtistDetail({ page, base, info, listening, links, chart }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[]; albumsFrom: AlbumsFrom }; listening: ArtistListening | null; /** The slugs of the songs and the artists that have a page of their own here. */ links: { tracks: ReadonlySet<string>; artists: ReadonlySet<string> }; chart?: ReactNode }) {
+export function ArtistDetail({ page, base, info, listening, links, chart, similar }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[]; albumsFrom: AlbumsFrom }; listening: ArtistListening | null; /** The slugs of the songs and the artists that have a page of their own here. */ links: { tracks: ReadonlySet<string>; artists: ReadonlySet<string> }; chart?: ReactNode; /** The artists like it that the visitor plays too (`SimilarArtists`), a server island the page puts in. */ similar?: ReactNode }) {
   const { lastfm, spotify, albums, albumsFrom } = info
   // The albums among the recent plays have a page of their own here, under the name of the edition that was played; the others are only named.
   const played = new Map(page.plays.filter((play) => play.album !== "").map((play) => [albumKey(play.album), play.album]))
   const tracks = listening?.tracks ?? []
-  const similar = listening?.similar ?? []
   const song = (title: string) => (links.tracks.has(trackSlug(page.name, title)) ? <TextLink href={trackHref(base, page.name, title)}>{title}</TextLink> : title)
   // The plays, the place, the share of all and last month's plays are the head's figures, and when it was first heard is in the chart: each is said once. The pane is what is like it, and the ways out.
   const rail = (
     <Stack gap="xl">
-      {similar.length === 0 ? null : (
-        <PageSection id="lignende" title="Lignende artister du også hører" icon="person">
-          <PictureRows
-            {...SHAPES.artist}
-            rows={similar.map((one) => ({
-              key: one.name,
-              picture: null,
-              sources: one.spotify?.images ?? [],
-              title: links.artists.has(slugify(one.name)) ? <TextLink href={artistHref(base, one.name)}>{one.name}</TextLink> : one.name,
-              detail: one.spotify === null ? null : <ExternalLink href={one.spotify.url}>Åpne i Spotify</ExternalLink>,
-              aside: count(one.plays, "avspilling", "avspillinger"),
-            }))}
-          />
-          <Text size="sm" tone="muted">
-            Artistene <TextLink href={page.url} external>Last.fm</TextLink> finner lignende, blant dem du har hørt mest på.
-          </Text>
-        </PageSection>
-      )}
+      {similar}
       <Stack gap="sm">
         <LinkButton href={page.url} external>Åpne på Last.fm</LinkButton>
         {spotify === null ? null : <LinkButton href={spotify.url} external>Åpne i Spotify</LinkButton>}

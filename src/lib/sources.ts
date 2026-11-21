@@ -275,8 +275,8 @@ export interface ArtistListening {
   place: { rank: number; plays: number; share: number | null } | null
   /** Their most played songs by it, most first. */
   tracks: TopTrack[] | null
-  /** The artists like it that they play too, with Spotify's picture where it was found. */
-  similar: { name: string; plays: number; url: string; spotify: SpotifyArtist | null }[]
+  /** The artists like it that they play too; their pictures are the page's server island's to ask for (`loadArtistPictures`), with a Worker's budget of questions of their own. */
+  similar: { name: string; plays: number; url: string }[]
 }
 
 /**
@@ -298,7 +298,8 @@ async function artistTimeline(base: string, get: Get, name: string, nowMs: numbe
 
 /**
  * The visitor's own listening to an artist, from Last.fm: its plays over time, its place among all they have played (their first thousand artists and songs of all time, one answer each shared by every
- * artist's page) and the artists like it that they play too (with at most `MAX_SIMILAR` pictures from Spotify). Each part is asked at the same time as the others and leaves out only itself when it fails.
+ * artist's page) and the artists like it that they play too (at most `MAX_SIMILAR`). Each part is asked at the same time as the others and leaves out only itself when it fails. Spotify is not asked here:
+ * on a cold page the charts use up the Worker's limit of questions, and the pictures of the artists like it are asked for by an island of their own.
  */
 export async function loadArtistListening(env: Env, get: Get, name: string, nowMs: number): Promise<ArtistListening | null> {
   const base = lastfmBase(env)
@@ -311,12 +312,11 @@ export async function loadArtistListening(env: Env, get: Get, name: string, nowM
     settle(get(similarArtistsUrl(base, name), { ttl: TTL.artist })).then((answer) => (answer === null ? [] : parseSimilarArtists(answer.data))),
   ])
   const heard = artists === null ? [] : similarHeard(similar, artists, name, MAX_SIMILAR)
-  const pictures = heard.length === 0 ? new Map<string, SpotifyArtist>() : await loadArtistPictures(env, get, heard.map((one) => one.name)).catch(() => new Map<string, SpotifyArtist>())
   return {
     timeline,
     place: artists === null ? null : placeAmong(artists, name, user?.plays ?? null),
     tracks,
-    similar: heard.map((one) => ({ ...one, spotify: pictures.get(one.name) ?? null })),
+    similar: heard,
   }
 }
 
