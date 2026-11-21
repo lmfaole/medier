@@ -72,6 +72,15 @@ On the page of an album the cover is a **sleeve in 3D** (`Head` with `sleeve`, t
 
 The page of an artist lists its most played albums (`artist.gettopalbums`, one call kept a day, `loadArtist`): ranked by Last.fm's plays with the design system's `RankedRows`, with Last.fm's covers, nameless and repeated albums left out, up to eight. An album the owner has played lately links to its page here and says so.
 
+## Your listening to an artist
+
+The page of an artist also says what the visitor's own listening to it is (`loadArtistListening` in `src/lib/sources.ts`, read by `src/lib/artist-listening.ts`), each part left out on its own when Last.fm does not answer:
+the head says its place among all they have heard in words («Din fjerde mest spilte artist»), their plays and share of all («10 903 avspillinger · 22 % av alt du har hørt»), when they first heard it and its tags as badges;
+**Din lytting** has the plays year by year since they started on Last.fm (`user.getinfo`, then one `user.getweeklyartistchart` a year: a year that is over is kept for a month, this one for an hour), the month it
+was first heard (the first year halved and halved again, four charts more) and what they played of it a year ago today (`user.getrecenttracks` for that day in Oslo, kept for the day); **Dine mest spilte** are their
+most played songs by it (`user.gettoptracks` of all time, a thousand, one answer for every artist's page; each links to its page where it has one); and **Lignende artister du også hører** are those of
+Last.fm's 50 like it (`artist.getsimilar`) that are among their thousand most played artists of all time (`user.gettopartists`, shared too), at most six, with Spotify's pictures. A first visit asks some 10–20 questions, kept afterwards.
+
 ## Weekly and monthly wrapped
 
 The head of a week's or a month's page is the same composed head as a detail page's (`Head`, the page `bare`): the most played album of the stretch leads it, its cover as the picture and its colours as the stage (WebGL, moving with the light), with the stretch and the album named under the title. The front page's card of what plays now stands on a stage of the cover's colours too, and when the song changes the colours go over to the new cover's in one move.

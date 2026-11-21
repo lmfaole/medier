@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-20T16:57:56.942Z",
+  "generated": "2026-11-21T11:31:19.000Z",
   "artists": [
     {
       "name": "a-ha",
@@ -8,7 +8,7 @@
         "norwegian"
       ],
       "weight": 10,
-      "since": 300,
+      "since": 1500,
       "bio": "a-ha er en norsk pop-/rockgruppe dannet i 1982 med Magne Furuholmen, Paul Waaktaar-Savoy og Morten Harket (sang).",
       "image": {
         "file": "/mock/artist-0.jpg",
@@ -126,7 +126,7 @@
         "norwegian"
       ],
       "weight": 8,
-      "since": 300,
+      "since": 1200,
       "bio": "Röyksopp er en norsk musikkgruppe som spiller elektronisk musikk. Röyksopp består av duoen Svein Berge og Torbjørn Brundtland som begge kommer fra Tromsø, og gruppen ble offisielt dannet i 1998. Året etter debuterte de med singelen «So Easy». Röyksopp har vunnet Spellemann seks ganger, Alarmprisen fire ganger og ble innlemmet i Rockheim Hall of Fame i 2024. I tillegg har de vunnet og blitt nominert til flere internasjonale priser.",
       "image": {
         "file": "/mock/artist-1.jpg",
@@ -249,7 +249,7 @@
         "norwegian"
       ],
       "weight": 7,
-      "since": 300,
+      "since": 1000,
       "bio": "Kings of Convenience er en norsk indie og indie folk-duo bestående av Erlend Øye og Eirik Glambek Bøe fra Bergen.",
       "image": {
         "file": "/mock/artist-2.jpg",
@@ -383,7 +383,7 @@
         "norwegian"
       ],
       "weight": 6,
-      "since": 300,
+      "since": 700,
       "bio": "Sigrid Solbakk Raabe, known mononymously as Sigrid, is a Norwegian singer and songwriter. She has released three studio albums, Sucker Punch (2019), How to Let Go (2022), and There's Always More That I Could Say (2025). Both her debut and second album reached the top of the charts in Norway as well as reaching the top 5 in the United Kingdom. She has also released three EPs.",
       "image": {
         "file": "/mock/artist-3.jpg",
@@ -481,7 +481,7 @@
         "norwegian"
       ],
       "weight": 5,
-      "since": 300,
+      "since": 500,
       "bio": "Aurora Aksnes, known mononymously as AURORA, is a Norwegian singer, songwriter and record producer. Known for blending electropop, folk, and art pop, she has been described as a pioneer of the Norwegian art pop scene and dubbed the \"Fairy of Pop\". She started writing songs and learning dance at age six, and gained recognition as a teenager after a classmate posted her music online without her knowledge. Initially trained on the piano, she later learned percussion and production.",
       "image": {
         "file": "/mock/artist-4.jpg",

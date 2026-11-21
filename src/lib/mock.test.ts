@@ -1,6 +1,8 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
+import { allTimeArtistsUrl, allTimeTracksUrl, parseSimilarArtists, parseTopTracks, parseUserInfo, similarArtistsUrl, userInfoUrl } from "./lastfm.ts"
+import { similarHeard, tracksBy } from "./artist-listening.ts"
 import { artistChartUrl, artistInfoUrl, artistTopAlbumsUrl, albumInfoUrl, parseAlbumInfo, parseArtistChart, parseArtistInfo, parseRecentPage, parseRecentTracks, parseTopAlbums, parseTopArtists, parseTrackInfo, playsInRangeUrl, playsTotalUrl, trackInfoUrl } from "./lastfm.ts"
 import { realAlbums } from "./albums.ts"
 import { MOCK_ARTISTS, mockFetch, mockSettings } from "./mock.ts"
@@ -47,6 +49,19 @@ test("Last.fm: info for an artist, an album and a track; an unknown name is Last
   const track = parseTrackInfo(await ask(trackInfoUrl(BASE, name, album.tracks[0]?.title ?? "", "ola")))
   assert.ok((track.seconds ?? 0) > 100)
   assert.deepEqual(await ask(artistInfoUrl(BASE, "Finnes ikke", "ola")), { error: 6, message: "The artist you supplied could not be found" })
+})
+
+test("Last.fm: an artist's page has years of plays to chart, the user's top artists and songs of all time, and artists like it, some of them played here", async () => {
+  const user = parseUserInfo(await ask(userInfoUrl(BASE)))
+  assert.ok((user.registered ?? SECONDS) < SECONDS - 3 * 365 * DAY && (user.plays ?? 0) > 1000)
+  const name = MOCK_ARTISTS[1] ?? ""
+  const top = parseTopArtists(await ask(allTimeArtistsUrl(BASE)))
+  assert.equal(top.length, MOCK_ARTISTS.length)
+  assert.ok(parseArtistChart(await ask(artistChartUrl(BASE, SECONDS - 3 * 365 * DAY, SECONDS - 2 * 365 * DAY))).some((artist) => artist.name === name))
+  assert.ok(tracksBy(parseTopTracks(await ask(allTimeTracksUrl(BASE))), name).length >= 5)
+  const similar = parseSimilarArtists(await ask(similarArtistsUrl(BASE, name)))
+  const heard = similarHeard(similar, top, name)
+  assert.ok(heard.length >= 3 && heard.length < similar.length)
 })
 
 test("MusicBrainz: an artist's albums by the id Last.fm gives, or by name, and an EP, a live album and a compilation are not among them", async () => {

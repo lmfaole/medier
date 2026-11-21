@@ -238,3 +238,57 @@ export function parseTopAlbums(answer: unknown, limit = 8): ArtistAlbum[] {
 }
 
 export const artistTopAlbumsUrl = (base: string, artist: string): string => `${base}&method=artist.gettopalbums&autocorrect=1&artist=${encodeURIComponent(artist)}&limit=50`
+
+/** What Last.fm says of the user: when they started (unix seconds) and how many plays they have in all; `null` for what it does not say. */
+export interface UserInfo {
+  registered: number | null
+  plays: number | null
+}
+
+export const userInfoUrl = (base: string): string => `${base}&method=user.getinfo`
+
+export function parseUserInfo(answer: unknown): UserInfo {
+  const user = object(object(answer)["user"])
+  const registered = object(user["registered"])
+  return { registered: count(registered["unixtime"] ?? registered["#text"]), plays: count(user["playcount"]) }
+}
+
+/** The user's most played artists and songs of all time: the first thousand, one answer shared by every artist's page. */
+export const allTimeArtistsUrl = (base: string): string => `${base}&method=user.gettopartists&period=overall&limit=1000`
+export const allTimeTracksUrl = (base: string): string => `${base}&method=user.gettoptracks&period=overall&limit=1000`
+
+/** A song among the user's most played, with how many times they have played it. */
+export interface TopTrack {
+  title: string
+  artist: string
+  plays: number
+  url: string
+}
+
+export function parseTopTracks(answer: unknown): TopTrack[] {
+  return list(object(object(answer)["toptracks"])["track"]).flatMap((value) => {
+    const track = object(value)
+    const title = text(track["name"]).trim()
+    const artist = text(object(track["artist"])["name"]) || named(track["artist"])
+    const plays = Number(text(track["playcount"]))
+    return title === "" || artist === "" || !Number.isFinite(plays) || plays <= 0 ? [] : [{ title, artist, plays, url: text(track["url"]) }]
+  })
+}
+
+/** Artists like one (`artist.getsimilar`), the most like it first, with how alike Last.fm finds them (0 to 1). */
+export interface SimilarArtist {
+  name: string
+  match: number
+  url: string
+}
+
+export const similarArtistsUrl = (base: string, artist: string): string => `${base}&method=artist.getsimilar&autocorrect=1&artist=${encodeURIComponent(artist)}&limit=50`
+
+export function parseSimilarArtists(answer: unknown): SimilarArtist[] {
+  return list(object(object(answer)["similarartists"])["artist"]).flatMap((value) => {
+    const artist = object(value)
+    const name = text(artist["name"]).trim()
+    const match = Number(text(artist["match"]))
+    return name === "" ? [] : [{ name, match: Number.isFinite(match) ? match : 0, url: text(artist["url"]) }]
+  })
+}

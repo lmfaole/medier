@@ -1,3 +1,6 @@
+import type { ReactNode } from "react"
+
+import { ExternalLink } from "@lmfaole/designsystem/components/external-link"
 import { FactList } from "@lmfaole/designsystem/components/fact-list"
 import { LinkButton } from "@lmfaole/designsystem/components/link-button"
 import { Split, Stack } from "@lmfaole/designsystem/components/layout"
@@ -9,10 +12,11 @@ import { Text, TextLink } from "@lmfaole/designsystem/components/text"
 
 import type { AlbumInfo, ArtistAlbum, ArtistInfo, TrackInfo } from "../lib/lastfm.ts"
 import { firstSentences } from "../lib/lastfm.ts"
-import { type AlbumPage, type Appearance, type ArtistPage, artistHref, albumHref, personHref, titleHref, type TitlePage, type TrackPage, trackSlug, trackHref } from "../lib/pages.ts"
+import { type AlbumPage, type Appearance, type ArtistPage, artistHref, slugify, albumHref, personHref, titleHref, type TitlePage, type TrackPage, trackSlug, trackHref } from "../lib/pages.ts"
 import type { SpotifyAlbum, SpotifyArtist, SpotifyTrack } from "../lib/spotify.ts"
 import { albumKey } from "../lib/albums.ts"
-import type { AlbumsFrom } from "../lib/sources.ts"
+import type { AlbumsFrom, ArtistListening } from "../lib/sources.ts"
+import { firstText, shareText } from "../lib/artist-listening.ts"
 import { sourcesOf } from "../lib/image-sources.ts"
 import { SHAPES } from "../lib/shapes.ts"
 import { type Person, profileSources } from "../lib/tmdb.ts"
@@ -81,29 +85,53 @@ export function TitleDetail({ page, base }: { page: TitlePage; base: string }) {
 }
 
 /**
- * An artist: its picture and what is known of it, its place among the month's most played, its recent plays, and last the ways to it on Last.fm and Spotify. The picture and the
- * link to it are Spotify's; the tags, the listeners and the text are Last.fm's (its text is the users', CC BY-SA, with the link back where it is shown).
+ * An artist: what is known of it and the visitor's own listening to it (by year, when first heard, a year ago today, their most played songs by it), its albums, its recent plays, the artists like it
+ * that they play too, and last the ways to it on Last.fm and Spotify. The picture and the link to it are Spotify's; the tags, the listeners and the text are Last.fm's (its text is the users', CC BY-SA, with
+ * the link back where it is shown). `chart` is the chart of the plays by year, an island the page puts in.
  */
-export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[]; albumsFrom: AlbumsFrom } }) {
+export function ArtistDetail({ page, base, info, listening, links, chart }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[]; albumsFrom: AlbumsFrom }; listening: ArtistListening | null; /** The slugs of the songs and the artists that have a page of their own here. */ links: { tracks: ReadonlySet<string>; artists: ReadonlySet<string> }; chart?: ReactNode }) {
   const { lastfm, spotify, albums, albumsFrom } = info
   // The albums among the recent plays have a page of their own here, under the name of the edition that was played; the others are only named.
   const played = new Map(page.plays.filter((play) => play.album !== "").map((play) => [albumKey(play.album), play.album]))
-  const genres = lastfm !== null && lastfm.tags.length > 0 ? lastfm.tags : (spotify?.genres ?? [])
+  const place = listening?.place ?? null
+  const first = listening?.first ?? null
+  const memory = listening?.memory ?? null
+  const tracks = listening?.tracks ?? []
+  const similar = listening?.similar ?? []
+  const song = (title: string) => (links.tracks.has(trackSlug(page.name, title)) ? <TextLink href={trackHref(base, page.name, title)}>{title}</TextLink> : title)
   const rail = (
     <Stack gap="lg">
       <FactList
         facts={[
-          ["Sjangere", genres.length === 0 ? null : genres.join(", ")],
-          ["Lyttere på Last.fm", lastfm?.listeners == null ? null : lastfm.listeners.toLocaleString("nb-NO")],
-          ["Spilt av deg totalt", lastfm?.userPlays == null ? null : count(lastfm.userPlays, "gang", "ganger")],
+          ["Spilt av deg totalt", lastfm?.userPlays == null ? (place === null ? null : count(place.plays, "gang", "ganger")) : count(lastfm.userPlays, "gang", "ganger")],
+          ["Blant artistene dine", place === null ? null : `Nr. ${place.rank.toLocaleString("nb-NO")}`],
+          ["Av alt du har hørt", place?.share == null ? null : shareText(place.share)],
+          ["Først hørt", first === null ? null : firstText(first)],
           ["Mest spilt siste måned", page.top === null ? null : `Nr. ${page.top.rank}, ${count(page.top.plays, "avspilling", "avspillinger")}`],
           ["Blant de siste avspillingene", page.plays.length === 0 ? "Ingen" : count(page.plays.length, "gang", "ganger")],
+          ["Lyttere på Last.fm", lastfm?.listeners == null ? null : lastfm.listeners.toLocaleString("nb-NO")],
         ]}
       />
     </Stack>
   )
   return (
     <Split rail={rail}>
+      {chart === undefined && first === null && memory === null ? null : (
+        <PageSection id="lytting" title="Din lytting" icon="chart">
+          {first === null ? null : <Text>Du hørte {page.name} første gang i {firstText(first)}.</Text>}
+          {memory === null ? null : (
+            <Text>
+              For ett år siden i dag spilte du «{song(memory.track)}» {count(memory.plays, "gang", "ganger")}.
+            </Text>
+          )}
+          {chart}
+        </PageSection>
+      )}
+      {tracks.length === 0 ? null : (
+        <PageSection id="mest-spilte" title="Dine mest spilte" icon="play">
+          <RankedRows rows={tracks.map((track) => ({ key: track.title, title: song(track.title), value: count(track.plays, "avspilling", "avspillinger"), amount: track.plays }))} />
+        </PageSection>
+      )}
       {lastfm?.bio == null ? null : (
         <PageSection id="om" title="Om artisten">
           <Text>{lastfm.bio}</Text>
@@ -146,6 +174,24 @@ export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: str
       {page.plays.length === 0 ? null : (
         <PageSection id="siste" title="Siste avspillinger">
           <PlayRows plays={page.plays} base={base} artistLinks={false} />
+        </PageSection>
+      )}
+      {similar.length === 0 ? null : (
+        <PageSection id="lignende" title="Lignende artister du også hører" icon="person">
+          <PictureRows
+            {...SHAPES.artist}
+            rows={similar.map((one) => ({
+              key: one.name,
+              picture: null,
+              sources: one.spotify?.images ?? [],
+              title: links.artists.has(slugify(one.name)) ? <TextLink href={artistHref(base, one.name)}>{one.name}</TextLink> : one.name,
+              detail: one.spotify === null ? null : <ExternalLink href={one.spotify.url}>Åpne i Spotify</ExternalLink>,
+              aside: count(one.plays, "avspilling", "avspillinger"),
+            }))}
+          />
+          <Text size="sm" tone="muted">
+            Artistene <TextLink href={page.url} external>Last.fm</TextLink> finner lignende, blant dem du har hørt mest på.
+          </Text>
         </PageSection>
       )}
       <Stack gap="sm">

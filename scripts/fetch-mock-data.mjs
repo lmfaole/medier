@@ -11,11 +11,11 @@ const DATA = new URL("../src/lib/mock-data.json", import.meta.url)
 const OUT = new URL("../public/mock/", import.meta.url)
 
 const ARTISTS = [
-  { name: "a-ha", wiki: "A-ha", weight: 10, since: 300, albums: ["Hunting High and Low", "Scoundrel Days"] },
-  { name: "Röyksopp", wiki: "Röyksopp", weight: 8, since: 300, albums: ["Melody A.M.", "Junior"] },
-  { name: "Kings of Convenience", wiki: "Kings of Convenience", weight: 7, since: 300, albums: ["Riot on an Empty Street", "Quiet Is the New Loud"] },
-  { name: "Sigrid", wiki: "Sigrid (singer)", weight: 6, since: 300, albums: ["Sucker Punch", "How to Let Go"] },
-  { name: "AURORA", wiki: "Aurora (singer)", weight: 5, since: 300, albums: ["All My Demons Greeting Me as a Friend", "A Different Kind of Human (Step 2)"] },
+  { name: "a-ha", wiki: "A-ha", weight: 10, since: 1500, albums: ["Hunting High and Low", "Scoundrel Days"] },
+  { name: "Röyksopp", wiki: "Röyksopp", weight: 8, since: 1200, albums: ["Melody A.M.", "Junior"] },
+  { name: "Kings of Convenience", wiki: "Kings of Convenience", weight: 7, since: 1000, albums: ["Riot on an Empty Street", "Quiet Is the New Loud"] },
+  { name: "Sigrid", wiki: "Sigrid (singer)", weight: 6, since: 700, albums: ["Sucker Punch", "How to Let Go"] },
+  { name: "AURORA", wiki: "Aurora (singer)", weight: 5, since: 500, albums: ["All My Demons Greeting Me as a Friend", "A Different Kind of Human (Step 2)"] },
   { name: "Susanne Sundfør", wiki: "Susanne Sundfør", weight: 4, since: 300, albums: ["Ten Love Songs", "The Brothel"] },
   { name: "Highasakite", wiki: "Highasakite", weight: 3, since: 40, albums: ["Silent Treatment", "Camp Echo"] },
   { name: "Todd Terje", wiki: "Todd Terje", weight: 2, since: 12, albums: ["It's Album Time", "It's the Arps"] },

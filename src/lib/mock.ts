@@ -17,6 +17,8 @@ export function mockSettings(env: Readonly<Partial<Record<string, string>>>): Re
 const DAY = 86400
 const SLOT = 1200
 const HISTORY = 300 * DAY
+/** The plays go further back than the viewings: an artist's page shows them year by year, and when it was first heard. */
+const PLAY_HISTORY = 1500 * DAY
 
 /** A number from two numbers, the same each time and unlike its neighbours. */
 function mix(a: number, b = 0): number {
@@ -28,6 +30,9 @@ function mix(a: number, b = 0): number {
 }
 
 // ---- Music ----
+
+/** Artists Last.fm finds like ours that are never played here: a page shows only those that are. */
+const SIMILAR_UNHEARD = ["Morten Harket", "Kygo", "Ane Brun", "Jarle Bernhoft", "Annie"]
 
 interface Picture {
   file: string
@@ -82,7 +87,7 @@ function pick(seed: number, at: number, now: number): MockTrack {
 
 /** Every play from `from` to `to` (unix seconds, both included), newest first. The listening is in the day (nothing at night) and some weeks have more of it than others. */
 function playsIn(from: number, to: number, now: number): Play[] {
-  const low = Math.max(from, now - HISTORY)
+  const low = Math.max(from, now - PLAY_HISTORY)
   const high = Math.min(to, now)
   const plays: Play[] = []
   for (let slot = Math.floor(high / SLOT); slot >= Math.floor(low / SLOT); slot -= 1) {
@@ -190,8 +195,31 @@ function lastfm(params: URLSearchParams, now: number): Response {
     const playing = !ranged && page === 1 ? [lastfmTrack(nowTrack(now), null)] : []
     return json({ recenttracks: { track: [...playing, ...shown], "@attr": { user, page: String(page), perPage: String(limit), totalPages: String(Math.max(1, Math.ceil(all.length / limit))), total: String(all.length) } } })
   }
+  if (method === "user.getinfo") {
+    return json({ user: { name: params.get("user") ?? "", playcount: String(playsIn(0, now, now).length), registered: { unixtime: String(now - PLAY_HISTORY), "#text": now - PLAY_HISTORY } } })
+  }
+  if (method === "user.gettoptracks") {
+    const tracks = new Map<string, { play: Play; plays: number }>()
+    for (const play of playsIn(0, now, now)) {
+      const key = `${play.artistIndex}:${play.albumIndex}:${play.index}`
+      const found = tracks.get(key) ?? { play, plays: 0 }
+      found.plays += 1
+      tracks.set(key, found)
+    }
+    const ranked = [...tracks.values()].sort((a, b) => b.plays - a.plays)
+    return json({ toptracks: { track: ranked.map((one, index) => ({ name: one.play.title, playcount: String(one.plays), url: lastfmUrl(one.play.artist.name, "_", one.play.title), artist: { name: one.play.artist.name, url: lastfmUrl(one.play.artist.name) }, "@attr": { rank: String(index + 1) } })) } })
+  }
+  if (method === "artist.getsimilar") {
+    const found = artistNamed(params.get("artist") ?? "")
+    if (found === undefined) return lastfmError(6, "The artist you supplied could not be found")
+    // The others of ours, the nearest in the list most alike, among names that are not played here.
+    const others = ARTISTS.filter((artist) => artist !== found.artist).sort((a, b) => Math.abs(ARTISTS.indexOf(a) - found.index) - Math.abs(ARTISTS.indexOf(b) - found.index)).map((artist) => artist.name)
+    const names = [...SIMILAR_UNHEARD.slice(0, 2), ...others.slice(0, 3), ...SIMILAR_UNHEARD.slice(2), ...others.slice(3)]
+    return json({ similarartists: { artist: names.map((name, index) => ({ name, match: (1 - index / names.length).toFixed(3), url: lastfmUrl(name) })), "@attr": { artist: found.artist.name } } })
+  }
   if (method === "user.gettopartists") {
-    return json({ topartists: { artist: chart(now - 30 * DAY, now).map((one, index) => ({ name: one.artist.name, playcount: String(one.plays), url: lastfmUrl(one.artist.name), "@attr": { rank: String(index + 1) } })) } })
+    const overall = params.get("period") === "overall"
+    return json({ topartists: { artist: chart(overall ? 0 : now - 30 * DAY, now).map((one, index) => ({ name: one.artist.name, playcount: String(one.plays), url: lastfmUrl(one.artist.name), "@attr": { rank: String(index + 1) } })) } })
   }
   if (method === "user.getweeklyartistchart") {
     return json({ weeklyartistchart: { artist: chart(Number(params.get("from")) || 0, Number(params.get("to")) || now).map((one, index) => ({ name: one.artist.name, playcount: String(one.plays), url: lastfmUrl(one.artist.name), "@attr": { rank: String(index + 1) } })) } })

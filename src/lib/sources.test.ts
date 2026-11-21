@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { type Env, forUsers, type Get, lastfmUserExists, loadAlbum, loadArtist, loadArtistPictures, loadLastfmNow, loadMusic, lastfmError, loadPerson, loadTrack, loadWatched, MAX_POSTER_LOOKUPS, settle, traktUserExists, TTL } from "./sources.ts"
+import { type Env, forUsers, type Get, lastfmUserExists, loadAlbum, loadArtist, loadArtistListening, loadArtistPictures, loadLastfmNow, loadMusic, lastfmError, loadPerson, loadTrack, loadWatched, MAX_POSTER_LOOKUPS, settle, traktUserExists, TTL } from "./sources.ts"
 
 /** A `get` that answers from a table by the start of the address and remembers what was asked. */
 function fake(answers: Record<string, unknown>, hits = new Set<string>()): { get: Get; asked: { url: string; ttl: number; method: string | undefined }[] } {
@@ -272,4 +272,51 @@ test("an answer of Last.fm's that is an error says so, though its status was ok,
   assert.equal(lastfmError({ track: { name: "x" } }), null)
   assert.equal(lastfmError({ error: "x", message: "y" }), null)
   for (const other of [null, "text", [], 3, undefined]) assert.equal(lastfmError(other), null)
+})
+
+test("an artist's listening: plays by year (a year over kept long, this one briefly), the month first heard, its place and share, its songs, the artists like it heard too, and a year ago today", async () => {
+  const now = Date.UTC(2026, 10, 21, 12)
+  const asked: { url: string; ttl: number }[] = []
+  // Plays in 2025 (from March) and 2026; the chart answers by the range asked.
+  const march2025 = Date.UTC(2025, 2, 10) / 1000
+  const get: Get = async (url, request) => {
+    asked.push({ url, ttl: request.ttl })
+    const query = new URL(url).searchParams
+    const method = query.get("method")
+    if (url.startsWith("https://api.spotify.com/") || url.startsWith("https://accounts.spotify.com/")) throw new Error("no Spotify")
+    if (method === "user.getinfo") return { data: { user: { playcount: "10000", registered: { unixtime: String(Date.UTC(2024, 5, 1) / 1000) } } }, hit: false }
+    if (method === "user.getweeklyartistchart") {
+      const from = Number(query.get("from"))
+      const to = Number(query.get("to"))
+      const plays = (from <= march2025 && march2025 < to ? 5 : 0) + (from >= Date.UTC(2026, 0, 1) / 1000 - 7200 ? 7 : 0)
+      return { data: { weeklyartistchart: { artist: plays === 0 ? [] : [{ name: "A-HA", playcount: String(plays), "@attr": { rank: "1" } }] } }, hit: false }
+    }
+    if (method === "user.gettopartists") return { data: { topartists: { artist: [{ name: "Sigrid", playcount: "400" }, { name: "a-ha", playcount: "310" }, { name: "Aurora", playcount: "20" }] } }, hit: false }
+    if (method === "user.gettoptracks") return { data: { toptracks: { track: [{ name: "Strangers", playcount: "50", artist: { name: "Sigrid" } }, { name: "Take On Me", playcount: "40", artist: { name: "a-ha" } }] } }, hit: false }
+    if (method === "artist.getsimilar") return { data: { similarartists: { artist: [{ name: "Morten Harket", match: "1" }, { name: "Aurora", match: "0.4" }] } }, hit: false }
+    if (method === "user.getrecenttracks") return { data: { recenttracks: { track: [{ name: "Take On Me", artist: { "#text": "a-ha" }, date: { uts: "1763700000" } }, { name: "Take On Me", artist: { "#text": "a-ha" }, date: { uts: "1763690000" } }] } }, hit: false }
+    throw new Error(`nothing for ${url}`)
+  }
+  const found = await loadArtistListening({ ...ENV, SPOTIFY_CLIENT_ID: "s", SPOTIFY_CLIENT_SECRET: "s", SPOTIFY_REFRESH_TOKEN: "r" }, get, "a-ha", now)
+  assert.deepEqual(found?.years, [{ year: 2024, plays: 0 }, { year: 2025, plays: 5 }, { year: 2026, plays: 7 }])
+  assert.deepEqual(found?.first, { year: 2025, month: 3 })
+  assert.deepEqual(found?.place, { rank: 2, plays: 310, share: 0.031 })
+  assert.deepEqual(found?.tracks?.map((track) => track.title), ["Take On Me"])
+  assert.deepEqual(found?.similar, [{ name: "Aurora", plays: 20, url: "", spotify: null }])
+  assert.deepEqual(found?.memory, { track: "Take On Me", plays: 2 })
+  const charts = asked.filter((one) => one.url.includes("getweeklyartistchart"))
+  assert.equal(charts.find((one) => one.url.includes(`from=${Date.UTC(2024, 0, 1) / 1000 - 3600}&`))?.ttl, TTL.yearDone)
+  assert.equal(charts.find((one) => one.url.includes(`from=${Date.UTC(2026, 0, 1) / 1000 - 3600}&`))?.ttl, TTL.yearLive)
+  assert.ok(charts.length <= 3 + 5)
+  assert.equal(asked.find((one) => one.url.includes("method=user.getrecenttracks"))?.ttl, TTL.memory)
+})
+
+test("an artist's listening leaves out only what failed, and asks nothing without a username", async () => {
+  const get: Get = async (url) => {
+    if (url.includes("method=user.gettopartists")) return { data: { topartists: { artist: [{ name: "a-ha", playcount: "3" }] } }, hit: false }
+    throw new Error("down")
+  }
+  const found = await loadArtistListening(ENV, get, "a-ha", Date.UTC(2026, 10, 21))
+  assert.deepEqual(found, { years: null, first: null, place: { rank: 1, plays: 3, share: null }, tracks: null, similar: [], memory: null })
+  assert.equal(await loadArtistListening(forUsers(ENV, { lastfm: null, trakt: null }), get, "a-ha", 0), null)
 })

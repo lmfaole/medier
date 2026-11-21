@@ -3,8 +3,9 @@
  * is quick and the sources are asked little. Pure: the asking is done by the `get` that is passed in (`runtime.ts`), so a test hands it a fake one.
  */
 
-import { type AlbumInfo, albumInfoUrl, type ArtistAlbum, type ArtistInfo, artistInfoUrl, artistTopAlbumsUrl, type Music, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopAlbums, parseTopArtists, parseTrackInfo, type TrackInfo, trackInfoUrl } from "./lastfm.ts"
+import { type AlbumInfo, albumInfoUrl, allTimeArtistsUrl, allTimeTracksUrl, artistChartUrl, type ArtistAlbum, type ArtistInfo, artistInfoUrl, artistTopAlbumsUrl, type Music, parseAlbumInfo, parseArtistChart, parseArtistInfo, parseRecentPage, parseRecentTracks, parseSimilarArtists, parseTopAlbums, parseTopArtists, parseTopTracks, parseTrackInfo, parseUserInfo, playsInRangeUrl, similarArtistsUrl, type TopTrack, type TrackInfo, trackInfoUrl, userInfoUrl } from "./lastfm.ts"
 import { realAlbums } from "./albums.ts"
+import { firstWith, monthRanges, mostPlayedOf, placeAmong, playsIn, similarHeard, tracksBy, yearAgoToday, yearRanges } from "./artist-listening.ts"
 import { parseStudioAlbums, releaseGroupsUrl } from "./musicbrainz.ts"
 import { type NowPlaying, parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl, type SpotifyAlbum, type SpotifyArtist, type SpotifyTrack } from "./spotify.ts"
 import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, type Person, personUrl, type TitleInfo } from "./tmdb.ts"
@@ -37,7 +38,7 @@ export interface Request {
 export type Get = (url: string, request: Request) => Promise<{ data: unknown; hit: boolean }>
 
 /** How long each kind of answer is kept, in seconds. A poster does not change; what is playing now does, quickly. */
-export const TTL = { nowPlaying: 15, token: 3000, user: 3600, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600, artist: 24 * 3600, weekDone: 24 * 3600, weekLive: 300, firsts: 7 * 24 * 3600, length: 7 * 24 * 3600, albums: 7 * 24 * 3600 } as const
+export const TTL = { nowPlaying: 15, token: 3000, user: 3600, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600, artist: 24 * 3600, weekDone: 24 * 3600, weekLive: 300, firsts: 7 * 24 * 3600, length: 7 * 24 * 3600, albums: 7 * 24 * 3600, allTime: 6 * 3600, yearDone: 30 * 24 * 3600, yearLive: 3600, memory: 24 * 3600 } as const
 
 /** Most of a page's asks that are not kept already: a cold page must stay well under a Worker's limit on what it may ask for. */
 export const MAX_POSTER_LOOKUPS = 12
@@ -261,6 +262,76 @@ export async function loadArtistPictures(env: Env, get: Get, names: readonly str
     )
   }
   return found
+}
+
+/** The artists like one that a page shows with their pictures: no more Spotify searches than this for them. */
+export const MAX_SIMILAR = 6
+
+/** What an artist's page says of the visitor's own listening to it; each part is `null` (or empty) where it could not be had, and the page leaves its section out. */
+export interface ArtistListening {
+  /** The plays of it each year since the user started on Last.fm, oldest first. */
+  years: { year: number; plays: number }[] | null
+  /** When it was first played: the year, and the month where that could be told. */
+  first: { year: number; month: number | null } | null
+  /** Its place among all the user has played, its plays, and its share of all their plays. */
+  place: { rank: number; plays: number; share: number | null } | null
+  /** Their most played songs by it, most first. */
+  tracks: TopTrack[] | null
+  /** The artists like it that they play too, with Spotify's picture where it was found. */
+  similar: { name: string; plays: number; url: string; spotify: SpotifyArtist | null }[]
+  /** Its song they played most a year ago today, and how many times. */
+  memory: { track: string; plays: number } | null
+}
+
+/** The plays of an artist each year (one chart a year, kept for a month once the year is over), and the month it was first played in (four charts more, the first year halved and halved again). */
+async function artistYears(base: string, get: Get, name: string, nowMs: number): Promise<{ years: ArtistListening["years"]; first: ArtistListening["first"] }> {
+  const user = parseUserInfo((await get(userInfoUrl(base), { ttl: TTL.user })).data)
+  if (user.registered === null) return { years: null, first: null }
+  const ranges = yearRanges(user.registered, nowMs)
+  const ttl = (end: number): number => (end * 1000 <= nowMs ? TTL.yearDone : TTL.yearLive)
+  const chart = (start: number, end: number): Promise<number | null> => settle(get(artistChartUrl(base, start, end), { ttl: ttl(end) })).then((answer) => (answer === null ? null : playsIn(parseArtistChart(answer.data), name)))
+  const plays: (number | null)[] = []
+  // A few at a time: Last.fm refuses an IP that asks too fast.
+  for (let start = 0; start < ranges.length; start += 3) plays.push(...(await Promise.all(ranges.slice(start, start + 3).map((range) => chart(range.start, range.end)))))
+  if (plays.some((one) => one === null)) return { years: null, first: null }
+  const years = ranges.map((range, index) => ({ year: range.year, plays: plays[index] ?? 0 }))
+  const firstYear = years.find((one) => one.plays > 0)?.year
+  if (firstYear === undefined) return { years, first: null }
+  const months = monthRanges(firstYear)
+  const month = await firstWith(months.length, async (from, to) => {
+    const found = await chart(months[from]?.start ?? 0, months[to]?.end ?? 0)
+    return found === null ? null : found > 0
+  })
+  return { years, first: { year: firstYear, month: month === null ? null : month + 1 } }
+}
+
+/**
+ * The visitor's own listening to an artist, from Last.fm: the plays year by year and when it was first played, its place among all they have played (their first thousand artists and songs of all
+ * time, one answer each shared by every artist's page), the artists like it that they play too (with at most `MAX_SIMILAR` pictures from Spotify), and what they played of it a year ago today
+ * (kept for the day). Each part is asked at the same time as the others and leaves out only itself when it fails.
+ */
+export async function loadArtistListening(env: Env, get: Get, name: string, nowMs: number): Promise<ArtistListening | null> {
+  const base = lastfmBase(env)
+  if (base === null) return null
+  const day = yearAgoToday(nowMs)
+  const [timeline, user, artists, tracks, similar, memory] = await Promise.all([
+    settle(artistYears(base, get, name, nowMs)),
+    settle(get(userInfoUrl(base), { ttl: TTL.user })).then((answer) => (answer === null ? null : parseUserInfo(answer.data))),
+    settle(get(allTimeArtistsUrl(base), { ttl: TTL.allTime })).then((answer) => (answer === null ? null : parseTopArtists(answer.data))),
+    settle(get(allTimeTracksUrl(base), { ttl: TTL.allTime })).then((answer) => (answer === null ? null : tracksBy(parseTopTracks(answer.data), name))),
+    settle(get(similarArtistsUrl(base, name), { ttl: TTL.artist })).then((answer) => (answer === null ? [] : parseSimilarArtists(answer.data))),
+    settle(get(playsInRangeUrl(base, day.start, day.end, 1), { ttl: TTL.memory })).then((answer) => (answer === null ? null : mostPlayedOf(parseRecentPage(answer.data).plays, name))),
+  ])
+  const heard = artists === null ? [] : similarHeard(similar, artists, name, MAX_SIMILAR)
+  const pictures = heard.length === 0 ? new Map<string, SpotifyArtist>() : await loadArtistPictures(env, get, heard.map((one) => one.name)).catch(() => new Map<string, SpotifyArtist>())
+  return {
+    years: timeline?.years ?? null,
+    first: timeline?.first ?? null,
+    place: artists === null ? null : placeAmong(artists, name, user?.plays ?? null),
+    tracks,
+    similar: heard.map((one) => ({ ...one, spotify: pictures.get(one.name) ?? null })),
+    memory,
+  }
 }
 
 /** What a page shows when a source is down: the others still show. */

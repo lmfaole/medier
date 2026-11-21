@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { albumInfoUrl, artistChartUrl, artistInfoUrl, parseArtistChart, parseRecentPage, parseTopAlbums, artistTopAlbumsUrl, playsInRangeUrl, firstSentences, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopArtists, parseTrackInfo, trackInfoUrl } from "./lastfm.ts"
+import { albumInfoUrl, artistChartUrl, artistInfoUrl, parseArtistChart, parseRecentPage, parseTopAlbums, artistTopAlbumsUrl, playsInRangeUrl, firstSentences, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopArtists, parseTrackInfo, trackInfoUrl, parseUserInfo, parseTopTracks, parseSimilarArtists, similarArtistsUrl, allTimeTracksUrl } from "./lastfm.ts"
 
 test("recent tracks: a played one has its time, the one playing now has none, an empty cover is null and a broken row is left out", () => {
   const plays = parseRecentTracks({
@@ -128,4 +128,22 @@ test("an artist's albums: most played first, with no nameless ones, no repeats, 
 
 test("the address of an artist's albums names the artist, escaped", () => {
   assert.equal(artistTopAlbumsUrl("https://x/?k=1", "Years & Years"), "https://x/?k=1&method=artist.gettopalbums&autocorrect=1&artist=Years%20%26%20Years&limit=50")
+})
+
+test("the user: when they started and how many plays they have; what is not said is null", () => {
+  assert.deepEqual(parseUserInfo({ user: { name: "ola", playcount: "123456", registered: { unixtime: "1300000000", "#text": 1300000000 } } }), { registered: 1300000000, plays: 123456 })
+  assert.deepEqual(parseUserInfo({ user: { registered: { "#text": 1300000000 } } }), { registered: 1300000000, plays: null })
+  assert.deepEqual(parseUserInfo({ error: 6 }), { registered: null, plays: null })
+})
+
+test("the user's top songs of all time, with the artist as a name or as text, and a broken row left out; the address asks for a thousand", () => {
+  const tracks = parseTopTracks({ toptracks: { track: [{ name: "Take On Me", playcount: "40", url: "u", artist: { name: "a-ha", url: "a" } }, { name: "Strangers", playcount: "3", artist: { "#text": "Sigrid" } }, { name: "", playcount: "9", artist: { name: "X" } }, { name: "Zero", playcount: "0", artist: { name: "X" } }] } })
+  assert.deepEqual(tracks, [{ title: "Take On Me", artist: "a-ha", plays: 40, url: "u" }, { title: "Strangers", artist: "Sigrid", plays: 3, url: "" }])
+  assert.ok(allTimeTracksUrl("B").includes("period=overall") && allTimeTracksUrl("B").includes("limit=1000"))
+})
+
+test("artists like one, with how alike, a single one as Last.fm writes it alone, and the name encoded in the address", () => {
+  assert.deepEqual(parseSimilarArtists({ similarartists: { artist: [{ name: "Aurora", match: "0.81", url: "u" }, { name: "" }] } }), [{ name: "Aurora", match: 0.81, url: "u" }])
+  assert.deepEqual(parseSimilarArtists({ similarartists: { artist: { name: "Sigrid", match: "x" } } }), [{ name: "Sigrid", match: 0, url: "" }])
+  assert.ok(similarArtistsUrl("B", "Kings of Convenience").includes("method=artist.getsimilar&autocorrect=1&artist=Kings%20of%20Convenience&limit=50"))
 })
