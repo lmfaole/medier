@@ -17,7 +17,6 @@ import { type Person, profileSources } from "../lib/tmdb.ts"
 import { episodesCode } from "../lib/trakt.ts"
 import { ageOn, lengthText, longDay, releaseText } from "../lib/days.ts"
 import { shortWhen } from "../lib/when.ts"
-import { FromSpotify } from "./credits.tsx"
 import { PlayRows } from "./sections.tsx"
 
 /** A big count in few characters: «5,1 mill.» from a million, the whole number («320 000») below. */
@@ -239,7 +238,6 @@ export function AlbumDetail({ page, base, info, played }: { page: AlbumPage; bas
   const { lastfm, spotify } = info
   const released = spotify?.released == null ? null : releaseText(spotify.released)
   const tracks = lastfm?.tracks ?? []
-  const fromSpotify = released !== null || spotify?.tracks != null
   const rail = (
     <Stack gap="lg">
       <FactList
@@ -253,7 +251,6 @@ export function AlbumDetail({ page, base, info, played }: { page: AlbumPage; bas
           ["Blant de siste avspillingene", count(page.plays.length, "gang", "ganger")],
         ]}
       />
-      {fromSpotify ? <FromSpotify /> : null}
     </Stack>
   )
   return (

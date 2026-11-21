@@ -8,7 +8,7 @@ Hva du hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaol
 - **Whose data.** The visitor's own: they give their Last.fm and Trakt usernames in a form (the design system's `UsernameForm`, in `src/components/UsernameGate.astro`, posted to `src/pages/api/brukernavn.ts`, no JS needed), which checks each with its
   service (Last.fm's `user.getinfo`; Trakt's profile, which must be public) and keeps it in a cookie for a year (`lastfm_user`, `trakt_user`; path `/`, `SameSite=Lax`, `Secure`, `HttpOnly`). An empty field forgets it.
   Without a username a page shows the form instead of data: Musikk and its pages (its Historikk and Wrapped too) need Last.fm, Film and TV and theirs Trakt, and the front page shows what has a username and asks for the rest.
-  «Viser data for … · Bytt» at the foot of every page leads to Innstillinger › Kontoer (`/brukernavn/` is a redirect there now).
+  Whose data it is is shown only under Innstillinger › Kontoer, not on every page (`/brukernavn/` is a redirect there now).
 - **The first run.** A first visit opens a full-screen wizard over whatever page it landed on (the design system's `FirstRun`, in `src/components/FirstRunWizard.astro` and `src/components/settings-fields.tsx`):
   welcome · Last.fm · Trakt · the front page's sections · theme · effects · tilt · install, one question a step. The effects and the tilt are chosen by their live examples
   (`ChoiceCards` with `EffectsPreview`/`TiltPreview` as the cards, one island each, `src/components/effect-choices.tsx`). It is drawn open by the server (no flash) until `first-run@1` is in `seen`, and works without JS
@@ -32,10 +32,10 @@ Hva du hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaol
   picture is worse than none), the tags, the listeners and the start of the text from Last.fm, and the top-artist lists have the pictures too. A film's or a show's page has the plot (in
   Norwegian where TMDB has it), genres, length or seasons and TMDB's vote, from the same answer as the poster. An album and a track have pages too, `/musikk/album/<artist>--<album>/` and `/musikk/spor/<artist>--<track>/`, for what is among the recent plays (like an artist): the artist, the album or the track, how long it is, the tags,
   how many listen and how many times it has been played in all (Last.fm), the tracks of an album in order (those that have been played link to their page), and from Spotify, found by name and artist, the day it came out, the
-  number of tracks and the link (with Spotify's mark where its day and count are shown). Every song in a list links to its page and its album to the album's. A title's page also names who played in it (the first twelve, each with the part) and who made it (directing, writing, music, photography, and for a show who created it), from the same TMDB answer
+  number of tracks and the link. Every song in a list links to its page and its album to the album's. A title's page also names who played in it (the first twelve, each with the part) and who made it (directing, writing, music, photography, and for a show who created it), from the same TMDB answer
   (`append_to_response=credits`); each person has a page of their own, `/personer/<TMDB id>-<name>/`, with their picture, dates and life story from TMDB (in Norwegian where TMDB has it) and the films and
-  shows seen that they are named in. A person has a page only while a title seen names them. Spotify content is attributed to Spotify (their mark, 28 px, one colour) and
-  links back to it; TMDB's statement is at the foot of every page. Everything is kept for a day at most (a poster and a title's facts for a month) and nothing is stored.
+  shows seen that they are named in. A person has a page only while a title seen names them. Spotify content links back to Spotify; its mark (small, one colour), what each source gives and
+  TMDB's statement are under «Kilder» at the foot of Innstillinger, not on every page (a page only says it when a source did not answer). Everything is kept for a day at most (a poster and a title's facts for a month) and nothing is stored.
 - There is no database and nothing is committed as data. `src/lib/` reads the APIs' answers (pure, with tests); `src/components/` and `src/pages/` show them.
 - A Worker on the lmfaole.party zone cannot reach origins outside Cloudflare (every such fetch ends in 525), so the site asks through a small relay, `upstream/` (`medier-upstream` on
   workers.dev): only those four hosts, only GET (and Spotify's token), only with a key the site and the relay share.

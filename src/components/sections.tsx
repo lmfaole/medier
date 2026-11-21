@@ -2,18 +2,16 @@ import { EmptyState } from "@lmfaole/designsystem/components/empty-state"
 import { details, PictureRows } from "@lmfaole/designsystem/components/picture-rows"
 import { ExternalLink } from "@lmfaole/designsystem/components/external-link"
 import { NowPlayingCard } from "@lmfaole/designsystem/components/now-playing-card"
-import { Stack } from "@lmfaole/designsystem/components/layout"
 import { Text, TextLink } from "@lmfaole/designsystem/components/text"
 
 import type { Play, TopArtist } from "../lib/lastfm.ts"
 import type { Playing } from "../lib/now.ts"
 import type { SpotifyArtist } from "../lib/spotify.ts"
-import { FromSpotify } from "./credits.tsx"
 import { sourcesOf } from "../lib/image-sources.ts"
 import { SHAPES } from "../lib/shapes.ts"
 import { albumHref, artistHref, titleHref, titlePages, trackHref } from "../lib/pages.ts"
 import { episodesCode, groupViewings, type Viewing, type Watch } from "../lib/trakt.ts"
-import { shortWhen, when } from "../lib/when.ts"
+import { shortWhen } from "../lib/when.ts"
 
 /**
  * The plays, newest first, each with its cover; the artist links to the artist's page here (`artistLinks` off on that page itself). `now` is the song playing this
@@ -75,14 +73,7 @@ export function TopArtistRows({ artists, base, pictures }: { artists: readonly T
       })}
     />
   )
-  return pictures.size === 0 ? (
-    list
-  ) : (
-    <Stack gap="md">
-      {list}
-      <FromSpotify />
-    </Stack>
-  )
+  return list
 }
 
 /** The films (`kind` film) or the episodes (`kind` episode), newest first, each with its poster and a link to its page here: the film's, or the show's. */
@@ -138,8 +129,8 @@ function viewingDetail(viewing: Viewing): (string | number | null)[] {
   return [episodesCode(viewing.episodes), only === undefined || only.title === "" ? null : only.title]
 }
 
-/** «Hentet fra Last.fm 19. nov. 2026, 14:05.», or that the source did not answer, for each source in one line. */
+/** «Last.fm svarte ikke.» for each source that did not answer, and nothing when all did: where the data comes from and how fresh it is is said once, under «Innstillinger» (`Credits`). */
 export function Fetched({ sources }: { sources: readonly { at: string | null; source: string }[] }) {
-  const parts = sources.map(({ at, source }) => (at === null ? `${source} svarte ikke.` : `Hentet fra ${source} ${when(at)}.`))
-  return <Text size="sm" tone="muted">{parts.join(" ")}</Text>
+  const failed = sources.filter(({ at }) => at === null).map(({ source }) => `${source} svarte ikke.`)
+  return failed.length === 0 ? null : <Text size="sm" tone="muted">{failed.join(" ")}</Text>
 }

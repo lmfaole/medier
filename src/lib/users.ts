@@ -112,12 +112,4 @@ export function usernameFields(services: readonly Service[], users: Users, error
   })
 }
 
-/** The usernames the visitor has given, in words for the chip: one name where both are the same, else each with its service. */
-export function usersText(users: Users): string | null {
-  if (users.lastfm !== null && users.trakt !== null) return users.lastfm.toLowerCase() === users.trakt.toLowerCase() ? users.lastfm : `${users.lastfm} (Last.fm) og ${users.trakt} (Trakt)`
-  if (users.lastfm !== null) return `${users.lastfm} (Last.fm)`
-  if (users.trakt !== null) return `${users.trakt} (Trakt)`
-  return null
-}
-
 export const FORM_BODY = "Vi viser bare det som er offentlig på profilen. Brukernavnet lagres i en informasjonskapsel i denne nettleseren."

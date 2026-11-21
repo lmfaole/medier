@@ -20,7 +20,6 @@ import { WEEKDAY_NAMES } from "../lib/weeks.ts"
 import { hourText, rankChange, longLength, playsChange, signed, type TopArtist, type WatchStats, type WeekStats } from "../lib/wrapped.ts"
 import type { ReactNode } from "react"
 
-import { FromSpotify } from "./credits.tsx"
 
 /** What has a page of its own to link to: the slugs of the artists, albums and songs among the recent plays, and the address of each title among the films and shows seen. */
 export interface Linkable {
@@ -79,7 +78,7 @@ function ArtistRows({ artists, pictures, linked, base }: { artists: readonly Top
       })}
     />
   )
-  return pictures.size === 0 ? list : <Stack gap="md">{list}<FromSpotify /></Stack>
+  return list
 }
 
 /** The top artists, a section of its own: its pictures come from Spotify, which a page may ask for only as far as its limit goes, so the page puts this in a server island (`TopArtists.astro`) that has a budget of its own. */

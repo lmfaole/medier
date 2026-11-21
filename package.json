@@ -22,7 +22,7 @@
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.9",
     "@astrojs/react": "^7.1.2",
-    "@lmfaole/designsystem": "github:lmfaole/designsystem#125b621906e7b5818529c7ff1d39a93e12742d9b",
+    "@lmfaole/designsystem": "github:lmfaole/designsystem#9fb27623435ee2520fab454658fa01780fffe5ff",
     "@tailwindcss/vite": "^4.3.5",
     "astro": "^7.4.5",
     "react": "^19.2.8",

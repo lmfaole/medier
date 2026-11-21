@@ -19,7 +19,7 @@ const info = page === undefined ? null : await artist(users, page.name)
   <NeedsUsername medium="music" />
 ) : (
 <Page bare current="music" width="pane" title={page.name} lead="Artist" crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.name, href: `${base}musikk/${page.slug}/` }]}>
-  <Head client:idle kind="Artist" title={page.name} sources={info.spotify?.images ?? []} shape="artist" fromSpotify={info.spotify !== null && info.spotify.images.length > 0} />
+  <Head client:idle kind="Artist" title={page.name} sources={info.spotify?.images ?? []} shape="artist" />
   <ArtistDetail page={page} base={base} info={info} />
 </Page>
 )}
