@@ -46,7 +46,7 @@ Hva du hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaol
 
 ## Music and film, apart
 
-Music (Last.fm), films and TV (both Trakt: the films, and the shows' episodes) are kept apart: each has its overview, its own Historikk and its own Wrapped, under its own address (`src/lib/media.ts`), reached from the overview's cards (`SubPages`), never from the bar.
+Music (Last.fm), films and TV (both Trakt: the films, and the shows' episodes) are kept apart: each has its overview, its own Historikk and its own Wrapped, under its own address (`src/lib/media.ts`), reached from the foot of the section each continues (`PageSection continues`: «Siste avspillinger» is a card ending in «Se hele lyttehistorikken», «Mest spilt siste måned» in «Se månedens Wrapped», and on Film a «Denne måneden» card of the month's numbers leads to its Wrapped), never from the bar. The front page's sections lead on to each history, and «Mest spilt» to the music's Wrapped.
 
 | | Musikk | Film | TV |
 | --- | --- | --- | --- |
@@ -76,7 +76,7 @@ The page of an artist lists its most played albums (`artist.gettopalbums`, one c
 
 The head of a week's or a month's page is the same composed head as a detail page's (`Head`, the page `bare`): the most played album of the stretch leads it, its cover as the picture and its colours as the stage (WebGL, moving with the light), with the stretch and the album named under the title. The front page's card of what plays now stands on a stage of the cover's colours too, and when the song changes the colours go over to the new cover's in one move.
 
-**Wrapped** (the card on Musikk) opens the last week that is over, `/musikk/uke/<year>-<week>/` (ISO weeks, Monday to Sunday in Oslo time, `src/lib/weeks.ts`); this week so far and the twelve before it are listed on the page.
+**Wrapped** (`/musikk/uke/`, and the month's `/musikk/maned/`, which the overviews' cards open on this month so far) opens the last week that is over, `/musikk/uke/<year>-<week>/` (ISO weeks, Monday to Sunday in Oslo time, `src/lib/weeks.ts`); this week so far and the twelve before it are listed on the page.
 Only numbers and lists: **Tall** (plays, how many different artists and songs, listening time, the busiest day and hour, the shape of the days), **top artists, albums and songs** in the shapes of what they are, with how each artist's place
 moved since the week before, and **new artists** (those among the ten most played that had no plays at all before the week).
 **The Wrapped of film** (`/film/uke/…`, `/film/maned/…`, `FilmPeriod` in `src/components/wrapped.tsx`) has the same head (the latest film's poster), the films, the time watched (a guess: the runtime, 110 minutes where TMDB has none), the busiest day and the shape of the week (a month: films per day), the films, and the genres and directors most watched (TMDB's, where it has been asked for the film).

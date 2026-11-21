@@ -2,8 +2,8 @@
 import Intro from '../../components/Intro.astro'
 import { INTROS } from '../../lib/onboarding'
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
-import { SubPages } from '@lmfaole/designsystem/components/sub-pages'
 import { mediumHref } from '../../lib/media'
+import { monthAt } from '../../lib/months'
 
 import { Fetched, PlayRows, TopArtistRows } from '../../components/sections'
 import UsernameGate from '../../components/UsernameGate.astro'
@@ -24,13 +24,11 @@ const now = playingNow(listening?.now ?? null)
     ) : (
       <>
         <Intro intro={INTROS.musikk} />
-        <PageSection id="siste" title="Siste avspillinger">
+        <PageSection id="siste" title="Siste avspillinger" continues={{ href: mediumHref(base, 'music', 'historikk/'), label: 'Se hele lyttehistorikken' }}>
           <PlayRows plays={listening?.recent ?? []} now={now} base={base} />
-          <SubPages label="Mer om avspillingene" pages={[{ href: mediumHref(base, 'music', 'historikk/'), label: 'Historikk', icon: 'history', description: 'Alt du har hørt på, dag for dag, og hvor lenge du lyttet.' }]} />
         </PageSection>
-        <PageSection id="artister" title="Mest spilt siste måned">
+        <PageSection id="artister" title="Mest spilt siste måned" continues={{ href: mediumHref(base, 'music', 'maned/', monthAt(Date.now()).id), label: 'Se månedens Wrapped' }}>
           <TopArtistRows artists={listening?.topArtists ?? []} base={base} pictures={pictures} />
-          <SubPages label="Mer om det du spiller mest" pages={[{ href: mediumHref(base, 'music', 'uke/'), label: 'Wrapped', icon: 'calendar', description: 'Oppsummeringen av hver uke og måned: toppartister, album, låter og tall.' }]} />
         </PageSection>
         <Fetched sources={[{ at: listening?.at ?? null, source: 'Last.fm' }]} />
       </>

@@ -6,9 +6,9 @@ import { orderSections, parsePrefs, PREFS_COOKIE } from '@lmfaole/designsystem/l
 import { SEEN_PATH } from '../lib/onboarding'
 import { FRONT_SECTION_IDS, frontSections, type FrontSection } from '../lib/settings-form'
 import { mediumHref } from '../lib/media'
+import { monthAt } from '../lib/months'
 import { firstRunOpen } from '../lib/visitor-cookies'
 import { PageSection } from '@lmfaole/designsystem/components/page-section'
-import { SubPages } from '@lmfaole/designsystem/components/sub-pages'
 
 import { NowPlayingLive } from '../components/now-playing-live'
 import { Fetched, PlayRows, TopArtistRows, WatchRows } from '../components/sections'
@@ -50,24 +50,20 @@ const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, 
       ) : !shown.includes(id) ? null : id === 'na' ? (
         <NowPlayingLive client:load initial={now} endpoint={`${base}api/now/`} />
       ) : id === 'musikk' ? (
-        <PageSection id="musikk" title="Musikk" icon="music" more={{ href: `${base}musikk/`, label: 'Se all musikk' }}>
+        <PageSection id="musikk" title="Musikk" icon="music" continues={{ href: mediumHref(base, 'music', 'historikk/'), label: 'Se hele lyttehistorikken' }}>
           <PlayRows plays={plays} base={base} limit={5} />
-          <SubPages label="Mer om avspillingene" pages={[{ href: mediumHref(base, 'music', 'historikk/'), label: 'Lyttehistorikk', icon: 'history', description: 'Alt du har hørt på, dag for dag.' }]} />
         </PageSection>
       ) : id === 'film' ? (
-        <PageSection id="film" title="Film" icon="film" more={{ href: mediumHref(base, 'film'), label: 'Se alle filmer' }}>
+        <PageSection id="film" title="Film" icon="film" continues={{ href: mediumHref(base, 'film', 'historikk/'), label: 'Se hele filmhistorikken' }}>
           <WatchRows items={films} base={base} limit={5} kind="film" />
-          <SubPages label="Mer om filmene" pages={[{ href: mediumHref(base, 'film', 'historikk/'), label: 'Filmhistorikk', icon: 'history', description: 'Alle filmene du har sett, dag for dag.' }]} />
         </PageSection>
       ) : id === 'tv' ? (
-        <PageSection id="tv" title="TV" icon="tv" more={{ href: mediumHref(base, 'tv'), label: 'Se all TV' }}>
+        <PageSection id="tv" title="TV" icon="tv" continues={{ href: mediumHref(base, 'tv', 'historikk/'), label: 'Se hele TV-historikken' }}>
           <WatchRows items={episodes} base={base} limit={5} kind="episode" />
-          <SubPages label="Mer om episodene" pages={[{ href: mediumHref(base, 'tv', 'historikk/'), label: 'TV-historikk', icon: 'history', description: 'Alle episodene du har sett, dag for dag.' }]} />
         </PageSection>
       ) : (
-        <PageSection id="artister" title="Mest spilt siste måned" icon="trend-up">
+        <PageSection id="artister" title="Mest spilt siste måned" icon="trend-up" continues={{ href: mediumHref(base, 'music', 'maned/', monthAt(Date.now()).id), label: 'Se månedens Wrapped' }}>
           <TopArtistRows artists={(listening?.topArtists ?? []).slice(0, 5)} base={base} pictures={pictures} />
-          <SubPages label="Mer om det du spiller mest" pages={[{ href: mediumHref(base, 'music', 'uke/'), label: 'Wrapped', icon: 'calendar', description: 'Oppsummeringen av uka og måneden.' }]} />
         </PageSection>
       ),
     )

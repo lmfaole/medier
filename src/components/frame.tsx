@@ -6,7 +6,7 @@ export type Place = "front" | "music" | "film" | "tv" | "settings"
 
 /**
  * The places of the app, for its `NavBar` (a bar at the foot on a phone, which scrolls sideways once they are more than fit, and a rail from tablet width): Forside, Musikk, Film, TV and, last,
- * Innstillinger (current on all its subpages). The history and the wrapped of each are under Musikk, Film and TV (`SubPages` on their overviews). `current` is the place the page is in, none for a
+ * Innstillinger (current on all its subpages). The history and the wrapped of each are under Musikk, Film and TV (the foot of the section card each continues, `PageSection continues`). `current` is the place the page is in, none for a
  * page that is in none.
  */
 export function navItems(base: string, current: Place | undefined): NavItem[] {
