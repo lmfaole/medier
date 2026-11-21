@@ -1,0 +1,18 @@
+---
+// A server island: who made the album, its other editions and its place among the artist's albums are MusicBrainz's, up to three asks a second apart (each kept for a month).
+import { albumRelease, usersOf } from '../lib/runtime'
+import { AlbumRelease } from './detail'
+
+interface Props {
+  artist: string
+  title: string
+  base: string
+  /** The artist's albums that have a page here: by `albumKey`, the title each was played under. */
+  linked: [string, string][]
+}
+
+const { artist, title, base, linked } = Astro.props
+const release = await albumRelease(usersOf(Astro.cookies), artist, title, true)
+---
+
+{release !== null && <AlbumRelease release={release} artist={artist} base={base} linked={new Map(linked)} />}

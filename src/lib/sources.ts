@@ -7,6 +7,8 @@ import { type AlbumInfo, albumInfoUrl, allTimeArtistsUrl, allTimeTracksUrl, arti
 import { albumShelf, type ShelfAlbum } from "./albums.ts"
 import { listeningPeriods, type PeriodUnit, placeAmong, playsIn, similarHeard, tracksBy } from "./artist-listening.ts"
 import { parseStudioAlbums, releaseGroupsUrl } from "./musicbrainz.ts"
+import { albumChartUrl, albumPlaysIn, parseAlbumChart } from "./album-listening.ts"
+import { type Credits, discographyPlace, type DiscographyPlace, type Edition, firstRelease, groupReleasesUrl, otherEditions, parseCredits, parseReleaseGroupMatch, parseReleases, type Release, releaseCreditsUrl, releaseGroupSearchUrl, studioIndex } from "./musicbrainz-release.ts"
 import { type ArtistLink, artistUrlsUrl, type LatestRelease, latestReleasesUrl, parseArtistUrls, parseLatestRelease, parseWikipedia, wikipediaLinksUrl, withWikipedia } from "./musicbrainz-artist.ts"
 import { type NowPlaying, parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl, type SpotifyAlbum, type SpotifyArtist, type SpotifyTrack } from "./spotify.ts"
 import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, type Person, personUrl, type TitleInfo } from "./tmdb.ts"
@@ -39,7 +41,7 @@ export interface Request {
 export type Get = (url: string, request: Request) => Promise<{ data: unknown; hit: boolean }>
 
 /** How long each kind of answer is kept, in seconds. A poster does not change; what is playing now does, quickly. */
-export const TTL = { nowPlaying: 15, token: 3000, user: 3600, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600, artist: 24 * 3600, weekDone: 24 * 3600, weekLive: 300, firsts: 7 * 24 * 3600, length: 7 * 24 * 3600, albums: 7 * 24 * 3600, allTime: 6 * 3600, periodDone: 30 * 24 * 3600, periodLive: 3600 } as const
+export const TTL = { nowPlaying: 15, token: 3000, user: 3600, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600, artist: 24 * 3600, weekDone: 24 * 3600, weekLive: 300, firsts: 7 * 24 * 3600, length: 7 * 24 * 3600, albums: 7 * 24 * 3600, allTime: 6 * 3600, periodDone: 30 * 24 * 3600, periodLive: 3600, release: 30 * 24 * 3600 } as const
 
 /** Most of a page's asks that are not kept already: a cold page must stay well under a Worker's limit on what it may ask for. */
 export const MAX_POSTER_LOOKUPS = 12
@@ -260,13 +262,84 @@ export async function loadTrack(env: Env, get: Get, artist: string, track: strin
   return { lastfm, spotify }
 }
 
-/** An album's page: Last.fm's tags, listeners, tracks and the owner's own count, and Spotify's link, day and number of tracks. */
-export async function loadAlbum(env: Env, get: Get, artist: string, album: string): Promise<{ lastfm: AlbumInfo | null; spotify: SpotifyAlbum | null }> {
-  const [lastfm, spotify] = await Promise.all([
+/**
+ * An album's page: Last.fm's tags, listeners, tracks and the owner's own count, Spotify's link, day and number of tracks, and the owner's most played songs by the artist (their first thousand
+ * of all time, the one answer every artist's page shares), from which each track's plays are read (`trackPlays`).
+ */
+export async function loadAlbum(env: Env, get: Get, artist: string, album: string): Promise<{ lastfm: AlbumInfo | null; spotify: SpotifyAlbum | null; top: TopTrack[] | null }> {
+  const base = lastfmBase(env)
+  const [lastfm, spotify, top] = await Promise.all([
     lastfmInfo(env, get, (base, user) => albumInfoUrl(base, artist, album, user), parseAlbumInfo),
     spotifyFound(env, get, searchAlbumUrl(album, artist), (answer) => parseAlbumMatch(answer, album, artist)),
+    base === null ? null : settle(get(allTimeTracksUrl(base), { ttl: TTL.allTime })).then((answer) => (answer === null ? null : tracksBy(parseTopTracks(answer.data), artist, Number.POSITIVE_INFINITY))),
   ])
-  return { lastfm, spotify }
+  return { lastfm, spotify, top }
+}
+
+/**
+ * The plays of an album in each stretch since the user started (`listeningPeriods`, as an artist's), one weekly album chart each, so every album's page shares them; a stretch that is over is kept
+ * for a month, the one now for an hour. `null` where Last.fm is not set up or a chart could not be had.
+ */
+export async function loadAlbumTimeline(env: Env, get: Get, artist: string, title: string, nowMs: number): Promise<ArtistListening["timeline"]> {
+  const base = lastfmBase(env)
+  if (base === null) return null
+  const user = parseUserInfo((await get(userInfoUrl(base), { ttl: TTL.user })).data)
+  if (user.registered === null) return null
+  const { unit, periods } = listeningPeriods(user.registered, nowMs)
+  const ttl = (end: number): number => (end * 1000 <= nowMs ? TTL.periodDone : TTL.periodLive)
+  const chart = (start: number, end: number): Promise<number | null> => settle(get(albumChartUrl(base, start, end), { ttl: ttl(end) })).then((answer) => (answer === null ? null : albumPlaysIn(parseAlbumChart(answer.data), artist, title)))
+  const plays: (number | null)[] = []
+  // A few at a time: Last.fm refuses an IP that asks too fast.
+  for (let start = 0; start < periods.length; start += 3) plays.push(...(await Promise.all(periods.slice(start, start + 3).map((period) => chart(period.start, period.end)))))
+  if (plays.some((one) => one === null)) return null
+  return { unit, series: periods.map((period, index) => ({ label: period.label, long: period.long, plays: plays[index] ?? 0 })) }
+}
+
+/** What MusicBrainz says of an album: its first official release (label, country), its other editions, its credits and its place among the artist's albums; each is empty where it is not known. */
+export interface AlbumRelease {
+  /** The release group, for the link to it on MusicBrainz. */
+  group: string
+  first: Release | null
+  editions: Edition[]
+  credits: Credits | null
+  place: DiscographyPlace | null
+}
+
+/** How long to wait between two asks of MusicBrainz that were not kept: it allows one a second. */
+const MUSICBRAINZ_PAUSE = 1100
+
+/**
+ * An album on MusicBrainz, in at most three asks of it, each kept for a month (a release changes seldom): its release group (from the artist's albums, the answer the artist's page has asked for
+ * and kept, by the id Last.fm gives the artist; else a search by the title), the group's releases, and, with `credits`, the credits of the first. The asks are one after the other, a second apart
+ * where they were not kept, and one that is refused (too many at once) is asked once more. `null` where MusicBrainz does not know the album or did not answer.
+ */
+export async function loadAlbumRelease(env: Env, get: Get, artist: string, title: string, options: { credits: boolean; pause: (ms: number) => Promise<void> }): Promise<AlbumRelease | null> {
+  let asked = false
+  const musicbrainz = async (url: string, ttl: number): Promise<unknown> => {
+    for (let attempt = 0; ; attempt += 1) {
+      if (asked) await options.pause(MUSICBRAINZ_PAUSE)
+      try {
+        const answer = await get(url, { ttl })
+        asked = !answer.hit
+        return answer.data
+      } catch (error) {
+        asked = true
+        if (attempt > 0) throw error
+      }
+    }
+  }
+  const mbid = await lastfmInfo(env, get, (base, user) => artistInfoUrl(base, artist, user), parseArtistInfo).then((info) => info?.mbid ?? null)
+  const studio = await settle(musicbrainz(releaseGroupsUrl(artist, mbid), TTL.albums)).then((answer) => (answer === null ? null : parseStudioAlbums(answer, artist, mbid)))
+  const index = studio === null ? null : studioIndex(studio, title)
+  const found = studio !== null && index !== null ? studio[index] : undefined
+  const searched = found === undefined ? await settle(musicbrainz(releaseGroupSearchUrl(artist, title), TTL.release)).then((answer) => (answer === null ? null : parseReleaseGroupMatch(answer, artist, title))) : null
+  const group: string | null = found?.id ?? searched?.id ?? null
+  if (group === null) return null
+  const releases = await settle(musicbrainz(groupReleasesUrl(group), TTL.release)).then((answer) => (answer === null ? null : parseReleases(answer)))
+  if (releases === null) return null
+  const first = firstRelease(releases)
+  const credits = !options.credits || first === null ? null : await settle(musicbrainz(releaseCreditsUrl(first.id), TTL.release)).then((answer) => (answer === null ? null : parseCredits(answer, artist)))
+  return { group, first, editions: otherEditions(releases, first), credits, place: studio === null ? null : discographyPlace(studio, index) }
 }
 
 /** Spotify's picture of each artist in a list, asked for in the order of the list and no more than `MAX_POSTER_LOOKUPS` that were not kept in one page (the rest come with the next pages). */

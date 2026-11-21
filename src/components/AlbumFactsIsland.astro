@@ -1,0 +1,17 @@
+---
+// A server island: the label and the country of the album's first release are MusicBrainz's, asked a second apart and kept for a month; the facts are there without them until it answers.
+import { albumRelease, usersOf } from '../lib/runtime'
+import { AlbumFacts, type AlbumFactsData } from './detail'
+
+interface Props {
+  facts: AlbumFactsData
+  artist: string
+  title: string
+  base: string
+}
+
+const { facts, artist, title, base } = Astro.props
+const release = await albumRelease(usersOf(Astro.cookies), artist, title, false)
+---
+
+<AlbumFacts facts={facts} base={base} release={release?.first ?? null} />

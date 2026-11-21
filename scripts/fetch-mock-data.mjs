@@ -1,8 +1,9 @@
 // One-off: fetches real metadata and pictures from public, keyless APIs for the made-up data of `src/lib/mock.ts` (local development only).
 //   node scripts/fetch-mock-data.mjs            metadata and pictures: writes src/lib/mock-data.json and public/mock/*
 //   node scripts/fetch-mock-data.mjs --images   only the pictures that are missing, from the addresses in the JSON (what a fresh clone runs)
+//   node scripts/fetch-mock-data.mjs --musicbrainz   only each album's releases and credits from MusicBrainz, into the JSON there is
 //   node scripts/fetch-mock-data.mjs --links   only each artist's links on (MusicBrainz's url-rels, and its Wikipedia articles from Wikidata), into the JSON there is
-// Sources: Deezer (albums, tracklists, covers, artist pictures), Wikipedia and Wikidata (texts, posters, portraits, years, birthdays).
+// Sources: Deezer (albums, tracklists, covers, artist pictures), Wikipedia and Wikidata (texts, posters, portraits, years, birthdays), MusicBrainz (editions, labels, credits).
 // The pictures are other people's artwork: they are not committed (public/mock/ is in .gitignore).
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
@@ -115,6 +116,53 @@ const slug = (text) => text.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, 
 const MUSICBRAINZ = "https://musicbrainz.org/ws/2"
 const quoted = (text) => `"${text.replace(/["\\]/g, "\\$&")}"`
 
+/**
+ * What MusicBrainz has of an album, as `mock.ts` answers it again: its official releases (editions, labels, countries) and the credits of its earliest one (producers, songwriters, musicians), by track.
+ * One ask a second, as MusicBrainz wants. `null` where it does not know the album.
+ */
+async function musicbrainzOf(artist, title) {
+  const ask = async (path) => {
+    await sleep(1100)
+    return json(`${MUSICBRAINZ}${path}`)
+  }
+  const plainTitle = title.replace(/\s*[([].*$|\s+-\s+.*$/, "")
+  let group = null
+  for (const wanted of [...new Set([title, plainTitle])]) {
+    const found = await ask(`/release-group?fmt=json&limit=5&query=${encodeURIComponent(`releasegroup:${quoted(wanted)} AND artist:${quoted(artist)}`)}`)
+    group = found?.["release-groups"]?.find((one) => one.title.toLowerCase() === wanted.toLowerCase()) ?? found?.["release-groups"]?.[0] ?? null
+    if (group !== null) break
+  }
+  if (group === null) return null
+  const releases = ((await ask(`/release?release-group=${group.id}&inc=labels+media&fmt=json&limit=100`))?.releases ?? []).map((one) => ({
+    title: one.title,
+    status: one.status ?? null,
+    date: one.date ?? "",
+    country: one.country ?? null,
+    disambiguation: one.disambiguation ?? "",
+    labels: [...new Set((one["label-info"] ?? []).map((info) => info.label?.name).filter((name) => typeof name === "string"))],
+    formats: (one.media ?? []).map((medium) => medium.format ?? null),
+    id: one.id,
+  }))
+  const sortable = (date) => (date === "" ? "9999" : date.padEnd(10, "-99"))
+  const first = releases.filter((one) => one.status === "Official").sort((a, b) => sortable(a.date).localeCompare(sortable(b.date)))[0]
+  const credits = []
+  if (first !== undefined) {
+    const release = await ask(`/release/${first.id}?inc=artist-credits+labels+recordings+artist-rels+recording-level-rels+work-rels+work-level-rels&fmt=json`)
+    const add = (level, track, relation) => {
+      if (relation["target-type"] !== "artist" || typeof relation.artist?.name !== "string") return
+      credits.push({ level, track, type: relation.type, attributes: relation.attributes ?? [], name: relation.artist.name })
+    }
+    for (const relation of release?.relations ?? []) add("release", null, relation)
+    for (const [track, item] of (release?.media ?? []).flatMap((medium) => medium.tracks ?? []).entries()) {
+      for (const relation of item.recording?.relations ?? []) {
+        add("recording", track, relation)
+        if (relation["target-type"] === "work") for (const inner of relation.work?.relations ?? []) add("work", track, inner)
+      }
+    }
+  }
+  return { title: group.title, releases: releases.slice(0, 40).map(({ id: _id, ...rest }) => rest), firstRelease: first === undefined ? null : releases.indexOf(first), credits }
+}
+
 /** The kinds of MusicBrainz url-rels `musicbrainz-artist.ts` shows, and Wikidata's item of the artist with its Wikipedia articles in bokmål, nynorsk and English (by language, where it has one). */
 const LINK_TYPES = new Set(["official homepage", "bandcamp", "youtube", "social network", "discogs", "wikidata", "wikipedia"])
 
@@ -143,6 +191,19 @@ if (process.argv.includes("--links")) {
     artists.push({ ...rest, links, albums })
   }
   data.artists = artists
+  writeFileSync(DATA, `${JSON.stringify(data, null, 2)}\n`)
+  process.exit(0)
+}
+
+if (process.argv.includes("--musicbrainz")) {
+  const data = JSON.parse(readFileSync(DATA, "utf8"))
+  for (const artist of data.artists) {
+    for (const album of artist.albums) {
+      album.musicbrainz = await musicbrainzOf(artist.name, album.title)
+      console.log(`musicbrainz ${artist.name}: ${album.title} (${album.musicbrainz?.releases.length ?? 0} releases, ${album.musicbrainz?.credits.length ?? 0} credits)`)
+    }
+  }
+  data.generated = new Date().toISOString()
   writeFileSync(DATA, `${JSON.stringify(data, null, 2)}\n`)
   process.exit(0)
 }
@@ -176,7 +237,7 @@ for (const [artistIndex, wanted] of ARTISTS.entries()) {
     for (const genre of album.genres?.data ?? []) tags.add(genre.name)
     const file = `cover-${artistIndex}-${albumIndex}`
     const source = album.cover_big
-    albums.push({ title: album.title, year: Number(String(album.release_date).slice(0, 4)) || null, type: album.record_type === "ep" ? "EP" : album.record_type === "single" ? "Single" : "Album", cover: { file: await image(file, source), source }, tracks: (album.tracks?.data ?? []).slice(0, 14).map((track) => ({ title: track.title, seconds: track.duration })) })
+    albums.push({ title: album.title, year: Number(String(album.release_date).slice(0, 4)) || null, type: album.record_type === "ep" ? "EP" : album.record_type === "single" ? "Single" : "Album", cover: { file: await image(file, source), source }, tracks: (album.tracks?.data ?? []).slice(0, 14).map((track) => ({ title: track.title, seconds: track.duration })), musicbrainz: await musicbrainzOf(wanted.name, album.title) })
     console.log(`album ${wanted.name}: ${album.title} (${albums.at(-1).tracks.length} tracks)`)
     await sleep(300)
   }

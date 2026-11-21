@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { type Env, forUsers, type Get, lastfmUserExists, loadAlbum, loadArtist, loadArtistLinks, loadArtistListening, loadArtistPictures, loadLastfmNow, loadLatestRelease, loadMusic, lastfmError, loadPerson, loadTrack, loadTrackCovers, loadWatched, MAX_POSTER_LOOKUPS, MAX_TRACK_COVERS, settle, traktUserExists, TTL } from "./sources.ts"
+import { type Env, forUsers, type Get, lastfmUserExists, loadAlbum, loadAlbumRelease, loadAlbumTimeline, loadArtist, loadArtistLinks, loadArtistListening, loadArtistPictures, loadLastfmNow, loadLatestRelease, loadMusic, lastfmError, loadPerson, loadTrack, loadTrackCovers, loadWatched, MAX_POSTER_LOOKUPS, MAX_TRACK_COVERS, settle, traktUserExists, TTL } from "./sources.ts"
 
 /** A `get` that answers from a table by the start of the address and remembers what was asked. */
 function fake(answers: Record<string, unknown>, hits = new Set<string>()): { get: Get; asked: { url: string; ttl: number; method: string | undefined }[] } {
@@ -279,7 +279,7 @@ test("an album or a track Spotify does not know, or with Spotify not set up, has
   const noSpotify = await loadTrack({ LASTFM_API_KEY: "k", LASTFM_USER: "u" }, musicGet().get, "Band", "Song")
   assert.equal(noSpotify.spotify, null)
   assert.equal(noSpotify.lastfm?.userPlays, 4)
-  assert.deepEqual(await loadAlbum({}, musicGet().get, "Band", "LP"), { lastfm: null, spotify: null })
+  assert.deepEqual(await loadAlbum({}, musicGet().get, "Band", "LP"), { lastfm: null, spotify: null, top: null })
 })
 
 test("an answer of Last.fm's that is an error says so, though its status was ok, and nothing else is taken for one", () => {
@@ -359,4 +359,41 @@ test("an artist's links are MusicBrainz's, with Wikipedia in Norwegian from Wiki
   const none = fake({})
   assert.deepEqual(await loadArtistLinks(none.get, null), [])
   assert.equal(none.asked.length, 0)
+})
+
+test("an album on MusicBrainz is its group among the artist's albums, the group's releases and the first's credits: three asks a second apart, kept for a month, and the credits only when wanted", async () => {
+  const credit = [{ name: "Röyksopp", artist: { id: "rm", name: "Röyksopp" } }]
+  const album = (id: string, title: string, released: string) => ({ id, title, "primary-type": "Album", "first-release-date": released, "artist-credit": credit })
+  const { get, asked } = fake({
+    "https://ws.audioscrobbler.com/2.0/": { artist: { name: "Röyksopp", mbid: "rm" } },
+    "https://musicbrainz.org/ws/2/release-group": { "release-groups": [album("g1", "Melody A.M.", "2001"), album("g2", "The Understanding", "2005")] },
+    "https://musicbrainz.org/ws/2/release?": { releases: [{ id: "r1", title: "Melody A.M.", status: "Official", date: "2001-09-03", country: "NO", "label-info": [{ label: { name: "Wall of Sound" } }] }] },
+    "https://musicbrainz.org/ws/2/release/r1": { media: [{ tracks: [{ recording: { relations: [{ type: "producer", "target-type": "artist", artist: { name: "Röyksopp" } }] } }] }] },
+  })
+  const pauses: number[] = []
+  const pause = async (ms: number) => void pauses.push(ms)
+  const found = await loadAlbumRelease(ENV, get, "Röyksopp", "Melody A.M.", { credits: true, pause })
+  assert.deepEqual([found?.group, found?.first?.labels, found?.credits?.producers, found?.place?.next?.title], ["g1", ["Wall of Sound"], ["Röyksopp"], "The Understanding"])
+  const brainz = asked.filter((one) => one.url.startsWith("https://musicbrainz.org"))
+  assert.equal(brainz.length, 3)
+  assert.deepEqual(brainz.slice(1).map((one) => one.ttl), [TTL.release, TTL.release])
+  assert.deepEqual(pauses, [1100, 1100])
+  const lean = fake({ "https://ws.audioscrobbler.com/2.0/": {}, "https://musicbrainz.org/ws/2/release-group": { "release-groups": [] }, "https://musicbrainz.org/ws/2/release?": { releases: [] } })
+  assert.equal((await loadAlbumRelease(ENV, lean.get, "Röyksopp", "Senior", { credits: false, pause }))?.credits ?? null, null)
+  assert.ok(!lean.asked.some((one) => one.url.includes("/ws/2/release/")))
+})
+
+test("an album's listening over time is one weekly album chart a stretch, a finished one kept for a month, and none when one fails", async () => {
+  const now = Date.UTC(2026, 10, 21)
+  const registered = now / 1000 - 3 * 365 * 86400
+  const { get, asked } = fake({
+    "https://ws.audioscrobbler.com/2.0/?format=json&api_key=k&user=someone&method=user.getinfo": { user: { registered: { unixtime: String(registered) }, playcount: "10" } },
+    "https://ws.audioscrobbler.com/2.0/?format=json&api_key=k&user=someone&method=user.getweeklyalbumchart": { weeklyalbumchart: { album: [{ name: "Junior (Deluxe)", artist: { "#text": "Röyksopp" }, playcount: "4" }] } },
+  })
+  const found = await loadAlbumTimeline(ENV, get, "Röyksopp", "Junior", now)
+  assert.ok(found !== null && found.series.length > 1 && found.series.length <= 24 && found.series.every((one) => one.plays === 4))
+  const charts = asked.filter((one) => one.url.includes("getweeklyalbumchart"))
+  assert.equal(charts.filter((one) => one.ttl === TTL.periodDone).length, charts.length - 1)
+  const down: Get = async (url) => (url.includes("user.getinfo") ? { data: { user: { registered: { unixtime: String(registered) } } }, hit: false } : Promise.reject(new Error("down")))
+  assert.equal(await loadAlbumTimeline(ENV, down, "Röyksopp", "Junior", now), null)
 })

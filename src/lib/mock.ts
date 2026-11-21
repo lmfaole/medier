@@ -48,7 +48,20 @@ interface MockArtist {
   bio: string
   image: Picture
   /** What it is on MusicBrainz: an album, or an EP or a single (which Last.fm ranks among the albums all the same). */
-  albums: { title: string; year: number | null; type: string; cover: Picture; tracks: { title: string; seconds: number }[] }[]
+  albums: {
+    title: string
+    year: number | null
+    type: string
+    cover: Picture
+    tracks: { title: string; seconds: number }[]
+    /** The real album on MusicBrainz: its releases, which of them came first, and the credits of that one (by level, and the track by its index). */
+    musicbrainz?: {
+      title: string
+      releases: { title: string; status: string | null; date: string; country: string | null; disambiguation: string; labels: string[]; formats: (string | null)[] }[]
+      firstRelease: number | null
+      credits: { level: string; track: number | null; type: string; attributes: string[]; name: string }[]
+    } | null
+  }[]
   /** Its links on, real ones from MusicBrainz (url-rels of the kinds shown) and its Wikipedia articles by language, from Wikidata. */
   links: { relations: { type: string; url: string }[]; wikipedia: Partial<Record<string, string>> }
 }
@@ -163,6 +176,7 @@ function lastfmReleases(artist: MockArtist, index: number): { title: string; pla
 
 /** MusicBrainz's answer to the search for an artist's official albums (`musicbrainz.ts`), by its id or its name: its albums, and a live album and a compilation that are not albums. */
 function musicbrainz(url: URL, now: number): Response {
+  if (url.pathname.startsWith("/ws/2/release/") || url.pathname === "/ws/2/release" || (url.pathname === "/ws/2/release-group" && (url.searchParams.get("query") ?? "").includes("releasegroup:"))) return musicbrainzRelease(url)
   const artistPath = /^\/ws\/2\/artist\/([^/]+)$/.exec(url.pathname)
   if (artistPath !== null) return musicbrainzArtist(decodeURIComponent(artistPath[1] ?? ""))
   const query = url.searchParams.get("query") ?? ""
@@ -172,13 +186,77 @@ function musicbrainz(url: URL, now: number): Response {
   const artist = ARTISTS[index]
   if (artist === undefined) return json({ created: new Date(0).toISOString(), count: 0, offset: 0, "release-groups": [] })
   const credit = [{ name: artist.name, artist: { id: mockMbid(index), name: artist.name } }]
-  const group = (slot: number, title: string, year: number | null, secondary: string[]) => ({ id: `${mockMbid(index).slice(0, -4)}${String(slot).padStart(4, "0")}`, title, "primary-type": "Album", ...(secondary.length === 0 ? {} : { "secondary-types": secondary }), "first-release-date": year === null ? "" : String(year), "artist-credit": credit })
+  const group = (slot: number, title: string, year: number | null, secondary: string[]) => ({ id: groupMbid(index, slot), title, "primary-type": "Album", ...(secondary.length === 0 ? {} : { "secondary-types": secondary }), "first-release-date": year === null ? "" : String(year), "artist-credit": credit })
   const groups = [
     ...artist.albums.flatMap((album, albumIndex) => (album.type === "Album" ? [group(albumIndex, album.title, album.year, [])] : [])),
     group(90, "Live at Rockefeller", 2019, ["Live"]),
     group(91, `The Best of ${artist.name}`, 2020, ["Compilation"]),
   ]
   return json({ created: new Date(0).toISOString(), count: groups.length, offset: 0, "release-groups": groups })
+}
+
+/** A release group of an artist: the artist's number and the group's slot, so no two artists' groups are one. */
+const groupMbid = (artistIndex: number, slot: number): string => `${mockMbid(artistIndex).slice(0, -12)}${String(artistIndex + 1).padStart(8, "0")}${String(slot).padStart(4, "0")}`
+/** A release of an album's group: its number among the group's releases in the first 8 digits, the group after. */
+const releaseMbid = (group: string, release: number): string => `${String(release + 1).padStart(8, "0")}${group.slice(8)}`
+
+/** The album a group id stands for, any type (an EP is found by search, not among the studio albums). */
+function albumOfGroup(group: string): { artist: MockArtist; artistIndex: number; album: MockArtist["albums"][number] } | undefined {
+  for (const [artistIndex, artist] of ARTISTS.entries()) {
+    const albumIndex = artist.albums.findIndex((_, at) => groupMbid(artistIndex, at) === group)
+    const album = artist.albums[albumIndex]
+    if (album !== undefined) return { artist, artistIndex, album }
+  }
+  return undefined
+}
+
+/**
+ * MusicBrainz's answers about one album (`musicbrainz-release.ts`), from the real album's releases and the credits of its first, in `mock-data.json`: the search for its release group, the group's
+ * releases with their labels, and the first release with its tracks, its recordings' and works' relationships.
+ */
+function musicbrainzRelease(url: URL): Response {
+  const empty = (key: string) => json({ created: new Date(0).toISOString(), count: 0, offset: 0, [key]: [] })
+  if (url.pathname === "/ws/2/release-group") {
+    const query = url.searchParams.get("query") ?? ""
+    const unquote = (pattern: RegExp): string => pattern.exec(query)?.[1]?.replace(/\\(.)/g, "$1") ?? ""
+    const found = albumNamed(unquote(/artist:"((?:[^"\\]|\\.)*)"/), unquote(/releasegroup:"((?:[^"\\]|\\.)*)"/))
+    if (found === undefined) return empty("release-groups")
+    const album = found.artist.albums[found.albumIndex] as MockArtist["albums"][number]
+    const credit = [{ name: found.artist.name, artist: { id: mockMbid(found.artistIndex), name: found.artist.name } }]
+    return json({ created: new Date(0).toISOString(), count: 1, offset: 0, "release-groups": [{ id: groupMbid(found.artistIndex, found.albumIndex), score: 100, title: album.title, "primary-type": album.type, "artist-credit": credit }] })
+  }
+  const notFound = () => json({ error: "Not Found", help: "For usage, please see: https://musicbrainz.org/development/mmd" }, 404)
+  const releaseOf = (release: NonNullable<MockArtist["albums"][number]["musicbrainz"]>["releases"][number], id: string) => ({
+    id, title: release.title, status: release.status, date: release.date, country: release.country, disambiguation: release.disambiguation,
+    "label-info": release.labels.map((name) => ({ "catalog-number": null, label: { name } })), media: release.formats.map((format) => ({ format, "track-count": 0 })),
+  })
+  if (url.pathname === "/ws/2/release") {
+    const group = url.searchParams.get("release-group") ?? ""
+    const found = albumOfGroup(group)
+    if (found === undefined) return notFound()
+    const releases = found.album.musicbrainz?.releases ?? []
+    return json({ "release-count": releases.length, "release-offset": 0, releases: releases.map((release, index) => releaseOf(release, releaseMbid(group, index))) })
+  }
+  const id = decodeURIComponent(url.pathname.slice("/ws/2/release/".length))
+  const found = albumOfGroup(`00000000${id.slice(8)}`)
+  const stored = found?.album.musicbrainz ?? undefined
+  const index = Number(id.slice(0, 8)) - 1
+  const release = stored?.releases[index]
+  if (found === undefined || stored === undefined || release === undefined) return notFound()
+  const relation = (credit: { type: string; attributes: string[]; name: string }) => ({ type: credit.type, "target-type": "artist", attributes: credit.attributes, direction: "backward", artist: { name: credit.name } })
+  const credits = stored.credits
+  const tracks = found.album.tracks.map((track, at) => {
+    const own = credits.filter((credit) => credit.track === at)
+    const works = own.filter((credit) => credit.level === "work")
+    return {
+      position: at + 1, title: track.title, length: track.seconds * 1000,
+      recording: { title: track.title, relations: [...own.filter((credit) => credit.level === "recording").map(relation), ...(works.length === 0 ? [] : [{ type: "performance", "target-type": "work", work: { title: track.title, relations: works.map(relation) } }])] },
+    }
+  })
+  return json({
+    ...releaseOf(release, id), "artist-credit": [{ name: found.artist.name, artist: { id: mockMbid(found.artistIndex), name: found.artist.name } }],
+    relations: credits.filter((credit) => credit.level === "release").map(relation), media: [{ format: release.formats[0] ?? null, position: 1, tracks }],
+  })
 }
 
 /** MusicBrainz's artist with its url-rels (`musicbrainz-artist.ts`): the real links of the made-up artist's real namesake; a Wikidata link names the item `wikidata` answers for. */
@@ -262,6 +340,17 @@ function lastfm(params: URLSearchParams, now: number): Response {
   if (method === "user.gettopartists") {
     const overall = params.get("period") === "overall"
     return json({ topartists: { artist: chart(overall ? 0 : now - 30 * DAY, now).map((one, index) => ({ name: one.artist.name, playcount: String(one.plays), url: lastfmUrl(one.artist.name), "@attr": { rank: String(index + 1) } })) } })
+  }
+  if (method === "user.getweeklyalbumchart") {
+    const albums = new Map<string, { play: Play; plays: number }>()
+    for (const play of playsIn(Number(params.get("from")) || 0, Number(params.get("to")) || now, now)) {
+      const key = `${play.artistIndex}:${play.albumIndex}`
+      const found = albums.get(key) ?? { play, plays: 0 }
+      found.plays += 1
+      albums.set(key, found)
+    }
+    const ranked = [...albums.values()].sort((a, b) => b.plays - a.plays)
+    return json({ weeklyalbumchart: { album: ranked.map((one, index) => ({ name: one.play.album, playcount: String(one.plays), url: lastfmUrl(one.play.artist.name, one.play.album), artist: { "#text": one.play.artist.name, mbid: "" }, "@attr": { rank: String(index + 1) } })) } })
   }
   if (method === "user.getweeklyartistchart") {
     return json({ weeklyartistchart: { artist: chart(Number(params.get("from")) || 0, Number(params.get("to")) || now).map((one, index) => ({ name: one.artist.name, playcount: String(one.plays), url: lastfmUrl(one.artist.name), "@attr": { rank: String(index + 1) } })) } })

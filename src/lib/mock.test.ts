@@ -7,6 +7,8 @@ import { artistChartUrl, artistInfoUrl, artistTopAlbumsUrl, albumInfoUrl, parseA
 import { albumShelf, realAlbums } from "./albums.ts"
 import { MOCK_ARTISTS, mockFetch, mockSettings } from "./mock.ts"
 import { parseStudioAlbums, releaseGroupsUrl } from "./musicbrainz.ts"
+import { albumChartUrl, albumPlaysIn, parseAlbumChart } from "./album-listening.ts"
+import { firstRelease, groupReleasesUrl, parseCredits, parseReleaseGroupMatch, parseReleases, releaseCreditsUrl, releaseGroupSearchUrl, studioIndex } from "./musicbrainz-release.ts"
 import { artistUrlsUrl, latestReleasesUrl, parseArtistUrls, parseLatestRelease, parseWikipedia, wikipediaLinksUrl } from "./musicbrainz-artist.ts"
 import { parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl } from "./spotify.ts"
 import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, personUrl } from "./tmdb.ts"
@@ -93,6 +95,21 @@ test("MusicBrainz and Wikidata: an artist's newest release (coming, new or stale
   assert.deepEqual(urls?.links.map((link) => link.label).slice(0, 2), ["Offisiell nettside", "Bandcamp"])
   assert.equal(urls?.wikidata, "Q193218")
   assert.deepEqual(parseWikipedia(await ask(wikipediaLinksUrl("Q193218")), "Q193218")?.language, "no")
+})
+
+test("MusicBrainz: an album's group among the albums or by a search (an EP), its real releases and the credits of the first; and Last.fm's weekly album chart counts its plays", async () => {
+  const { mbid } = parseArtistInfo(await ask(artistInfoUrl(BASE, "Röyksopp", "ola")))
+  const studio = parseStudioAlbums(await ask(releaseGroupsUrl("Röyksopp", mbid)), "Röyksopp", mbid) ?? []
+  const group = studio[studioIndex(studio, "Melody A.M.") ?? -1]?.id ?? ""
+  const releases = parseReleases(await ask(groupReleasesUrl(group)))
+  const first = firstRelease(releases)
+  assert.ok(releases.length > 5 && first?.labels.includes("Wall of Sound"))
+  const credits = parseCredits(await ask(releaseCreditsUrl(first?.id ?? "")), "Röyksopp")
+  assert.ok((credits?.producers.length ?? 0) > 0 && (credits?.performers.length ?? 0) > 0)
+  assert.ok(parseReleaseGroupMatch(await ask(releaseGroupSearchUrl("Todd Terje", "It's the Arps")), "Todd Terje", "It's the Arps") !== null)
+  assert.equal(parseReleaseGroupMatch(await ask(releaseGroupSearchUrl("Todd Terje", "Ukjent")), "Todd Terje", "Ukjent"), null)
+  const chart = parseAlbumChart(await ask(albumChartUrl(BASE, SECONDS - 3 * 365 * DAY, SECONDS)))
+  assert.ok(chart.length > 3 && MOCK_ARTISTS.some((artist) => chart.some((album) => album.artist === artist && albumPlaysIn(chart, artist, album.title) > 0)))
 })
 
 test("Trakt and TMDB: history in a range, then each title's poster, facts, credits and each person", async () => {
