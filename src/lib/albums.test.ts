@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { albumKey, isSingleOrEp, looksLikeAlbum, realAlbums } from "./albums.ts"
+import { albumKey, albumShelf, isSingleOrEp, looksLikeAlbum, realAlbums } from "./albums.ts"
 import type { ArtistAlbum } from "./lastfm.ts"
 
 const album = (title: string, plays: number, image: string | null = `${title}.jpg`): ArtistAlbum => ({ title, plays, image, url: `https://www.last.fm/${title}` })
@@ -51,4 +51,20 @@ test("without MusicBrainz (it failed, or there is no id and no match), the title
   assert.deepEqual(albums.map((one) => one.title), ["Blonde (Deluxe Edition)", "Hit Song", "Channel Orange", "Endless"])
   assert.equal(realAlbums(LASTFM, null, 2).length, 2)
   assert.deepEqual(realAlbums([], studio("Blonde")), [])
+})
+
+test("the shelf is every one of MusicBrainz's albums, oldest first and an unknown day last, with Last.fm's plays and cover where it has them, else the Cover Art Archive's", () => {
+  const shelf = albumShelf(LASTFM, [
+    { id: "b", title: "Blonde", released: "2016-08-20" },
+    { id: "x", title: "Nostalgia, Ultra", released: null },
+    { id: "c", title: "Channel Orange", released: "2012-07-10" },
+    { id: "e", title: "Endless", released: "2016-08-19" },
+  ])
+  assert.deepEqual(shelf.map((one) => [one.title, one.released, one.plays]), [["Channel Orange", "2012-07-10", 4000], ["Endless", "2016-08-19", 800], ["Blonde", "2016-08-20", 11000], ["Nostalgia, Ultra", null, null]])
+  assert.equal(shelf[2]?.image, "Blonde (Deluxe Edition).jpg")
+  assert.equal(shelf[3]?.image, "https://coverartarchive.org/release-group/x/front-250")
+})
+
+test("without MusicBrainz the shelf is Last.fm's albums, most played first and with no day, at most the limit", () => {
+  assert.deepEqual(albumShelf(LASTFM, null, 3).map((one) => [one.title, one.released]), [["Blonde (Deluxe Edition)", null], ["Hit Song", null], ["Channel Orange", null]])
 })

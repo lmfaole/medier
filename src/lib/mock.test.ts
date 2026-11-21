@@ -4,7 +4,7 @@ import { test } from "node:test"
 import { allTimeArtistsUrl, allTimeTracksUrl, parseSimilarArtists, parseTopTracks, parseUserInfo, similarArtistsUrl, userInfoUrl } from "./lastfm.ts"
 import { similarHeard, tracksBy } from "./artist-listening.ts"
 import { artistChartUrl, artistInfoUrl, artistTopAlbumsUrl, albumInfoUrl, parseAlbumInfo, parseArtistChart, parseArtistInfo, parseRecentPage, parseRecentTracks, parseTopAlbums, parseTopArtists, parseTrackInfo, playsInRangeUrl, playsTotalUrl, trackInfoUrl } from "./lastfm.ts"
-import { realAlbums } from "./albums.ts"
+import { albumShelf, realAlbums } from "./albums.ts"
 import { MOCK_ARTISTS, mockFetch, mockSettings } from "./mock.ts"
 import { parseStudioAlbums, releaseGroupsUrl } from "./musicbrainz.ts"
 import { parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl } from "./spotify.ts"
@@ -47,7 +47,9 @@ test("Last.fm: info for an artist, an album and a track; an unknown name is Last
   const album = parseAlbumInfo(await ask(albumInfoUrl(BASE, name, albums[0]?.title ?? "", "ola")))
   assert.ok(album.tracks.length > 0 && album.bio !== null)
   const track = parseTrackInfo(await ask(trackInfoUrl(BASE, name, album.tracks[0]?.title ?? "", "ola")))
-  assert.ok((track.seconds ?? 0) > 100)
+  assert.ok((track.seconds ?? 0) > 100 && track.cover?.startsWith("/mock/"))
+  const shelf = albumShelf(ranked, parseStudioAlbums(await ask(releaseGroupsUrl(name, artist.mbid)), name, artist.mbid))
+  assert.ok(shelf.length === 2 && shelf.every((one) => one.released !== null && one.image?.startsWith("/mock/") && (one.plays ?? 0) > 0))
   assert.deepEqual(await ask(artistInfoUrl(BASE, "Finnes ikke", "ola")), { error: 6, message: "The artist you supplied could not be found" })
 })
 

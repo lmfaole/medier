@@ -233,7 +233,7 @@ function lastfm(params: URLSearchParams, now: number): Response {
   if (method === "track.getinfo") {
     const found = trackNamed(params.get("artist") ?? "", params.get("track") ?? "")
     if (found === undefined) return lastfmError(6, "Track not found")
-    return json({ track: { name: found.title, url: lastfmUrl(found.artist.name, "_", found.title), duration: String(found.seconds * 1000), listeners: String(5000 + (mix(found.artistIndex, found.index) % 90000)), userplaycount: String(count(found.artist, (play) => play.title === found.title)), toptags: tagList(found.artist.tags), artist: { name: found.artist.name }, album: { title: found.album } } })
+    return json({ track: { name: found.title, url: lastfmUrl(found.artist.name, "_", found.title), duration: String(found.seconds * 1000), listeners: String(5000 + (mix(found.artistIndex, found.index) % 90000)), userplaycount: String(count(found.artist, (play) => play.title === found.title)), toptags: tagList(found.artist.tags), artist: { name: found.artist.name }, album: { title: found.album, image: lastfmImages(cover(found.artistIndex, found.albumIndex)) } } })
   }
   if (method === "album.getinfo") {
     const found = albumNamed(params.get("artist") ?? "", params.get("album") ?? "")

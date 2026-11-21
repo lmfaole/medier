@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { type Env, forUsers, type Get, lastfmUserExists, loadAlbum, loadArtist, loadArtistListening, loadArtistPictures, loadLastfmNow, loadMusic, lastfmError, loadPerson, loadTrack, loadWatched, MAX_POSTER_LOOKUPS, settle, traktUserExists, TTL } from "./sources.ts"
+import { type Env, forUsers, type Get, lastfmUserExists, loadAlbum, loadArtist, loadArtistListening, loadArtistPictures, loadLastfmNow, loadMusic, lastfmError, loadPerson, loadTrack, loadTrackCovers, loadWatched, MAX_POSTER_LOOKUPS, MAX_TRACK_COVERS, settle, traktUserExists, TTL } from "./sources.ts"
 
 /** A `get` that answers from a table by the start of the address and remembers what was asked. */
 function fake(answers: Record<string, unknown>, hits = new Set<string>()): { get: Get; asked: { url: string; ttl: number; method: string | undefined }[] } {
@@ -192,6 +192,22 @@ test("with no MusicBrainz id the albums are asked for by name, and when MusicBra
   const failed = await loadArtist({ LASTFM_API_KEY: "k", LASTFM_USER: "u" }, albumsGet(MBID, new Error("503")).get, "Frank Ocean")
   assert.deepEqual(failed.albums.map((album) => album.title), ["Hit Song", "Blonde", "Endless"])
   assert.equal(failed.albumsFrom, "titles")
+})
+
+test("the covers of an artist's songs are one track.getinfo each, no more than the limit, kept for a week under a name of their own; a song that fails or has no cover has none", async () => {
+  const asked: { url: string; ttl: number; key: string | undefined }[] = []
+  const get: Get = async (url, request) => {
+    asked.push({ url, ttl: request.ttl, key: request.key })
+    if (url.includes("track=Broken")) throw new Error("503")
+    return { data: { track: { album: url.includes("track=Bare") ? {} : { image: [{ "#text": `${new URL(url).searchParams.get("track")}.jpg` }] } } }, hit: false }
+  }
+  const titles = ["Eple", "Broken", "Bare", ...Array.from({ length: 12 }, (_, index) => `Song ${index}`)]
+  const covers = await loadTrackCovers({ LASTFM_API_KEY: "k", LASTFM_USER: "u" }, get, "Röyksopp", titles)
+  assert.equal(asked.length, MAX_TRACK_COVERS)
+  assert.equal(covers.get("Eple"), "Eple.jpg")
+  assert.ok(!covers.has("Broken") && !covers.has("Bare"))
+  assert.ok(asked.every((one) => one.url.includes("method=track.getinfo") && one.ttl === TTL.albums && one.key === `cover:${one.url}`))
+  assert.equal((await loadTrackCovers({ LASTFM_API_KEY: "k" }, get, "Röyksopp", titles)).size, 0)
 })
 
 test("a list's pictures are asked for in its order, each name once, and no more than the limit that were not kept", async () => {

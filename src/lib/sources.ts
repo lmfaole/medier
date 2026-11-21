@@ -3,8 +3,8 @@
  * is quick and the sources are asked little. Pure: the asking is done by the `get` that is passed in (`runtime.ts`), so a test hands it a fake one.
  */
 
-import { type AlbumInfo, albumInfoUrl, allTimeArtistsUrl, allTimeTracksUrl, artistChartUrl, type ArtistAlbum, type ArtistInfo, artistInfoUrl, artistTopAlbumsUrl, type Music, parseAlbumInfo, parseArtistChart, parseArtistInfo, parseRecentTracks, parseSimilarArtists, parseTopAlbums, parseTopArtists, parseTopTracks, parseTrackInfo, parseUserInfo, similarArtistsUrl, type TopTrack, type TrackInfo, trackInfoUrl, userInfoUrl } from "./lastfm.ts"
-import { realAlbums } from "./albums.ts"
+import { type AlbumInfo, albumInfoUrl, allTimeArtistsUrl, allTimeTracksUrl, artistChartUrl, type ArtistInfo, artistInfoUrl, artistTopAlbumsUrl, type Music, parseAlbumInfo, parseArtistChart, parseArtistInfo, parseRecentTracks, parseSimilarArtists, parseTopAlbums, parseTopArtists, parseTopTracks, parseTrackInfo, parseUserInfo, similarArtistsUrl, type TopTrack, type TrackInfo, trackInfoUrl, userInfoUrl } from "./lastfm.ts"
+import { albumShelf, type ShelfAlbum } from "./albums.ts"
 import { listeningPeriods, type PeriodUnit, placeAmong, playsIn, similarHeard, tracksBy } from "./artist-listening.ts"
 import { parseStudioAlbums, releaseGroupsUrl } from "./musicbrainz.ts"
 import { type NowPlaying, parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl, type SpotifyAlbum, type SpotifyArtist, type SpotifyTrack } from "./spotify.ts"
@@ -193,10 +193,10 @@ async function spotifyArtist(token: string, name: string, get: Get): Promise<{ a
 export type AlbumsFrom = "musicbrainz" | "titles"
 
 /**
- * What an artist's page shows beyond its plays: Last.fm's tags, listeners, text and most played albums, and Spotify's picture; each leaves out only itself when it fails. The
- * albums are only albums: Last.fm ranks every release, and MusicBrainz (asked by the id Last.fm gives, else by the name; kept for a week) says which are albums (`albums.ts`).
+ * What an artist's page shows beyond its plays: Last.fm's tags, listeners, text and albums, and Spotify's picture; each leaves out only itself when it fails. The albums are only
+ * albums: Last.fm ranks every release, and MusicBrainz (asked by the id Last.fm gives, else by the name; kept for a week) says which are albums and when each came out (`albums.ts`).
  */
-export async function loadArtist(env: Env, get: Get, name: string): Promise<{ lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[]; albumsFrom: AlbumsFrom }> {
+export async function loadArtist(env: Env, get: Get, name: string): Promise<{ lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ShelfAlbum[]; albumsFrom: AlbumsFrom }> {
   const base = lastfmBase(env)
   const [lastfm, spotify, ranked] = await Promise.all([
     base === null ? null : settle(get(artistInfoUrl(base, name, setting(env, "LASTFM_USER")), { ttl: TTL.artist })).then((answer) => (answer === null ? null : parseArtistInfo(answer.data))),
@@ -205,7 +205,7 @@ export async function loadArtist(env: Env, get: Get, name: string): Promise<{ la
   ])
   const mbid = lastfm?.mbid ?? null
   const studio = ranked.length === 0 ? null : await settle(get(releaseGroupsUrl(name, mbid), { ttl: TTL.albums })).then((answer) => (answer === null ? null : parseStudioAlbums(answer.data, name, mbid)))
-  return { lastfm, spotify, albums: realAlbums(ranked, studio), albumsFrom: studio === null ? "titles" : "musicbrainz" }
+  return { lastfm, spotify, albums: albumShelf(ranked, studio), albumsFrom: studio === null ? "titles" : "musicbrainz" }
 }
 
 /** Last.fm's answer for an address, read; `null` where Last.fm is not set up or did not answer: the rest of the page is there. */
@@ -318,6 +318,32 @@ export async function loadArtistListening(env: Env, get: Get, name: string, nowM
     tracks,
     similar: heard,
   }
+}
+
+/** No more questions than this for the covers of an artist's most played songs, a few at a time: Last.fm refuses an IP that asks too fast. */
+export const MAX_TRACK_COVERS = 10
+const COVER_BATCH = 5
+
+/**
+ * The covers of an artist's songs that the recent plays did not show (`coversFromPlays`), from Last.fm's `track.getinfo`: one question a song, at most `MAX_TRACK_COVERS`, each kept for a week
+ * under a name of its own (a track's page asks the same address for the owner's count, which is kept for a day). A song Last.fm has no cover for is not in the map.
+ */
+export async function loadTrackCovers(env: Env, get: Get, artist: string, titles: readonly string[]): Promise<Map<string, string>> {
+  const base = lastfmBase(env)
+  const found = new Map<string, string>()
+  if (base === null) return found
+  const wanted = [...new Set(titles)].slice(0, MAX_TRACK_COVERS)
+  for (let start = 0; start < wanted.length; start += COVER_BATCH) {
+    await Promise.all(
+      wanted.slice(start, start + COVER_BATCH).map(async (title) => {
+        const url = trackInfoUrl(base, artist, title, setting(env, "LASTFM_USER"))
+        const answer = await settle(get(url, { ttl: TTL.albums, key: `cover:${url}` }))
+        const cover = answer === null ? null : parseTrackInfo(answer.data).cover
+        if (cover !== null) found.set(title, cover)
+      }),
+    )
+  }
+  return found
 }
 
 /** What a page shows when a source is down: the others still show. */

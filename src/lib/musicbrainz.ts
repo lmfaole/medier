@@ -19,6 +19,9 @@ const object = (value: unknown): Json => (typeof value === "object" && value !==
 const list = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
 const text = (value: unknown): string => (typeof value === "string" ? value : "")
 
+/** The front cover of a release group in the Cover Art Archive, 250 px wide: an address the browser asks for itself (it redirects to the Internet Archive), and that has nothing where no cover was given. */
+export const coverArtUrl = (id: string): string => `https://coverartarchive.org/release-group/${encodeURIComponent(id)}/front-250`
+
 /** A name inside quotes in MusicBrainz's search (Lucene): a quote or a backslash in it is escaped. */
 const quoted = (name: string): string => `"${name.replace(/["\\]/g, "\\$&")}"`
 

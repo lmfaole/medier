@@ -61,15 +61,17 @@ test("the artist is asked for by name, encoded, with autocorrect", () => {
   assert.equal(artistInfoUrl("https://x/?k=1", "Beyoncé & Co", "me"), "https://x/?k=1&method=artist.getinfo&autocorrect=1&artist=Beyonc%C3%A9%20%26%20Co&username=me")
 })
 
-test("a track's info is its tags, listeners, the owner's own count, its length in seconds and Last.fm's text where there is one", () => {
-  const info = parseTrackInfo({ track: { duration: "215000", listeners: "5000", userplaycount: "12", toptags: { tag: [{ name: "pop" }] }, wiki: { summary: `${BIO.slice(0, 120)} <a href="x">Read more</a>` } } })
+test("a track's info is its tags, listeners, the owner's own count, its length in seconds, Last.fm's text where there is one and its album's cover", () => {
+  const info = parseTrackInfo({ track: { duration: "215000", listeners: "5000", userplaycount: "12", toptags: { tag: [{ name: "pop" }] }, wiki: { summary: `${BIO.slice(0, 120)} <a href="x">Read more</a>` }, album: { title: "X", image: [{ "#text": "s.jpg" }, { "#text": "l.jpg" }] } } })
+  assert.equal(info.cover, "l.jpg")
   assert.equal(info.seconds, 215)
   assert.equal(info.listeners, 5000)
   assert.equal(info.userPlays, 12)
   assert.deepEqual(info.tags, ["pop"])
   assert.ok(info.bio?.startsWith("Troye Sivan is"))
-  assert.deepEqual(parseTrackInfo({ error: 6 }), { tags: [], listeners: null, userPlays: null, seconds: null, bio: null })
+  assert.deepEqual(parseTrackInfo({ error: 6 }), { tags: [], listeners: null, userPlays: null, seconds: null, bio: null, cover: null })
   assert.equal(parseTrackInfo({ track: { duration: "0", userplaycount: "0" } }).seconds, null)
+  assert.equal(parseTrackInfo({ track: { album: { image: [{ "#text": "https://x/2a96cbd8b46e442fc41c2b86b821562f.png" }] } } }).cover, null)
 })
 
 test("an album's info has its tracks in order, one track is a list of one, and a track without a name is left out", () => {

@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { artistFigures, artistKind, listeningChartText, listeningPeriods, placeAmong, playsIn, shareText, similarHeard, tracksBy } from "./artist-listening.ts"
+import { artistFigures, artistKind, coversFromPlays, listeningChartText, listeningPeriods, placeAmong, playsIn, shareText, similarHeard, tracksBy } from "./artist-listening.ts"
 import { osloMidnight } from "./weeks.ts"
 
 test("the stretches since the user started are the finest of month, quarter, half-year and year that make at most 24, on the calendar's boundaries in Oslo, end to start", () => {
@@ -71,4 +71,10 @@ test("the chart over time says when it was first played, when most and how much 
   assert.equal(listeningChartText("year", [{ long: "2025", plays: 3 }, { long: "2026", plays: 9 }])?.summary, "Arealdiagram. Spilt alt i 2025, da historikken din på Last.fm begynner, mest hittil i 2026 (9 avspillinger).")
   assert.equal(listeningChartText("month", [{ long: "mai 2026", plays: 0 }, { long: "juni 2026", plays: 0 }])?.title, "Ikke spilt i perioden")
   assert.equal(listeningChartText("month", [{ long: "mai 2026", plays: 4 }]), null)
+})
+
+test("a song's cover is the one its recent plays carry, whatever the case of its title; a song not played lately, or played with no cover, has none", () => {
+  const play = (track: string, artist: string, image: string | null) => ({ track, artist, album: "A", image, url: "", playedAt: null })
+  const plays = [play("Eple", "Röyksopp", "new.jpg"), play("eple", "Röyksopp", "old.jpg"), play("Eple", "Other", "x.jpg"), play("Sparks", "röyksopp", null)]
+  assert.deepEqual([...coversFromPlays(plays, "Röyksopp", ["Eple", "Sparks", "Poor Leno"])], [["Eple", "new.jpg"]])
 })

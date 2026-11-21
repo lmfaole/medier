@@ -3,7 +3,8 @@
  * artists like it that they hear too. Pure, so a test pins it; `sources.ts` asks Last.fm for what it is read from.
  */
 
-import type { ChartArtist, SimilarArtist, TopArtist, TopTrack } from "./lastfm.ts"
+import type { ChartArtist, Play, SimilarArtist, TopArtist, TopTrack } from "./lastfm.ts"
+import { plain } from "./spotify.ts"
 import { dateAt, osloMidnight } from "./weeks.ts"
 
 /** Names are the same artist whatever their case («AURORA» and «Aurora»). */
@@ -79,6 +80,19 @@ export function shareText(share: number): string {
 
 /** The user's most played songs by the artist, most first, at most `limit`. */
 export const tracksBy = (tracks: readonly TopTrack[], name: string, limit = 10): TopTrack[] => tracks.filter((track) => same(track.artist, name)).slice(0, limit)
+
+/**
+ * The covers of songs by an artist that the recent plays show, by title as given: a play carries its album's cover, so a song played lately needs no question for it. A title is matched whatever its
+ * case and punctuation (`plain`); a song with no cover among the plays is not in the map.
+ */
+export function coversFromPlays(plays: readonly Play[], name: string, titles: readonly string[]): Map<string, string> {
+  const found = new Map<string, string>()
+  for (const play of plays) if (play.image !== null && same(play.artist, name) && !found.has(plain(play.track))) found.set(plain(play.track), play.image)
+  return new Map(titles.flatMap((title) => {
+    const cover = found.get(plain(title))
+    return cover === undefined ? [] : [[title, cover] as const]
+  }))
+}
 
 /** Of the artists Last.fm finds like this one, those the user has played too, the most alike first, with their plays; at most `limit`. */
 export function similarHeard(similar: readonly SimilarArtist[], top: readonly TopArtist[], name: string, limit = 6): { name: string; plays: number; url: string }[] {

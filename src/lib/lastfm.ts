@@ -87,6 +87,8 @@ export interface TrackInfo {
   seconds: number | null
   /** The start of Last.fm's text about it, plain text; `null` where there is none (most tracks have none). */
   bio: string | null
+  /** The cover of the album Last.fm puts it on; `null` where it knows of none. */
+  cover: string | null
 }
 
 /** What Last.fm says of an album, with the tracks it has. */
@@ -152,7 +154,7 @@ export function parseArtistInfo(answer: unknown): ArtistInfo {
 export function parseTrackInfo(answer: unknown): TrackInfo {
   const info = object(object(answer)["track"])
   const milliseconds = count(info["duration"])
-  return { tags: tagsOf(info["toptags"]), listeners: count(info["listeners"]), userPlays: count(info["userplaycount"]), seconds: milliseconds === null ? null : Math.round(milliseconds / 1000), bio: wikiText(info["wiki"]) }
+  return { tags: tagsOf(info["toptags"]), listeners: count(info["listeners"]), userPlays: count(info["userplaycount"]), seconds: milliseconds === null ? null : Math.round(milliseconds / 1000), bio: wikiText(info["wiki"]), cover: largest(object(info["album"])["image"]) }
 }
 
 export function parseAlbumInfo(answer: unknown): AlbumInfo {

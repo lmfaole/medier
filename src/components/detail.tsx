@@ -6,15 +6,17 @@ import { LinkButton } from "@lmfaole/designsystem/components/link-button"
 import { Split, Stack } from "@lmfaole/designsystem/components/layout"
 import { PageSection } from "@lmfaole/designsystem/components/page-section"
 import { RankedRows } from "@lmfaole/designsystem/components/ranked-rows"
+import { Tiles } from "@lmfaole/designsystem/components/tiles"
 import { details, PictureRows } from "@lmfaole/designsystem/components/picture-rows"
 import { Rows } from "@lmfaole/designsystem/components/rows"
 import { Text, TextLink } from "@lmfaole/designsystem/components/text"
 
-import type { AlbumInfo, ArtistAlbum, ArtistInfo, TrackInfo } from "../lib/lastfm.ts"
+import type { AlbumInfo, ArtistInfo, TopTrack, TrackInfo } from "../lib/lastfm.ts"
 import { firstSentences } from "../lib/lastfm.ts"
 import { type AlbumPage, type Appearance, type ArtistPage, artistHref, albumHref, personHref, titleHref, type TitlePage, type TrackPage, trackSlug, trackHref } from "../lib/pages.ts"
 import type { SpotifyAlbum, SpotifyArtist, SpotifyTrack } from "../lib/spotify.ts"
-import { albumKey } from "../lib/albums.ts"
+import { albumKey, type ShelfAlbum } from "../lib/albums.ts"
+import { coversFromPlays } from "../lib/artist-listening.ts"
 import type { AlbumsFrom, ArtistListening } from "../lib/sources.ts"
 import { sourcesOf } from "../lib/image-sources.ts"
 import { SHAPES } from "../lib/shapes.ts"
@@ -113,16 +115,40 @@ export function SimilarArtists({ similar, pictures, linked, base, url }: { simil
 }
 
 /**
+ * The visitor's most played songs by an artist, each with its album's cover (`covers`, by title: from the recent plays, and from Last.fm for the others in the page's server island; a song with none
+ * keeps its empty frame). `linked` are the titles that have a page of their own here.
+ */
+export function TopTracks({ artist, tracks, covers, linked, base }: { artist: string; tracks: readonly TopTrack[]; covers: ReadonlyMap<string, string>; linked: ReadonlySet<string>; base: string }) {
+  if (tracks.length === 0) return null
+  return (
+    <PageSection id="mest-spilte" title="Dine mest spilte" icon="play">
+      <RankedRows
+        {...SHAPES.track}
+        rows={tracks.map((track) => ({
+          key: track.title,
+          sources: sourcesOf(covers.get(track.title) ?? null),
+          title: linked.has(track.title) ? <TextLink href={trackHref(base, artist, track.title)}>{track.title}</TextLink> : track.title,
+          value: count(track.plays, "avspilling", "avspillinger"),
+          amount: track.plays,
+        }))}
+      />
+    </PageSection>
+  )
+}
+
+/** The year an album came out, from MusicBrainz's day, as a tile's line. */
+const yearOf = (released: string | null): string | null => (released === null ? null : released.slice(0, 4))
+
+/**
  * An artist: what Last.fm's users write of it first, then the visitor's own listening to it (their plays over time, their most played songs by it), its albums, its recent plays, the artists like it
  * that they play too, and last the ways to it on Last.fm and Spotify. The picture and the link to it are Spotify's; the tags, the listeners and the text are Last.fm's (its text is the users', CC BY-SA, with
- * the link back where it is shown). `chart` is the chart of the plays over time, an island the page puts in.
+ * the link back where it is shown). `chart` is the chart of the plays over time, an island the page puts in; `songs` the most played songs with their covers (`TopTracks`), another.
  */
-export function ArtistDetail({ page, base, info, listening, links, chart, similar }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[]; albumsFrom: AlbumsFrom }; listening: ArtistListening | null; /** The slugs of the songs and the artists that have a page of their own here. */ links: { tracks: ReadonlySet<string>; artists: ReadonlySet<string> }; chart?: ReactNode; /** The artists like it that the visitor plays too (`SimilarArtists`), a server island the page puts in. */ similar?: ReactNode }) {
+export function ArtistDetail({ page, base, info, listening, links, chart, similar, songs }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ShelfAlbum[]; albumsFrom: AlbumsFrom }; listening: ArtistListening | null; /** The slugs of the songs and the artists that have a page of their own here. */ links: { tracks: ReadonlySet<string>; artists: ReadonlySet<string> }; chart?: ReactNode; /** The artists like it that the visitor plays too (`SimilarArtists`), a server island the page puts in. */ similar?: ReactNode; /** The most played songs (`TopTracks`), a server island the page puts in; without it they are shown with the covers of the recent plays. */ songs?: ReactNode }) {
   const { lastfm, spotify, albums, albumsFrom } = info
   // The albums among the recent plays have a page of their own here, under the name of the edition that was played; the others are only named.
   const played = new Map(page.plays.filter((play) => play.album !== "").map((play) => [albumKey(play.album), play.album]))
   const tracks = listening?.tracks ?? []
-  const song = (title: string) => (links.tracks.has(trackSlug(page.name, title)) ? <TextLink href={trackHref(base, page.name, title)}>{title}</TextLink> : title)
   // The plays, the place, the share of all and last month's plays are the head's figures, and when it was first heard is in the chart: each is said once. The pane is what is like it, and the ways out.
   const rail = (
     <Stack gap="xl">
@@ -153,32 +179,29 @@ export function ArtistDetail({ page, base, info, listening, links, chart, simila
           {chart}
         </PageSection>
       )}
-      {tracks.length === 0 ? null : (
-        <PageSection id="mest-spilte" title="Dine mest spilte" icon="play">
-          <RankedRows rows={tracks.map((track) => ({ key: track.title, title: song(track.title), value: count(track.plays, "avspilling", "avspillinger"), amount: track.plays }))} />
-        </PageSection>
-      )}
+      {songs ?? <TopTracks artist={page.name} tracks={tracks} covers={coversFromPlays(page.plays, page.name, tracks.map((track) => track.title))} linked={new Set(tracks.flatMap((track) => (links.tracks.has(trackSlug(page.name, track.title)) ? [track.title] : [])))} base={base} />}
       {albums.length === 0 ? null : (
         <PageSection id="album" title="Album">
-          <RankedRows
-            {...SHAPES.album}
-            rows={albums.map((album) => {
+          <Tiles
+            tiles={albums.map((album) => {
               const edition = played.get(albumKey(album.title))
               return {
                 key: album.title,
+                href: edition === undefined ? null : albumHref(base, page.name, edition),
+                title: album.title,
+                picture: null,
                 sources: sourcesOf(album.image),
-                title: edition === undefined ? album.title : <TextLink href={albumHref(base, page.name, edition)}>{album.title}</TextLink>,
-                detail: edition === undefined ? null : "Spilt av deg nylig",
-                value: `${compactCount(album.plays)} avspillinger`,
-                amount: album.plays,
+                ...SHAPES.album,
+                detail: yearOf(album.released),
+                lines: album.plays === null ? [] : [`${compactCount(album.plays)} avspillinger`],
               }
             })}
           />
           <Text size="sm" tone="muted">
             {albumsFrom === "musicbrainz" ? (
               <>
-                Albumene ifølge <TextLink href="https://musicbrainz.org" external>MusicBrainz</TextLink>, uten singler, EP-er, livealbum og samlinger, etter avspillinger på{" "}
-                <TextLink href={page.url} external>Last.fm</TextLink>.
+                Albumene ifølge <TextLink href="https://musicbrainz.org" external>MusicBrainz</TextLink>, eldste først, uten singler, EP-er, livealbum og samlinger. Avspillingene er alle
+                brukernes på <TextLink href={page.url} external>Last.fm</TextLink>.
               </>
             ) : (
               <>

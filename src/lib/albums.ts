@@ -5,7 +5,7 @@
  */
 
 import type { ArtistAlbum } from "./lastfm.ts"
-import type { StudioAlbum } from "./musicbrainz.ts"
+import { coverArtUrl, type StudioAlbum } from "./musicbrainz.ts"
 import { plain } from "./spotify.ts"
 
 /** What an edition is called, in brackets or after a dash at the end of a title: «(Deluxe Edition)», «[2011 Remaster]», « - Expanded». */
@@ -61,4 +61,31 @@ export function realAlbums(lastfm: readonly ArtistAlbum[], studio: readonly Stud
     })
     .sort((a, b) => b.plays - a.plays)
     .slice(0, limit)
+}
+
+/** One of an artist's albums on its shelf: its name, when it came out, and Last.fm's plays and cover of it where Last.fm has them. */
+export interface ShelfAlbum {
+  title: string
+  /** `YYYY-MM-DD`, `YYYY-MM` or `YYYY` (MusicBrainz's); `null` where it is not known. */
+  released: string | null
+  /** The plays of all its editions on Last.fm; `null` where Last.fm has none. */
+  plays: number | null
+  /** Last.fm's cover, else the Cover Art Archive's; `null` where there is neither. */
+  image: string | null
+}
+
+/**
+ * An artist's albums as a shelf, in the order they came out, oldest first. With `studio` (MusicBrainz's albums) every one of them, Last.fm's plays and cover where it has the album
+ * (`realAlbums`: all its editions together), the Cover Art Archive's cover where Last.fm has none, and one with no known day last. Without it, Last.fm's albums as `realAlbums` finds
+ * them, most played first, at most `limit`: there is no day to order them by.
+ */
+export function albumShelf(lastfm: readonly ArtistAlbum[], studio: readonly StudioAlbum[] | null, limit = 12): ShelfAlbum[] {
+  if (studio === null) return realAlbums(lastfm, null, limit).map((album) => ({ title: album.title, released: null, plays: album.plays, image: album.image }))
+  const ranked = new Map(realAlbums(lastfm, studio, Number.POSITIVE_INFINITY).map((album) => [albumKey(album.title), album]))
+  return studio
+    .map((album) => {
+      const found = ranked.get(albumKey(album.title))
+      return { title: album.title, released: album.released, plays: found?.plays ?? null, image: found?.image ?? coverArtUrl(album.id) }
+    })
+    .sort((a, b) => (a.released ?? "9999").localeCompare(b.released ?? "9999"))
 }
