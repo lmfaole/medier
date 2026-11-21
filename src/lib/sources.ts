@@ -1,9 +1,11 @@
 /**
- * What a page needs from Last.fm, Trakt, TMDB and Spotify, for the visitor's own usernames (`users.ts`), asked for when the page is asked for. Each answer is kept for a while (`TTL`), so a page
+ * What a page needs from Last.fm, Trakt, TMDB, Spotify and MusicBrainz, for the visitor's own usernames (`users.ts`), asked for when the page is asked for. Each answer is kept for a while (`TTL`), so a page
  * is quick and the sources are asked little. Pure: the asking is done by the `get` that is passed in (`runtime.ts`), so a test hands it a fake one.
  */
 
 import { type AlbumInfo, albumInfoUrl, type ArtistAlbum, type ArtistInfo, artistInfoUrl, artistTopAlbumsUrl, type Music, parseAlbumInfo, parseArtistInfo, parseRecentTracks, parseTopAlbums, parseTopArtists, parseTrackInfo, type TrackInfo, trackInfoUrl } from "./lastfm.ts"
+import { realAlbums } from "./albums.ts"
+import { parseStudioAlbums, releaseGroupsUrl } from "./musicbrainz.ts"
 import { type NowPlaying, parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl, type SpotifyAlbum, type SpotifyArtist, type SpotifyTrack } from "./spotify.ts"
 import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, type Person, personUrl, type TitleInfo } from "./tmdb.ts"
 import { mergeHistory, parseHistory, type Watch, type Watched } from "./trakt.ts"
@@ -35,7 +37,7 @@ export interface Request {
 export type Get = (url: string, request: Request) => Promise<{ data: unknown; hit: boolean }>
 
 /** How long each kind of answer is kept, in seconds. A poster does not change; what is playing now does, quickly. */
-export const TTL = { nowPlaying: 15, token: 3000, user: 3600, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600, artist: 24 * 3600, weekDone: 24 * 3600, weekLive: 300, firsts: 7 * 24 * 3600, length: 7 * 24 * 3600 } as const
+export const TTL = { nowPlaying: 15, token: 3000, user: 3600, recent: 60, topArtists: 3600, history: 300, poster: 30 * 24 * 3600, artist: 24 * 3600, weekDone: 24 * 3600, weekLive: 300, firsts: 7 * 24 * 3600, length: 7 * 24 * 3600, albums: 7 * 24 * 3600 } as const
 
 /** Most of a page's asks that are not kept already: a cold page must stay well under a Worker's limit on what it may ask for. */
 export const MAX_POSTER_LOOKUPS = 12
@@ -186,15 +188,23 @@ async function spotifyArtist(token: string, name: string, get: Get): Promise<{ a
   }
 }
 
-/** What an artist's page shows beyond its plays: Last.fm's tags, listeners, text and most played albums, and Spotify's picture; each leaves out only itself when it fails. */
-export async function loadArtist(env: Env, get: Get, name: string): Promise<{ lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[] }> {
+/** Where an artist's albums were told from the rest: MusicBrainz said which are albums, or (it could not) the titles were. */
+export type AlbumsFrom = "musicbrainz" | "titles"
+
+/**
+ * What an artist's page shows beyond its plays: Last.fm's tags, listeners, text and most played albums, and Spotify's picture; each leaves out only itself when it fails. The
+ * albums are only albums: Last.fm ranks every release, and MusicBrainz (asked by the id Last.fm gives, else by the name; kept for a week) says which are albums (`albums.ts`).
+ */
+export async function loadArtist(env: Env, get: Get, name: string): Promise<{ lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[]; albumsFrom: AlbumsFrom }> {
   const base = lastfmBase(env)
-  const [lastfm, spotify, albums] = await Promise.all([
+  const [lastfm, spotify, ranked] = await Promise.all([
     base === null ? null : settle(get(artistInfoUrl(base, name, setting(env, "LASTFM_USER")), { ttl: TTL.artist })).then((answer) => (answer === null ? null : parseArtistInfo(answer.data))),
     spotifyToken(env, get).then((token) => (token === null ? null : spotifyArtist(token, name, get).then((found) => found.artist))).catch(() => null),
-    base === null ? [] : settle(get(artistTopAlbumsUrl(base, name), { ttl: TTL.artist })).then((answer) => (answer === null ? [] : parseTopAlbums(answer.data))),
+    base === null ? [] : settle(get(artistTopAlbumsUrl(base, name), { ttl: TTL.artist })).then((answer) => (answer === null ? [] : parseTopAlbums(answer.data, Number.POSITIVE_INFINITY))),
   ])
-  return { lastfm, spotify, albums }
+  const mbid = lastfm?.mbid ?? null
+  const studio = ranked.length === 0 ? null : await settle(get(releaseGroupsUrl(name, mbid), { ttl: TTL.albums })).then((answer) => (answer === null ? null : parseStudioAlbums(answer.data, name, mbid)))
+  return { lastfm, spotify, albums: realAlbums(ranked, studio), albumsFrom: studio === null ? "titles" : "musicbrainz" }
 }
 
 /** Last.fm's answer for an address, read; `null` where Last.fm is not set up or did not answer: the rest of the page is there. */

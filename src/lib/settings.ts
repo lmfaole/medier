@@ -22,7 +22,7 @@ export const SETTINGS: readonly Setting[] = [
   { name: "SPOTIFY_CLIENT_ID", where: "worker", optional: true, about: "Spotify app Client ID, for the artists' pictures and the links to albums and tracks: https://developer.spotify.com/dashboard" },
   { name: "SPOTIFY_CLIENT_SECRET", where: "worker", optional: true, about: "Spotify app Client Secret (same place)" },
   { name: "SPOTIFY_REFRESH_TOKEN", where: "worker", optional: true, about: "made by `npm run spotify:auth`: the sign-in the site's searches are made with; it lasts six months" },
-  { name: "UPSTREAM_URL", where: "worker", about: "the relay's address on workers.dev, https://medier-upstream.<your subdomain>.workers.dev (a Worker on this zone cannot reach Last.fm, Trakt, TMDB or Spotify itself)" },
+  { name: "UPSTREAM_URL", where: "worker", about: "the relay's address on workers.dev, https://medier-upstream.<your subdomain>.workers.dev (a Worker on this zone cannot reach Last.fm, Trakt, TMDB, Spotify or MusicBrainz itself)" },
   { name: "UPSTREAM_KEY", where: "worker", about: "the key the site and the relay share; made when it is not in the files, and set on both" },
   { name: "CLOUDFLARE_API_TOKEN", where: "github", about: "a Cloudflare API token that may edit Workers: https://dash.cloudflare.com/profile/api-tokens (the deploy uses it)" },
   { name: "CLOUDFLARE_ACCOUNT_ID", where: "github", about: "the Cloudflare account's id (the dashboard's sidebar)" },

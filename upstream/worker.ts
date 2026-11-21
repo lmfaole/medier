@@ -1,6 +1,6 @@
 /**
  * The relay for the site: a Worker on workers.dev that asks the sources on the site's behalf, because a Worker on the lmfaole.party zone gets 525 on every
- * fetch to an origin outside Cloudflare while workers.dev does not. Only the hosts below, only GET (and the one POST that swaps Spotify's refresh token),
+ * fetch to an origin outside Cloudflare while workers.dev does not. Only the hosts below (MusicBrainz wants the User-Agent to name the site, and this one does), only GET (and the one POST that swaps Spotify's refresh token),
  * and only with the key the site and the relay share (`UPSTREAM_KEY`). It holds no key of its own: what a source needs comes with the ask.
  */
 
@@ -8,7 +8,7 @@ interface RelayEnv {
   UPSTREAM_KEY?: string
 }
 
-const GET_HOSTS = new Set(["ws.audioscrobbler.com", "api.trakt.tv", "api.themoviedb.org", "api.spotify.com"])
+const GET_HOSTS = new Set(["ws.audioscrobbler.com", "api.trakt.tv", "api.themoviedb.org", "api.spotify.com", "musicbrainz.org"])
 const FORWARDED = ["authorization", "content-type", "accept", "trakt-api-version", "trakt-api-key"]
 const USER_AGENT = "lmfaole-medier (https://github.com/lmfaole/medier)"
 

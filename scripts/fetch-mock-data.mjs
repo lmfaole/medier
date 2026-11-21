@@ -142,7 +142,7 @@ for (const [artistIndex, wanted] of ARTISTS.entries()) {
     for (const genre of album.genres?.data ?? []) tags.add(genre.name)
     const file = `cover-${artistIndex}-${albumIndex}`
     const source = album.cover_big
-    albums.push({ title: album.title, year: Number(String(album.release_date).slice(0, 4)) || null, cover: { file: await image(file, source), source }, tracks: (album.tracks?.data ?? []).slice(0, 14).map((track) => ({ title: track.title, seconds: track.duration })) })
+    albums.push({ title: album.title, year: Number(String(album.release_date).slice(0, 4)) || null, type: album.record_type === "ep" ? "EP" : album.record_type === "single" ? "Single" : "Album", cover: { file: await image(file, source), source }, tracks: (album.tracks?.data ?? []).slice(0, 14).map((track) => ({ title: track.title, seconds: track.duration })) })
     console.log(`album ${wanted.name}: ${album.title} (${albums.at(-1).tracks.length} tracks)`)
     await sleep(300)
   }

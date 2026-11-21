@@ -39,8 +39,14 @@ test("an artist's info is its tags, its listeners and the text before Last.fm's 
   assert.ok(!info.bio?.includes("Read more") && !info.bio?.includes("CC BY-SA"))
 })
 
+test("an artist's MusicBrainz id is Last.fm's, when it is one", () => {
+  assert.equal(parseArtistInfo({ artist: { mbid: "A74B1B7F-71A5-4011-9441-D0B5E4122711" } }).mbid, "a74b1b7f-71a5-4011-9441-d0b5e4122711")
+  assert.equal(parseArtistInfo({ artist: { mbid: "" } }).mbid, null)
+  assert.equal(parseArtistInfo({ artist: { mbid: "not-an-id" } }).mbid, null)
+})
+
 test("an artist Last.fm knows nothing of has no info, and a bio that is only the link is none", () => {
-  assert.deepEqual(parseArtistInfo({ error: 6 }), { tags: [], listeners: null, userPlays: null, bio: null })
+  assert.deepEqual(parseArtistInfo({ error: 6 }), { tags: [], listeners: null, userPlays: null, bio: null, mbid: null })
   assert.equal(parseArtistInfo({ artist: { bio: { summary: '<a href="https://x">Read more on Last.fm</a>' } } }).bio, null)
 })
 
@@ -121,5 +127,5 @@ test("an artist's albums: most played first, with no nameless ones, no repeats, 
 })
 
 test("the address of an artist's albums names the artist, escaped", () => {
-  assert.equal(artistTopAlbumsUrl("https://x/?k=1", "Years & Years"), "https://x/?k=1&method=artist.gettopalbums&autocorrect=1&artist=Years%20%26%20Years&limit=24")
+  assert.equal(artistTopAlbumsUrl("https://x/?k=1", "Years & Years"), "https://x/?k=1&method=artist.gettopalbums&autocorrect=1&artist=Years%20%26%20Years&limit=50")
 })

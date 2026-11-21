@@ -2,7 +2,9 @@ import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
 import { artistChartUrl, artistInfoUrl, artistTopAlbumsUrl, albumInfoUrl, parseAlbumInfo, parseArtistChart, parseArtistInfo, parseRecentPage, parseRecentTracks, parseTopAlbums, parseTopArtists, parseTrackInfo, playsInRangeUrl, playsTotalUrl, trackInfoUrl } from "./lastfm.ts"
+import { realAlbums } from "./albums.ts"
 import { MOCK_ARTISTS, mockFetch, mockSettings } from "./mock.ts"
+import { parseStudioAlbums, releaseGroupsUrl } from "./musicbrainz.ts"
 import { parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl } from "./spotify.ts"
 import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, personUrl } from "./tmdb.ts"
 import { parseHistory } from "./trakt.ts"
@@ -36,13 +38,27 @@ test("Last.fm: info for an artist, an album and a track; an unknown name is Last
   const name = MOCK_ARTISTS[0] ?? ""
   const artist = parseArtistInfo(await ask(artistInfoUrl(BASE, name, "ola")))
   assert.ok(artist.tags.length > 0 && (artist.userPlays ?? 0) > 0 && artist.bio !== null)
-  const albums = parseTopAlbums(await ask(artistTopAlbumsUrl(BASE, name)))
+  const ranked = parseTopAlbums(await ask(artistTopAlbumsUrl(BASE, name)), Number.POSITIVE_INFINITY)
+  assert.equal(ranked.length, 5)
+  const albums = realAlbums(ranked, parseStudioAlbums(await ask(releaseGroupsUrl(name, artist.mbid)), name, artist.mbid))
   assert.equal(albums.length, 2)
   const album = parseAlbumInfo(await ask(albumInfoUrl(BASE, name, albums[0]?.title ?? "", "ola")))
   assert.ok(album.tracks.length > 0 && album.bio !== null)
   const track = parseTrackInfo(await ask(trackInfoUrl(BASE, name, album.tracks[0]?.title ?? "", "ola")))
   assert.ok((track.seconds ?? 0) > 100)
   assert.deepEqual(await ask(artistInfoUrl(BASE, "Finnes ikke", "ola")), { error: 6, message: "The artist you supplied could not be found" })
+})
+
+test("MusicBrainz: an artist's albums by the id Last.fm gives, or by name, and an EP, a live album and a compilation are not among them", async () => {
+  const name = MOCK_ARTISTS.find((artist) => artist === "Todd Terje") ?? ""
+  const { mbid } = parseArtistInfo(await ask(artistInfoUrl(BASE, name, "ola")))
+  assert.ok(mbid !== null)
+  const byId = parseStudioAlbums(await ask(releaseGroupsUrl(name, mbid)), name, mbid)
+  assert.deepEqual(byId?.map((album) => album.title), ["It's Album Time"])
+  assert.deepEqual(parseStudioAlbums(await ask(releaseGroupsUrl(name, null)), name, null), byId)
+  assert.equal(parseStudioAlbums(await ask(releaseGroupsUrl("Ukjent", null)), "Ukjent", null), null)
+  const ranked = parseTopAlbums(await ask(artistTopAlbumsUrl(BASE, name)), Number.POSITIVE_INFINITY)
+  assert.deepEqual(realAlbums(ranked, byId).map((album) => album.title), ["It's Album Time"])
 })
 
 test("Trakt and TMDB: history in a range, then each title's poster, facts, credits and each person", async () => {
@@ -69,8 +85,7 @@ test("Spotify: the token, and the searches that find an artist, an album and a t
 
   const name = MOCK_ARTISTS[2] ?? ""
   assert.ok((parseArtistMatch(await ask(searchArtistUrl(name)), name)?.images.length ?? 0) > 0)
-  const albums = parseTopAlbums(await ask(artistTopAlbumsUrl(BASE, name)))
-  const album = albums[0]?.title ?? ""
+  const album = realAlbums(parseTopAlbums(await ask(artistTopAlbumsUrl(BASE, name))), null)[0]?.title ?? ""
   const tracks = parseAlbumInfo(await ask(albumInfoUrl(BASE, name, album, "ola"))).tracks
   assert.equal(parseAlbumMatch(await ask(searchAlbumUrl(album, name)), album, name)?.tracks, tracks.length)
   const first = tracks[0]?.title ?? ""

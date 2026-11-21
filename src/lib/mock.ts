@@ -1,5 +1,5 @@
 /**
- * Made-up answers from Last.fm, Trakt, TMDB and Spotify, for working on the site with no keys and no network (`MOCK_DATA=1` in `.dev.vars`; `runtime.ts` asks `mockFetch` instead of the sources).
+ * Made-up answers from Last.fm, Trakt, TMDB, Spotify and MusicBrainz, for working on the site with no keys and no network (`MOCK_DATA=1` in `.dev.vars`; `runtime.ts` asks `mockFetch` instead of the sources).
  * Pure: the same time gives the same answers. Plays and viewings are laid out on a fixed grid of time that ends at `now`, so every week and month of the last ten months has some, a week is not like
  * the one before it, and two artists are new lately. What they are made of is real (`mock-data.json`: albums, tracklists, films, people, from Deezer and Wikipedia) and so are the pictures in `public/mock/`,
  * both fetched once by `scripts/fetch-mock-data.mjs` (the pictures are other people's artwork and not committed: `node scripts/fetch-mock-data.mjs --images` fetches them again).
@@ -42,7 +42,8 @@ interface MockArtist {
   since: number
   bio: string
   image: Picture
-  albums: { title: string; year: number | null; cover: Picture; tracks: { title: string; seconds: number }[] }[]
+  /** What it is on MusicBrainz: an album, or an EP or a single (which Last.fm ranks among the albums all the same). */
+  albums: { title: string; year: number | null; type: string; cover: Picture; tracks: { title: string; seconds: number }[] }[]
 }
 
 const ARTISTS: readonly MockArtist[] = data.artists
@@ -135,6 +136,41 @@ function lastfmTrack(play: MockTrack, at: number | null): Record<string, unknown
 const json = (data: unknown, status = 200): Response => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } })
 const lastfmError = (code: number, message: string): Response => json({ error: code, message })
 
+/** The MusicBrainz id of a made-up artist: the same each time, and one no real artist has. */
+const mockMbid = (index: number): string => `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`
+
+/**
+ * What Last.fm ranks among an artist's albums, as it does: the albums and EPs, and besides them a single (a song of the first album, under its own name), a deluxe edition of
+ * the first album and a live album, so a page shows that only the albums are kept, each once.
+ */
+function lastfmReleases(artist: MockArtist, index: number): { title: string; plays: number; albumIndex: number }[] {
+  const plays = (slot: number): number => 400000 - slot * 90000 + (mix(index, slot) % 50000)
+  const first = artist.albums[0] as MockArtist["albums"][number]
+  return [
+    ...artist.albums.map((album, albumIndex) => ({ title: album.title, plays: plays(albumIndex * 2), albumIndex })),
+    { title: first.tracks[0]?.title ?? `${first.title} - Single`, plays: plays(1), albumIndex: 0 },
+    { title: `${first.title} (Deluxe Edition)`, plays: plays(3) / 4, albumIndex: 0 },
+    { title: `Live at Rockefeller`, plays: plays(4) / 3, albumIndex: 1 },
+  ].map((release) => ({ ...release, plays: Math.round(release.plays) }))
+}
+
+/** MusicBrainz's answer to the search for an artist's official albums (`musicbrainz.ts`), by its id or its name: its albums, and a live album and a compilation that are not albums. */
+function musicbrainz(url: URL): Response {
+  const query = url.searchParams.get("query") ?? ""
+  const id = /arid:(\S+)/.exec(query)?.[1]
+  const index = id === undefined ? (artistNamed(/artist:"((?:[^"\\]|\\.)*)"/.exec(query)?.[1]?.replace(/\\(.)/g, "$1") ?? "")?.index ?? -1) : ARTISTS.findIndex((_, at) => mockMbid(at) === id)
+  const artist = ARTISTS[index]
+  if (artist === undefined) return json({ created: new Date(0).toISOString(), count: 0, offset: 0, "release-groups": [] })
+  const credit = [{ name: artist.name, artist: { id: mockMbid(index), name: artist.name } }]
+  const group = (slot: number, title: string, year: number | null, secondary: string[]) => ({ id: `${mockMbid(index).slice(0, -4)}${String(slot).padStart(4, "0")}`, title, "primary-type": "Album", ...(secondary.length === 0 ? {} : { "secondary-types": secondary }), "first-release-date": year === null ? "" : String(year), "artist-credit": credit })
+  const groups = [
+    ...artist.albums.flatMap((album, albumIndex) => (album.type === "Album" ? [group(albumIndex, album.title, album.year, [])] : [])),
+    group(90, "Live at Rockefeller", 2019, ["Live"]),
+    group(91, `The Best of ${artist.name}`, 2020, ["Compilation"]),
+  ]
+  return json({ created: new Date(0).toISOString(), count: groups.length, offset: 0, "release-groups": groups })
+}
+
 function lastfm(params: URLSearchParams, now: number): Response {
   const method = params.get("method")
   const user = params.get("username") ?? ""
@@ -164,7 +200,7 @@ function lastfm(params: URLSearchParams, now: number): Response {
     const found = artistNamed(params.get("artist") ?? "")
     if (found === undefined) return lastfmError(6, "The artist you supplied could not be found")
     const { artist } = found
-    return json({ artist: { name: artist.name, url: lastfmUrl(artist.name), stats: { listeners: String(20000 + (mix(found.index, 8) % 400000)), playcount: String(900000 + (mix(found.index, 9) % 9000000)), userplaycount: String(count(artist)) }, tags: tagList(artist.tags), bio: wiki(artist.bio, lastfmUrl(artist.name)) } })
+    return json({ artist: { name: artist.name, mbid: mockMbid(found.index), url: lastfmUrl(artist.name), stats: { listeners: String(20000 + (mix(found.index, 8) % 400000)), playcount: String(900000 + (mix(found.index, 9) % 9000000)), userplaycount: String(count(artist)) }, tags: tagList(artist.tags), bio: wiki(artist.bio, lastfmUrl(artist.name)) } })
   }
   if (method === "track.getinfo") {
     const found = trackNamed(params.get("artist") ?? "", params.get("track") ?? "")
@@ -191,7 +227,7 @@ function lastfm(params: URLSearchParams, now: number): Response {
   if (method === "artist.gettopalbums") {
     const found = artistNamed(params.get("artist") ?? "")
     if (found === undefined) return lastfmError(6, "The artist you supplied could not be found")
-    return json({ topalbums: { album: found.artist.albums.map((album, albumIndex) => ({ name: album.title, playcount: String(400000 - albumIndex * 150000 + (mix(found.index, albumIndex) % 50000)), url: lastfmUrl(found.artist.name, album.title), image: lastfmImages(cover(found.index, albumIndex)) })) } })
+    return json({ topalbums: { album: lastfmReleases(found.artist, found.index).map((release) => ({ name: release.title, playcount: String(release.plays), url: lastfmUrl(found.artist.name, release.title), image: lastfmImages(cover(found.index, release.albumIndex)) })) } })
   }
   return lastfmError(3, `Invalid Method - ${method ?? "none"}`)
 }
@@ -359,6 +395,8 @@ export function mockFetch(url: string, _request: { headers?: Record<string, stri
     case "accounts.spotify.com":
     case "api.spotify.com":
       return spotify(address)
+    case "musicbrainz.org":
+      return musicbrainz(address)
     default:
       return json({ error: `mock: no fixtures for ${address.hostname}` }, 404)
   }

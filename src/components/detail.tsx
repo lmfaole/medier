@@ -11,6 +11,8 @@ import type { AlbumInfo, ArtistAlbum, ArtistInfo, TrackInfo } from "../lib/lastf
 import { firstSentences } from "../lib/lastfm.ts"
 import { type AlbumPage, type Appearance, type ArtistPage, artistHref, albumHref, personHref, titleHref, type TitlePage, type TrackPage, trackSlug, trackHref } from "../lib/pages.ts"
 import type { SpotifyAlbum, SpotifyArtist, SpotifyTrack } from "../lib/spotify.ts"
+import { albumKey } from "../lib/albums.ts"
+import type { AlbumsFrom } from "../lib/sources.ts"
 import { sourcesOf } from "../lib/image-sources.ts"
 import { SHAPES } from "../lib/shapes.ts"
 import { type Person, profileSources } from "../lib/tmdb.ts"
@@ -82,10 +84,10 @@ export function TitleDetail({ page, base }: { page: TitlePage; base: string }) {
  * An artist: its picture and what is known of it, its place among the month's most played, its recent plays, and last the ways to it on Last.fm and Spotify. The picture and the
  * link to it are Spotify's; the tags, the listeners and the text are Last.fm's (its text is the users', CC BY-SA, with the link back where it is shown).
  */
-export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[] } }) {
-  const { lastfm, spotify, albums } = info
-  // The albums among the recent plays have a page of their own here; the others are only named.
-  const played = new Set(page.plays.map((play) => play.album))
+export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[]; albumsFrom: AlbumsFrom } }) {
+  const { lastfm, spotify, albums, albumsFrom } = info
+  // The albums among the recent plays have a page of their own here, under the name of the edition that was played; the others are only named.
+  const played = new Map(page.plays.filter((play) => play.album !== "").map((play) => [albumKey(play.album), play.album]))
   const genres = lastfm !== null && lastfm.tags.length > 0 ? lastfm.tags : (spotify?.genres ?? [])
   const rail = (
     <Stack gap="lg">
@@ -114,17 +116,30 @@ export function ArtistDetail({ page, base, info }: { page: ArtistPage; base: str
         <PageSection id="album" title="Album">
           <RankedRows
             {...SHAPES.album}
-            rows={albums.map((album) => ({
-              key: album.title,
-              sources: sourcesOf(album.image),
-              title: played.has(album.title) ? <TextLink href={albumHref(base, page.name, album.title)}>{album.title}</TextLink> : album.title,
-              detail: played.has(album.title) ? "Spilt av deg nylig" : null,
-              value: `${compactCount(album.plays)} avspillinger`,
-              amount: album.plays,
-            }))}
+            rows={albums.map((album) => {
+              const edition = played.get(albumKey(album.title))
+              return {
+                key: album.title,
+                sources: sourcesOf(album.image),
+                title: edition === undefined ? album.title : <TextLink href={albumHref(base, page.name, edition)}>{album.title}</TextLink>,
+                detail: edition === undefined ? null : "Spilt av deg nylig",
+                value: `${compactCount(album.plays)} avspillinger`,
+                amount: album.plays,
+              }
+            })}
           />
           <Text size="sm" tone="muted">
-            De mest spilte albumene på <TextLink href={page.url} external>Last.fm</TextLink>, etter avspillinger der.
+            {albumsFrom === "musicbrainz" ? (
+              <>
+                Albumene ifølge <TextLink href="https://musicbrainz.org" external>MusicBrainz</TextLink>, uten singler, EP-er, livealbum og samlinger, etter avspillinger på{" "}
+                <TextLink href={page.url} external>Last.fm</TextLink>.
+              </>
+            ) : (
+              <>
+                De mest spilte albumene på <TextLink href={page.url} external>Last.fm</TextLink>, etter avspillinger der. Singler, EP-er, livealbum og samlinger er holdt utenfor så godt det lar
+                seg gjøre.
+              </>
+            )}
           </Text>
         </PageSection>
       )}

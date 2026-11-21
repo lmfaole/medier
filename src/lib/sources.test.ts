@@ -154,6 +154,46 @@ test("a source that fails leaves out only its own part of the artist's page", as
   assert.equal(got.lastfm, null)
 })
 
+const TOP = { topalbums: { album: [["Hit Song", "9000"], ["Blonde", "5000"], ["Blonde (Deluxe)", "600"], ["Live at Coachella", "700"], ["Endless", "800"]].map(([name, playcount]) => ({ name, playcount, url: "u", image: [] })) } }
+const MBID = "a74b1b7f-71a5-4011-9441-d0b5e4122711"
+const GROUPS = { "release-groups": ["Blonde", "Endless"].map((title) => ({ id: title, title, "primary-type": "Album", "artist-credit": [{ name: "Frank Ocean", artist: { id: MBID, name: "Frank Ocean" } }] })) }
+
+/** A `get` for an artist's albums: Last.fm's info (with `mbid`) and top albums, and MusicBrainz's answer, or its failure. */
+function albumsGet(mbid: string | null, musicbrainz: unknown | Error): { get: Get; asked: { url: string; ttl: number }[] } {
+  const asked: { url: string; ttl: number }[] = []
+  const get: Get = async (url, request) => {
+    asked.push({ url, ttl: request.ttl })
+    if (url.includes("method=artist.getinfo")) return { data: { artist: { mbid: mbid ?? "" } }, hit: false }
+    if (url.includes("method=artist.gettopalbums")) return { data: TOP, hit: false }
+    if (url.startsWith("https://musicbrainz.org/")) {
+      if (musicbrainz instanceof Error) throw musicbrainz
+      return { data: musicbrainz, hit: false }
+    }
+    throw new Error(`nothing for ${url}`)
+  }
+  return { get, asked }
+}
+
+test("an artist's albums are only MusicBrainz's albums, asked for by the id Last.fm gives and kept for a week, with Last.fm's plays of all their editions", async () => {
+  const { get, asked } = albumsGet(MBID, GROUPS)
+  const got = await loadArtist({ LASTFM_API_KEY: "k", LASTFM_USER: "u" }, get, "Frank Ocean")
+  assert.deepEqual(got.albums.map((album) => [album.title, album.plays]), [["Blonde", 5600], ["Endless", 800]])
+  assert.equal(got.albumsFrom, "musicbrainz")
+  const musicbrainz = asked.find((one) => one.url.startsWith("https://musicbrainz.org/"))
+  assert.ok(musicbrainz?.url.includes(encodeURIComponent(`arid:${MBID}`)))
+  assert.equal(musicbrainz?.ttl, TTL.albums)
+})
+
+test("with no MusicBrainz id the albums are asked for by name, and when MusicBrainz fails the titles decide", async () => {
+  const byName = albumsGet(null, GROUPS)
+  const named = await loadArtist({ LASTFM_API_KEY: "k", LASTFM_USER: "u" }, byName.get, "Frank Ocean")
+  assert.ok(byName.asked.some((one) => one.url.includes(encodeURIComponent('artist:"Frank Ocean"'))))
+  assert.equal(named.albumsFrom, "musicbrainz")
+  const failed = await loadArtist({ LASTFM_API_KEY: "k", LASTFM_USER: "u" }, albumsGet(MBID, new Error("503")).get, "Frank Ocean")
+  assert.deepEqual(failed.albums.map((album) => album.title), ["Hit Song", "Blonde", "Endless"])
+  assert.equal(failed.albumsFrom, "titles")
+})
+
 test("a list's pictures are asked for in its order, each name once, and no more than the limit that were not kept", async () => {
   const names = Array.from({ length: 30 }, (_, index) => `Artist ${index}`)
   const { get, searches } = spotify()

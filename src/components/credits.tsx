@@ -12,6 +12,7 @@ export function Credits() {
         { name: "Last.fm", brand: "lastfm", href: "https://www.last.fm", description: "Det du har spilt og det som spilles nå, hentet på nytt hvert minutt." },
         { name: "Trakt", brand: "trakt", href: "https://trakt.tv", description: "Filmene og episodene du har sett, hentet på nytt hvert femte minutt." },
         { name: "Spotify", brand: "spotify", href: "https://open.spotify.com", description: "Bilder av artister, og lenker til dem på Spotify." },
+        { name: "MusicBrainz", href: "https://musicbrainz.org", description: "Hvilke av en artists utgivelser som er album, og ikke singler, EP-er, livealbum eller samlinger. Hentet på nytt hver uke." },
         { name: "TMDB", brand: "tmdb", href: "https://www.themoviedb.org", description: "Plakater, hvem som er med og fakta om filmer og serier.", credit: "Denne siden bruker TMDB API, men er ikke støttet eller sertifisert av TMDB." },
       ]}
     />

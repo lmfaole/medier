@@ -74,6 +74,8 @@ export interface ArtistInfo {
   userPlays: number | null
   /** The start of Last.fm's text about it, as plain text (their text is the users', CC BY-SA, with a link back where it is shown). */
   bio: string | null
+  /** Its MusicBrainz id, where Last.fm knows it (`musicbrainz.ts` asks for its albums by it). */
+  mbid: string | null
 }
 
 /** What Last.fm says of a track. */
@@ -143,7 +145,8 @@ export const albumInfoUrl = (base: string, artist: string, album: string, user: 
 export function parseArtistInfo(answer: unknown): ArtistInfo {
   const info = object(object(answer)["artist"])
   const stats = object(info["stats"])
-  return { tags: tagsOf(info["tags"]), listeners: count(stats["listeners"]), userPlays: count(stats["userplaycount"]), bio: wikiText(info["bio"]) }
+  const mbid = text(info["mbid"]).trim().toLowerCase()
+  return { tags: tagsOf(info["tags"]), listeners: count(stats["listeners"]), userPlays: count(stats["userplaycount"]), bio: wikiText(info["bio"]), mbid: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(mbid) ? mbid : null }
 }
 
 export function parseTrackInfo(answer: unknown): TrackInfo {
@@ -217,7 +220,7 @@ export interface ArtistAlbum {
 
 /**
  * The most played albums of an artist (`artist.gettopalbums`), most first: Last.fm lists some with no name («(null)») and the same album twice under different spellings, which are left out; at most `limit`.
- * What Last.fm has no plays for is not ranked.
+ * What Last.fm has no plays for is not ranked. Last.fm does not tell an album from a single, an EP, a live album or a compilation: `albums.ts` sorts those out.
  */
 export function parseTopAlbums(answer: unknown, limit = 8): ArtistAlbum[] {
   const seen = new Set<string>()
@@ -234,4 +237,4 @@ export function parseTopAlbums(answer: unknown, limit = 8): ArtistAlbum[] {
   return albums.sort((a, b) => b.plays - a.plays).slice(0, limit)
 }
 
-export const artistTopAlbumsUrl = (base: string, artist: string): string => `${base}&method=artist.gettopalbums&autocorrect=1&artist=${encodeURIComponent(artist)}&limit=24`
+export const artistTopAlbumsUrl = (base: string, artist: string): string => `${base}&method=artist.gettopalbums&autocorrect=1&artist=${encodeURIComponent(artist)}&limit=50`
