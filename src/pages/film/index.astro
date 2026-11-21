@@ -22,16 +22,16 @@ const films = (seen?.items ?? []).filter((watch) => watch.kind === 'film')
       <UsernameGate services={['trakt']} />
     ) : (
       <>
-        <SubPages
-          label="Mer om film"
-          pages={[
-            { href: mediumHref(base, 'film', 'historikk/'), label: 'Historikk', icon: 'history', description: 'Alle filmene du har sett, dag for dag, og hvor lenge du så.' },
-            { href: mediumHref(base, 'film', 'uke/'), label: 'Wrapped', icon: 'calendar', description: 'Oppsummeringen av hver uke og måned: filmer, sjangere, regissører og tall.' },
-          ]}
-        />
         <Intro intro={INTROS.film} />
         <PageSection id="sett" title="Sist sett" icon="film">
           <WatchRows items={films} base={base} kind="film" />
+          <SubPages
+            label="Mer om filmene du har sett"
+            pages={[
+              { href: mediumHref(base, 'film', 'historikk/'), label: 'Historikk', icon: 'history', description: 'Alle filmene du har sett, dag for dag, og hvor lenge du så.' },
+              { href: mediumHref(base, 'film', 'uke/'), label: 'Wrapped', icon: 'calendar', description: 'Oppsummeringen av hver uke og måned: filmer, sjangere, regissører og tall.' },
+            ]}
+          />
         </PageSection>
         <Fetched sources={[{ at: seen?.at ?? null, source: 'Trakt' }]} />
       </>

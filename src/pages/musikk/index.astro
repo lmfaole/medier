@@ -23,19 +23,14 @@ const now = playingNow(listening?.now ?? null)
       <UsernameGate services={['lastfm']} />
     ) : (
       <>
-        <SubPages
-          label="Mer om musikken"
-          pages={[
-            { href: mediumHref(base, 'music', 'historikk/'), label: 'Historikk', icon: 'history', description: 'Alt du har hørt på, dag for dag, og hvor lenge du lyttet.' },
-            { href: mediumHref(base, 'music', 'uke/'), label: 'Wrapped', icon: 'calendar', description: 'Oppsummeringen av hver uke og måned: toppartister, album, låter og tall.' },
-          ]}
-        />
         <Intro intro={INTROS.musikk} />
         <PageSection id="siste" title="Siste avspillinger">
           <PlayRows plays={listening?.recent ?? []} now={now} base={base} />
+          <SubPages label="Mer om avspillingene" pages={[{ href: mediumHref(base, 'music', 'historikk/'), label: 'Historikk', icon: 'history', description: 'Alt du har hørt på, dag for dag, og hvor lenge du lyttet.' }]} />
         </PageSection>
         <PageSection id="artister" title="Mest spilt siste måned">
           <TopArtistRows artists={listening?.topArtists ?? []} base={base} pictures={pictures} />
+          <SubPages label="Mer om det du spiller mest" pages={[{ href: mediumHref(base, 'music', 'uke/'), label: 'Wrapped', icon: 'calendar', description: 'Oppsummeringen av hver uke og måned: toppartister, album, låter og tall.' }]} />
         </PageSection>
         <Fetched sources={[{ at: listening?.at ?? null, source: 'Last.fm' }]} />
       </>
