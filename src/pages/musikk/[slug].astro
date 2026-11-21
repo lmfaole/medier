@@ -1,12 +1,16 @@
 ---
+import ArtistLinksIsland from '../../components/ArtistLinksIsland.astro'
 import { ArtistDetail, SimilarArtists, TopTracks } from '../../components/detail'
 import { Head } from '../../components/head'
+import LatestReleaseIsland from '../../components/LatestReleaseIsland.astro'
 import NeedsUsername from '../../components/NeedsUsername.astro'
 import SimilarArtistsIsland from '../../components/SimilarArtistsIsland.astro'
 import TopTracksIsland from '../../components/TopTracksIsland.astro'
 import { ListeningChart } from '../../components/trend'
 import Page from '../../layouts/Page.astro'
+import { albumKey } from '../../lib/albums'
 import { artistFigures, artistKind, coversFromPlays, listeningChartText } from '../../lib/artist-listening'
+import { playedCovers } from '../../lib/musicbrainz-artist'
 import { artistPages, slugify, trackPages, trackSlug } from '../../lib/pages'
 import { artist, artistListening, music, usersOf } from '../../lib/runtime'
 
@@ -30,6 +34,9 @@ const tracks = own?.tracks ?? []
 const knownCovers = page === undefined ? [] : [...coversFromPlays(page.plays, page.name, tracks.map((one) => one.title))]
 const linkedTracks = page === undefined ? [] : tracks.filter((one) => links.tracks.has(trackSlug(page.name, one.title))).map((one) => one.title)
 const chart = timeline === null ? null : listeningChartText(timeline.unit, timeline.series)
+const mbid = info?.lastfm?.mbid ?? null
+// The albums among the recent plays have a page of their own, under the name of the edition played: the newest release links to its page where it is one of them.
+const played: [string, string][] = page === undefined ? [] : [...new Map(page.plays.filter((play) => play.album !== '').map((play) => [albumKey(play.album), play.album]))]
 ---
 
 {page === undefined || info === null ? (
@@ -38,6 +45,8 @@ const chart = timeline === null ? null : listeningChartText(timeline.unit, timel
 <Page bare current="music" width="pane" title={page.name} lead={artistKind(own?.place?.rank ?? null)} crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.name, href: `${base}musikk/${page.slug}/` }]}>
   <Head client:idle kind={artistKind(own?.place?.rank ?? null)} title={page.name} sources={info.spotify?.images ?? []} shape="artist" large figures={artistFigures(plays, own?.place?.share ?? null, page.top?.plays ?? null)} tags={tags.slice(0, 4)} />
   <ArtistDetail page={page} base={base} info={info} listening={own} links={links}>
+    <LatestReleaseIsland slot="latest" server:defer artist={page.name} mbid={mbid} played={played} covers={page === undefined ? [] : playedCovers(page.plays)} base={base} />
+    <ArtistLinksIsland slot="onward" server:defer mbid={mbid} />
     {timeline !== null && chart !== null && (
       <ListeningChart
         slot="chart"

@@ -49,6 +49,8 @@ interface MockArtist {
   image: Picture
   /** What it is on MusicBrainz: an album, or an EP or a single (which Last.fm ranks among the albums all the same). */
   albums: { title: string; year: number | null; type: string; cover: Picture; tracks: { title: string; seconds: number }[] }[]
+  /** Its links on, real ones from MusicBrainz (url-rels of the kinds shown) and its Wikipedia articles by language, from Wikidata. */
+  links: { relations: { type: string; url: string }[]; wikipedia: Partial<Record<string, string>> }
 }
 
 const ARTISTS: readonly MockArtist[] = data.artists
@@ -160,8 +162,11 @@ function lastfmReleases(artist: MockArtist, index: number): { title: string; pla
 }
 
 /** MusicBrainz's answer to the search for an artist's official albums (`musicbrainz.ts`), by its id or its name: its albums, and a live album and a compilation that are not albums. */
-function musicbrainz(url: URL): Response {
+function musicbrainz(url: URL, now: number): Response {
+  const artistPath = /^\/ws\/2\/artist\/([^/]+)$/.exec(url.pathname)
+  if (artistPath !== null) return musicbrainzArtist(decodeURIComponent(artistPath[1] ?? ""))
   const query = url.searchParams.get("query") ?? ""
+  if (query.includes("firstreleasedate:")) return latestReleases(query, now)
   const id = /arid:(\S+)/.exec(query)?.[1]
   const index = id === undefined ? (artistNamed(/artist:"((?:[^"\\]|\\.)*)"/.exec(query)?.[1]?.replace(/\\(.)/g, "$1") ?? "")?.index ?? -1) : ARTISTS.findIndex((_, at) => mockMbid(at) === id)
   const artist = ARTISTS[index]
@@ -174,6 +179,43 @@ function musicbrainz(url: URL): Response {
     group(91, `The Best of ${artist.name}`, 2020, ["Compilation"]),
   ]
   return json({ created: new Date(0).toISOString(), count: groups.length, offset: 0, "release-groups": groups })
+}
+
+/** MusicBrainz's artist with its url-rels (`musicbrainz-artist.ts`): the real links of the made-up artist's real namesake; a Wikidata link names the item `wikidata` answers for. */
+function musicbrainzArtist(id: string): Response {
+  const artist = ARTISTS.find((_, at) => mockMbid(at) === id)
+  if (artist === undefined) return json({ error: "Not Found", help: "For usage, please see: https://musicbrainz.org/development/mmd" }, 404)
+  return json({ id, name: artist.name, relations: artist.links.relations.map((one) => ({ type: one.type, ended: false, url: { resource: one.url } })) })
+}
+
+/**
+ * MusicBrainz's answer to the search for an artist's newest releases (`latestReleasesUrl`), made up around `now` so the page has one to show: every third artist has a single coming in a few weeks,
+ * the next a new album a few months old (its second, so its page is linked where it is played), and the third only one from years ago, which is no news.
+ */
+function latestReleases(query: string, now: number): Response {
+  const id = /arid:(\S+)/.exec(query)?.[1]
+  const index = id === undefined ? (artistNamed(/artist:"((?:[^"\\]|\\.)*)"/.exec(query)?.[1]?.replace(/\\(.)/g, "$1") ?? "")?.index ?? -1) : ARTISTS.findIndex((_, at) => mockMbid(at) === id)
+  const artist = ARTISTS[index]
+  const album = artist?.albums[1] ?? artist?.albums[0]
+  if (artist === undefined || album === undefined) return json({ created: new Date(0).toISOString(), count: 0, offset: 0, "release-groups": [] })
+  const day = (days: number): string => new Date((now + days * DAY) * 1000).toISOString().slice(0, 10)
+  const credit = [{ name: artist.name, artist: { id: mockMbid(index), name: artist.name } }]
+  const group = (slot: number, title: string, type: string, released: string) => ({ id: `${mockMbid(index).slice(0, -4)}${String(slot).padStart(4, "0")}`, title, "primary-type": type, "first-release-date": released, "artist-credit": credit })
+  const which = index % 3
+  const groups =
+    which === 1 ? [group(80, album.tracks[0]?.title ?? album.title, "Single", day(10 + (mix(index, 80) % 30)))]
+    : which === 0 ? [group(82, album.title, "Album", day(-30 - (mix(index, 82) % 150))), group(83, album.tracks[1]?.title ?? album.title, "Single", day(-250))]
+    : [group(84, album.tracks[0]?.title ?? album.title, "Single", day(-800))]
+  return json({ created: new Date(0).toISOString(), count: groups.length, offset: 0, "release-groups": groups })
+}
+
+/** Wikidata's answer for an item's Wikipedia articles (`wikipediaLinksUrl`): the real ones of the artist whose MusicBrainz links name the item. */
+function wikidata(url: URL): Response {
+  const item = url.searchParams.get("ids") ?? ""
+  const artist = ARTISTS.find((one) => one.links.relations.some((relation) => relation.type === "wikidata" && relation.url.endsWith(`/${item}`)))
+  if (artist === undefined) return json({ error: { code: "no-such-entity", info: `Could not find an entity with the ID "${item}".` } })
+  const sitelinks = Object.fromEntries(Object.entries(artist.links.wikipedia).map(([language, address]) => [`${language}wiki`, { site: `${language}wiki`, title: artist.name, badges: [], url: address }]))
+  return json({ entities: { [item]: { type: "item", id: item, sitelinks } }, success: 1 })
 }
 
 function lastfm(params: URLSearchParams, now: number): Response {
@@ -424,7 +466,9 @@ export function mockFetch(url: string, _request: { headers?: Record<string, stri
     case "api.spotify.com":
       return spotify(address)
     case "musicbrainz.org":
-      return musicbrainz(address)
+      return musicbrainz(address, seconds)
+    case "www.wikidata.org":
+      return wikidata(address)
     default:
       return json({ error: `mock: no fixtures for ${address.hostname}` }, 404)
   }

@@ -14,6 +14,51 @@
         "file": "/mock/artist-0.jpg",
         "source": "https://cdn-images.dzcdn.net/images/artist/5b66e3647ecffe097744e2479c689c41/500x500-000000-80-0-0.jpg"
       },
+      "links": {
+        "relations": [
+          {
+            "type": "discogs",
+            "url": "https://www.discogs.com/artist/37757"
+          },
+          {
+            "type": "official homepage",
+            "url": "http://a-ha.com/"
+          },
+          {
+            "type": "social network",
+            "url": "https://twitter.com/aha_com"
+          },
+          {
+            "type": "social network",
+            "url": "https://vk.ru/aha"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.facebook.com/officialaha"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.flickr.com/a-ha_com/"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.instagram.com/officialaha/"
+          },
+          {
+            "type": "wikidata",
+            "url": "https://www.wikidata.org/wiki/Q156305"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/channel/UCeEi1My3KTXHT0SG1JkR9gA"
+          }
+        ],
+        "wikipedia": {
+          "en": "https://en.wikipedia.org/wiki/A-ha",
+          "nn": "https://nn.wikipedia.org/wiki/A-ha",
+          "no": "https://no.wikipedia.org/wiki/A-ha"
+        }
+      },
       "albums": [
         {
           "title": "Hunting High and Low",
@@ -131,6 +176,59 @@
       "image": {
         "file": "/mock/artist-1.jpg",
         "source": "https://cdn-images.dzcdn.net/images/artist/41923b4d4a4a58dbb316eb335b6c6cb0/500x500-000000-80-0-0.jpg"
+      },
+      "links": {
+        "relations": [
+          {
+            "type": "bandcamp",
+            "url": "https://royksopp.bandcamp.com/"
+          },
+          {
+            "type": "discogs",
+            "url": "https://www.discogs.com/artist/15596"
+          },
+          {
+            "type": "discogs",
+            "url": "https://www.discogs.com/artist/786258"
+          },
+          {
+            "type": "official homepage",
+            "url": "http://royksopp.com/"
+          },
+          {
+            "type": "social network",
+            "url": "https://twitter.com/royksopp"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.facebook.com/Royksopp"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.instagram.com/royksopp/"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.tiktok.com/@royksopp.official"
+          },
+          {
+            "type": "wikidata",
+            "url": "https://www.wikidata.org/wiki/Q193218"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/channel/UC9lmMDVtBa6Hppy8Ehfpwpg"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/channel/UCoT418wNz3-pX_Nd7XTVknw"
+          }
+        ],
+        "wikipedia": {
+          "en": "https://en.wikipedia.org/wiki/R%C3%B6yksopp",
+          "nn": "https://nn.wikipedia.org/wiki/R%C3%B6yksopp",
+          "no": "https://no.wikipedia.org/wiki/R%C3%B6yksopp"
+        }
       },
       "albums": [
         {
@@ -254,6 +352,42 @@
       "image": {
         "file": "/mock/artist-2.jpg",
         "source": "https://cdn-images.dzcdn.net/images/artist/22a982e025b2f51b5cde2c4f6c1fee26/500x500-000000-80-0-0.jpg"
+      },
+      "links": {
+        "relations": [
+          {
+            "type": "discogs",
+            "url": "https://www.discogs.com/artist/12634"
+          },
+          {
+            "type": "official homepage",
+            "url": "http://www.kingsofconvenience.eu/"
+          },
+          {
+            "type": "social network",
+            "url": "https://twitter.com/Kings_of_C"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.facebook.com/kingsofconvenience"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.instagram.com/kingsofconvenience/"
+          },
+          {
+            "type": "wikidata",
+            "url": "https://www.wikidata.org/wiki/Q849299"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/channel/UCvJgKTD0yZwJgdjRikTq8yw"
+          }
+        ],
+        "wikipedia": {
+          "en": "https://en.wikipedia.org/wiki/Kings_of_Convenience",
+          "no": "https://no.wikipedia.org/wiki/Kings_of_Convenience"
+        }
       },
       "albums": [
         {
@@ -389,6 +523,55 @@
         "file": "/mock/artist-3.jpg",
         "source": "https://cdn-images.dzcdn.net/images/artist/355b28ac9e0388c53c43001bf755f4d1/500x500-000000-80-0-0.jpg"
       },
+      "links": {
+        "relations": [
+          {
+            "type": "discogs",
+            "url": "https://www.discogs.com/artist/10137166"
+          },
+          {
+            "type": "discogs",
+            "url": "https://www.discogs.com/artist/5592842"
+          },
+          {
+            "type": "official homepage",
+            "url": "http://www.thisissigrid.com/"
+          },
+          {
+            "type": "social network",
+            "url": "https://twitter.com/thisissigrid"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.facebook.com/thisissigrid"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.instagram.com/thisissigrid/"
+          },
+          {
+            "type": "wikidata",
+            "url": "https://www.wikidata.org/wiki/Q28864768"
+          },
+          {
+            "type": "wikipedia",
+            "url": "https://en.wikipedia.org/wiki/Sigrid_(singer)"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/channel/UCLG7twDweqlHpyv0EDOjrgw"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/channel/UCTV0CAq7RoWSZSCXQ-4CCag"
+          }
+        ],
+        "wikipedia": {
+          "en": "https://en.wikipedia.org/wiki/Sigrid_(singer)",
+          "nn": "https://nn.wikipedia.org/wiki/Artisten_Sigrid",
+          "no": "https://no.wikipedia.org/wiki/Sigrid_(artist)"
+        }
+      },
       "albums": [
         {
           "title": "Sucker Punch",
@@ -486,6 +669,55 @@
       "image": {
         "file": "/mock/artist-4.jpg",
         "source": "https://cdn-images.dzcdn.net/images/artist/1fb1c4bd2ed19d4f21a2976ee0335c60/500x500-000000-80-0-0.jpg"
+      },
+      "links": {
+        "relations": [
+          {
+            "type": "discogs",
+            "url": "https://www.discogs.com/artist/3843283"
+          },
+          {
+            "type": "discogs",
+            "url": "https://www.discogs.com/artist/532900"
+          },
+          {
+            "type": "official homepage",
+            "url": "http://aurora-music.com/"
+          },
+          {
+            "type": "social network",
+            "url": "https://twitter.com/AURORAmusic"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.facebook.com/iamAURORA"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.instagram.com/auroramusic/"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.tiktok.com/@iamauroramusic"
+          },
+          {
+            "type": "wikidata",
+            "url": "https://www.wikidata.org/wiki/Q19329827"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/channel/UC7Lhhngb9lLW6tuPddEM62A"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/channel/UCNjHgaLpdy1IMNK57pYiKiQ"
+          }
+        ],
+        "wikipedia": {
+          "en": "https://en.wikipedia.org/wiki/Aurora_(singer)",
+          "nn": "https://nn.wikipedia.org/wiki/Artisten_AURORA",
+          "no": "https://no.wikipedia.org/wiki/Aurora_(artist)"
+        }
       },
       "albums": [
         {
@@ -617,6 +849,47 @@
         "file": "/mock/artist-5.jpg",
         "source": "https://cdn-images.dzcdn.net/images/artist/15e87c36db6f16b0c219a67a37dc9226/500x500-000000-80-0-0.jpg"
       },
+      "links": {
+        "relations": [
+          {
+            "type": "discogs",
+            "url": "https://www.discogs.com/artist/747088"
+          },
+          {
+            "type": "official homepage",
+            "url": "https://susannesundfor.com/"
+          },
+          {
+            "type": "social network",
+            "url": "https://twitter.com/susannesundfor"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.facebook.com/247990362191"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.instagram.com/susannesundfor/"
+          },
+          {
+            "type": "wikidata",
+            "url": "https://www.wikidata.org/wiki/Q455147"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/channel/UCBPpr4JyW5JY_lOfWT2p9kQ"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/channel/UCCBXB6NAswUmh5seRzS2wVg"
+          }
+        ],
+        "wikipedia": {
+          "en": "https://en.wikipedia.org/wiki/Susanne_Sundf%C3%B8r",
+          "nn": "https://nn.wikipedia.org/wiki/Susanne_Sundf%C3%B8r",
+          "no": "https://no.wikipedia.org/wiki/Susanne_Sundf%C3%B8r"
+        }
+      },
       "albums": [
         {
           "title": "Ten Love Songs",
@@ -736,6 +1009,43 @@
         "file": "/mock/artist-6.jpg",
         "source": "https://cdn-images.dzcdn.net/images/artist/4e1bc5d703d8775677e7b83e2e171b99/500x500-000000-80-0-0.jpg"
       },
+      "links": {
+        "relations": [
+          {
+            "type": "discogs",
+            "url": "https://www.discogs.com/artist/2614426"
+          },
+          {
+            "type": "official homepage",
+            "url": "https://highasakite.no/"
+          },
+          {
+            "type": "social network",
+            "url": "https://twitter.com/Highasakiteband"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.facebook.com/highasakitemusic"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.instagram.com/highasakiteband/"
+          },
+          {
+            "type": "wikidata",
+            "url": "https://www.wikidata.org/wiki/Q5757815"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/channel/UCs-VUZrt6_fa_drvV4XAwcw"
+          }
+        ],
+        "wikipedia": {
+          "en": "https://en.wikipedia.org/wiki/Highasakite",
+          "nn": "https://nn.wikipedia.org/wiki/Highasakite",
+          "no": "https://no.wikipedia.org/wiki/Highasakite"
+        }
+      },
       "albums": [
         {
           "title": "Silent Treatment",
@@ -850,6 +1160,39 @@
       "image": {
         "file": "/mock/artist-7.jpg",
         "source": "https://cdn-images.dzcdn.net/images/artist/d80c0629e041ae6ab9cdb9d4d1ec8a9f/500x500-000000-80-0-0.jpg"
+      },
+      "links": {
+        "relations": [
+          {
+            "type": "discogs",
+            "url": "https://www.discogs.com/artist/132082"
+          },
+          {
+            "type": "official homepage",
+            "url": "http://toddterje.com/"
+          },
+          {
+            "type": "social network",
+            "url": "https://twitter.com/toddterjeolsen"
+          },
+          {
+            "type": "social network",
+            "url": "https://www.facebook.com/ToddTerje"
+          },
+          {
+            "type": "wikidata",
+            "url": "https://www.wikidata.org/wiki/Q16056085"
+          },
+          {
+            "type": "youtube",
+            "url": "https://www.youtube.com/user/ToddTerje"
+          }
+        ],
+        "wikipedia": {
+          "en": "https://en.wikipedia.org/wiki/Todd_Terje",
+          "nn": "https://nn.wikipedia.org/wiki/Todd_Terje",
+          "no": "https://no.wikipedia.org/wiki/Todd_Terje"
+        }
       },
       "albums": [
         {

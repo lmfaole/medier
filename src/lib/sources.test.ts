@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { type Env, forUsers, type Get, lastfmUserExists, loadAlbum, loadArtist, loadArtistListening, loadArtistPictures, loadLastfmNow, loadMusic, lastfmError, loadPerson, loadTrack, loadTrackCovers, loadWatched, MAX_POSTER_LOOKUPS, MAX_TRACK_COVERS, settle, traktUserExists, TTL } from "./sources.ts"
+import { type Env, forUsers, type Get, lastfmUserExists, loadAlbum, loadArtist, loadArtistLinks, loadArtistListening, loadArtistPictures, loadLastfmNow, loadLatestRelease, loadMusic, lastfmError, loadPerson, loadTrack, loadTrackCovers, loadWatched, MAX_POSTER_LOOKUPS, MAX_TRACK_COVERS, settle, traktUserExists, TTL } from "./sources.ts"
 
 /** A `get` that answers from a table by the start of the address and remembers what was asked. */
 function fake(answers: Record<string, unknown>, hits = new Set<string>()): { get: Get; asked: { url: string; ttl: number; method: string | undefined }[] } {
@@ -338,4 +338,25 @@ test("an artist's listening leaves out only what failed, and asks nothing withou
   const found = await loadArtistListening(ENV, get, "a-ha", Date.UTC(2026, 10, 21))
   assert.deepEqual(found, { timeline: null, place: { rank: 1, plays: 3, share: null }, tracks: null, similar: [] })
   assert.equal(await loadArtistListening(forUsers(ENV, { lastfm: null, trakt: null }), get, "a-ha", 0), null)
+})
+
+test("an artist's newest release is one ask to MusicBrainz, kept for a week; none when it does not answer", async () => {
+  const groups = { "release-groups": [{ id: "e", title: "Eat the Fruit", "primary-type": "Single", "first-release-date": "2026-10-09", "artist-credit": [{ name: "Röyksopp", artist: { id: MBID, name: "Röyksopp" } }] }] }
+  const { get, asked } = fake({ "https://musicbrainz.org/ws/2/release-group": groups })
+  assert.equal((await loadLatestRelease(get, "Röyksopp", MBID, "2026-11-21"))?.title, "Eat the Fruit")
+  assert.deepEqual(asked.map((one) => one.ttl), [TTL.albums])
+  assert.equal(await loadLatestRelease(fake({}).get, "Röyksopp", MBID, "2026-11-21"), null)
+})
+
+test("an artist's links are MusicBrainz's, with Wikipedia in Norwegian from Wikidata, else the article MusicBrainz links; none without an id", async () => {
+  const relations = { relations: [{ type: "official homepage", url: { resource: "https://royksopp.com/" } }, { type: "wikidata", url: { resource: "https://www.wikidata.org/wiki/Q193218" } }, { type: "wikipedia", url: { resource: "https://en.wikipedia.org/wiki/R" } }] }
+  const sitelinks = { entities: { Q193218: { sitelinks: { nowiki: { url: "https://no.wikipedia.org/wiki/R" } } } } }
+  const both = fake({ "https://musicbrainz.org/ws/2/artist/": relations, "https://www.wikidata.org/": sitelinks })
+  assert.deepEqual((await loadArtistLinks(both.get, MBID)).map((link) => [link.label, link.url]), [["Offisiell nettside", "https://royksopp.com/"], ["Wikipedia", "https://no.wikipedia.org/wiki/R"]])
+  assert.deepEqual(both.asked.map((one) => one.ttl), [TTL.albums, TTL.albums])
+  const noWikidata = fake({ "https://musicbrainz.org/ws/2/artist/": relations })
+  assert.deepEqual((await loadArtistLinks(noWikidata.get, MBID)).map((link) => link.label), ["Offisiell nettside", "Wikipedia (engelsk)"])
+  const none = fake({})
+  assert.deepEqual(await loadArtistLinks(none.get, null), [])
+  assert.equal(none.asked.length, 0)
 })

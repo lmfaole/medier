@@ -7,6 +7,7 @@ import { type AlbumInfo, albumInfoUrl, allTimeArtistsUrl, allTimeTracksUrl, arti
 import { albumShelf, type ShelfAlbum } from "./albums.ts"
 import { listeningPeriods, type PeriodUnit, placeAmong, playsIn, similarHeard, tracksBy } from "./artist-listening.ts"
 import { parseStudioAlbums, releaseGroupsUrl } from "./musicbrainz.ts"
+import { type ArtistLink, artistUrlsUrl, type LatestRelease, latestReleasesUrl, parseArtistUrls, parseLatestRelease, parseWikipedia, wikipediaLinksUrl, withWikipedia } from "./musicbrainz-artist.ts"
 import { type NowPlaying, parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl, type SpotifyAlbum, type SpotifyArtist, type SpotifyTrack } from "./spotify.ts"
 import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, type Person, personUrl, type TitleInfo } from "./tmdb.ts"
 import { mergeHistory, parseHistory, type Watch, type Watched } from "./trakt.ts"
@@ -206,6 +207,29 @@ export async function loadArtist(env: Env, get: Get, name: string): Promise<{ la
   const mbid = lastfm?.mbid ?? null
   const studio = ranked.length === 0 ? null : await settle(get(releaseGroupsUrl(name, mbid), { ttl: TTL.albums })).then((answer) => (answer === null ? null : parseStudioAlbums(answer.data, name, mbid)))
   return { lastfm, spotify, albums: albumShelf(ranked, studio), albumsFrom: studio === null ? "titles" : "musicbrainz" }
+}
+
+/**
+ * The artist's newest album, single or EP from the last two years, or one that is coming (`musicbrainz-artist.ts`); `null` where there is none or MusicBrainz did not answer. One
+ * ask, kept for a week like the albums: a server island's, so the page's own budget of asks is not touched.
+ */
+export async function loadLatestRelease(get: Get, artist: string, mbid: string | null, today: string): Promise<LatestRelease | null> {
+  const answer = await settle(get(latestReleasesUrl(artist, mbid, today), { ttl: TTL.albums }))
+  return answer === null ? null : parseLatestRelease(answer.data, artist, mbid, today)
+}
+
+/**
+ * The artist's links on from MusicBrainz (its own site, Bandcamp, YouTube…), with Wikipedia in Norwegian where Wikidata knows one, else what MusicBrainz links to: two asks at most,
+ * each kept for a week. None without MusicBrainz's id of the artist (a search by name could find another), or when MusicBrainz did not answer; Wikidata failing leaves out only itself.
+ */
+export async function loadArtistLinks(get: Get, mbid: string | null): Promise<ArtistLink[]> {
+  if (mbid === null) return []
+  const answer = await settle(get(artistUrlsUrl(mbid), { ttl: TTL.albums }))
+  const urls = answer === null ? null : parseArtistUrls(answer.data)
+  if (urls === null) return []
+  const item = urls.wikidata
+  const wikipedia = item === null ? null : await settle(get(wikipediaLinksUrl(item), { ttl: TTL.albums })).then((found) => (found === null ? null : parseWikipedia(found.data, item)))
+  return withWikipedia(urls.links, wikipedia ?? urls.wikipedia)
 }
 
 /** Last.fm's answer for an address, read; `null` where Last.fm is not set up or did not answer: the rest of the page is there. */

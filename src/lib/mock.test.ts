@@ -7,6 +7,7 @@ import { artistChartUrl, artistInfoUrl, artistTopAlbumsUrl, albumInfoUrl, parseA
 import { albumShelf, realAlbums } from "./albums.ts"
 import { MOCK_ARTISTS, mockFetch, mockSettings } from "./mock.ts"
 import { parseStudioAlbums, releaseGroupsUrl } from "./musicbrainz.ts"
+import { artistUrlsUrl, latestReleasesUrl, parseArtistUrls, parseLatestRelease, parseWikipedia, wikipediaLinksUrl } from "./musicbrainz-artist.ts"
 import { parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl } from "./spotify.ts"
 import { authorize, detailsUrl, parseInfo, parsePerson, parsePoster, personUrl } from "./tmdb.ts"
 import { parseHistory } from "./trakt.ts"
@@ -76,6 +77,22 @@ test("MusicBrainz: an artist's albums by the id Last.fm gives, or by name, and a
   assert.equal(parseStudioAlbums(await ask(releaseGroupsUrl("Ukjent", null)), "Ukjent", null), null)
   const ranked = parseTopAlbums(await ask(artistTopAlbumsUrl(BASE, name)), Number.POSITIVE_INFINITY)
   assert.deepEqual(realAlbums(ranked, byId).map((album) => album.title), ["It's Album Time"])
+})
+
+test("MusicBrainz and Wikidata: an artist's newest release (coming, new or stale) and its links, with Wikipedia in bokmål", async () => {
+  const today = new Date(NOW).toISOString().slice(0, 10)
+  const latest = async (name: string) => {
+    const { mbid } = parseArtistInfo(await ask(artistInfoUrl(BASE, name, "ola")))
+    return parseLatestRelease(await ask(latestReleasesUrl(name, mbid, today)), name, mbid, today)
+  }
+  assert.deepEqual(await latest("Röyksopp").then((release) => [release?.type, release?.upcoming]), ["Single", true])
+  assert.deepEqual(await latest("a-ha").then((release) => [release?.title, release?.upcoming]), ["Scoundrel Days", false])
+  assert.equal(await latest("Kings of Convenience"), null)
+  const { mbid } = parseArtistInfo(await ask(artistInfoUrl(BASE, "Röyksopp", "ola")))
+  const urls = parseArtistUrls(await ask(artistUrlsUrl(mbid ?? "")))
+  assert.deepEqual(urls?.links.map((link) => link.label).slice(0, 2), ["Offisiell nettside", "Bandcamp"])
+  assert.equal(urls?.wikidata, "Q193218")
+  assert.deepEqual(parseWikipedia(await ask(wikipediaLinksUrl("Q193218")), "Q193218")?.language, "no")
 })
 
 test("Trakt and TMDB: history in a range, then each title's poster, facts, credits and each person", async () => {

@@ -52,6 +52,13 @@ test("MusicBrainz is one of the hosts, asked with the site's name as its User-Ag
   assert.equal((await ask("/musicbrainz.org/ws/2/release-group", { method: "POST", body: "x" })).status, 405)
 })
 
+test("Wikidata is one of the hosts, for an artist's Wikipedia article in Norwegian, and only with GET", async () => {
+  const calls = spy()
+  assert.equal((await ask("/www.wikidata.org/w/api.php?action=wbgetentities&ids=Q1")).status, 200)
+  assert.equal(calls[0]?.url, "https://www.wikidata.org/w/api.php?action=wbgetentities&ids=Q1")
+  assert.equal((await ask("/www.wikidata.org/w/api.php", { method: "POST", body: "x" })).status, 405)
+})
+
 test("the one POST is Spotify's token, with the sign-in that came with the ask forwarded and nothing else of the page's", async () => {
   const calls = spy()
   await ask("/accounts.spotify.com/api/token", { method: "POST", body: "grant_type=refresh_token", headers: { Authorization: "Basic abc", "Content-Type": "application/x-www-form-urlencoded", Cookie: "session=1" } })

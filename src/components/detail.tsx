@@ -17,6 +17,7 @@ import { type AlbumPage, type Appearance, type ArtistPage, artistHref, albumHref
 import type { SpotifyAlbum, SpotifyArtist, SpotifyTrack } from "../lib/spotify.ts"
 import { albumKey, type ShelfAlbum } from "../lib/albums.ts"
 import { coversFromPlays } from "../lib/artist-listening.ts"
+import { type ArtistLink, type LatestRelease as Release, latestReleaseText, releaseCover } from "../lib/musicbrainz-artist.ts"
 import type { AlbumsFrom, ArtistListening } from "../lib/sources.ts"
 import { sourcesOf } from "../lib/image-sources.ts"
 import { SHAPES } from "../lib/shapes.ts"
@@ -136,15 +137,42 @@ export function TopTracks({ artist, tracks, covers, linked, base }: { artist: st
   )
 }
 
+/**
+ * The artist's newest album, single or EP from the last two years, or the one that is coming (`musicbrainz-artist.ts`): its cover (`releaseCover`: the plays', else the Cover Art Archive's), what it is
+ * and when, and a link to the album's page where it is among the plays (`played`: the edition played, by `albumKey`). Nothing where there is none.
+ */
+export function LatestRelease({ artist, release, played, covers, base, today }: { artist: string; release: Release | null; played: ReadonlyMap<string, string>; covers: ReadonlyMap<string, string>; base: string; today: string }) {
+  if (release === null) return null
+  const { kind, when } = latestReleaseText(release, today)
+  const edition = played.get(albumKey(release.title))
+  return (
+    <PageSection id="utgivelse" title={release.upcoming ? "Neste utgivelse" : "Siste utgivelse"} icon="new">
+      <PictureRows
+        {...SHAPES.album}
+        rows={[{ key: release.id, picture: null, sources: sourcesOf(releaseCover(release, covers)), title: edition === undefined ? release.title : <TextLink href={albumHref(base, artist, edition)}>{release.title}</TextLink>, detail: details([kind]), aside: when }]}
+      />
+    </PageSection>
+  )
+}
+
+/** The artist's links on from MusicBrainz (its own site, Wikipedia, Bandcamp…), as buttons under Last.fm's and Spotify's, each named for where it goes. */
+export function ArtistLinks({ links }: { links: readonly ArtistLink[] }) {
+  return links.map((link) => (
+    <LinkButton key={link.kind} href={link.url} external>
+      {link.label}
+    </LinkButton>
+  ))
+}
+
 /** The year an album came out, from MusicBrainz's day, as a tile's line. */
 const yearOf = (released: string | null): string | null => (released === null ? null : released.slice(0, 4))
 
 /**
- * An artist: what Last.fm's users write of it first, then the visitor's own listening to it (their plays over time, their most played songs by it), its albums, its recent plays, the artists like it
- * that they play too, and last the ways to it on Last.fm and Spotify. The picture and the link to it are Spotify's; the tags, the listeners and the text are Last.fm's (its text is the users', CC BY-SA, with
+ * An artist: its newest release where it is news, what Last.fm's users write of it, then the visitor's own listening to it (their plays over time, their most played songs by it), its albums, its recent plays, the artists like it
+ * that they play too, and last the ways to it on Last.fm and Spotify and on from MusicBrainz (its own site, Wikipedia…). The picture and the link to it are Spotify's; the tags, the listeners and the text are Last.fm's (its text is the users', CC BY-SA, with
  * the link back where it is shown). `chart` is the chart of the plays over time, an island the page puts in; `songs` the most played songs with their covers (`TopTracks`), another.
  */
-export function ArtistDetail({ page, base, info, listening, links, chart, similar, songs }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ShelfAlbum[]; albumsFrom: AlbumsFrom }; listening: ArtistListening | null; /** The slugs of the songs and the artists that have a page of their own here. */ links: { tracks: ReadonlySet<string>; artists: ReadonlySet<string> }; chart?: ReactNode; /** The artists like it that the visitor plays too (`SimilarArtists`), a server island the page puts in. */ similar?: ReactNode; /** The most played songs (`TopTracks`), a server island the page puts in; without it they are shown with the covers of the recent plays. */ songs?: ReactNode }) {
+export function ArtistDetail({ page, base, info, listening, links, chart, similar, songs, latest, onward }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ShelfAlbum[]; albumsFrom: AlbumsFrom }; listening: ArtistListening | null; /** The slugs of the songs and the artists that have a page of their own here. */ links: { tracks: ReadonlySet<string>; artists: ReadonlySet<string> }; chart?: ReactNode; /** The artists like it that the visitor plays too (`SimilarArtists`), a server island the page puts in. */ similar?: ReactNode; /** The most played songs (`TopTracks`), a server island the page puts in; without it they are shown with the covers of the recent plays. */ songs?: ReactNode; /** The newest release (`LatestRelease`), a server island the page puts in. */ latest?: ReactNode; /** The links on from MusicBrainz (`ArtistLinks`), a server island the page puts in. */ onward?: ReactNode }) {
   const { lastfm, spotify, albums, albumsFrom } = info
   // The albums among the recent plays have a page of their own here, under the name of the edition that was played; the others are only named.
   const played = new Map(page.plays.filter((play) => play.album !== "").map((play) => [albumKey(play.album), play.album]))
@@ -156,11 +184,13 @@ export function ArtistDetail({ page, base, info, listening, links, chart, simila
       <Stack gap="sm">
         <LinkButton href={page.url} external>Åpne på Last.fm</LinkButton>
         {spotify === null ? null : <LinkButton href={spotify.url} external>Åpne i Spotify</LinkButton>}
+        {onward}
       </Stack>
     </Stack>
   )
   return (
     <Split rail={rail} position="end">
+      {latest}
       {lastfm?.bio == null && lastfm?.listeners == null ? null : (
         <PageSection id="om" title="Om artisten">
           {lastfm.bio == null ? null : (

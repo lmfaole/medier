@@ -8,7 +8,7 @@ interface RelayEnv {
   UPSTREAM_KEY?: string
 }
 
-const GET_HOSTS = new Set(["ws.audioscrobbler.com", "api.trakt.tv", "api.themoviedb.org", "api.spotify.com", "musicbrainz.org"])
+const GET_HOSTS = new Set(["ws.audioscrobbler.com", "api.trakt.tv", "api.themoviedb.org", "api.spotify.com", "musicbrainz.org", "www.wikidata.org"])
 const FORWARDED = ["authorization", "content-type", "accept", "trakt-api-version", "trakt-api-key"]
 const USER_AGENT = "lmfaole-medier (https://github.com/lmfaole/medier)"
 

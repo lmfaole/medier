@@ -1,6 +1,7 @@
 // One-off: fetches real metadata and pictures from public, keyless APIs for the made-up data of `src/lib/mock.ts` (local development only).
 //   node scripts/fetch-mock-data.mjs            metadata and pictures: writes src/lib/mock-data.json and public/mock/*
 //   node scripts/fetch-mock-data.mjs --images   only the pictures that are missing, from the addresses in the JSON (what a fresh clone runs)
+//   node scripts/fetch-mock-data.mjs --links   only each artist's links on (MusicBrainz's url-rels, and its Wikipedia articles from Wikidata), into the JSON there is
 // Sources: Deezer (albums, tracklists, covers, artist pictures), Wikipedia and Wikidata (texts, posters, portraits, years, birthdays).
 // The pictures are other people's artwork: they are not committed (public/mock/ is in .gitignore).
 
@@ -111,7 +112,40 @@ async function image(file, source) {
 
 const slug = (text) => text.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
 
+const MUSICBRAINZ = "https://musicbrainz.org/ws/2"
+const quoted = (text) => `"${text.replace(/["\\]/g, "\\$&")}"`
+
+/** The kinds of MusicBrainz url-rels `musicbrainz-artist.ts` shows, and Wikidata's item of the artist with its Wikipedia articles in bokmål, nynorsk and English (by language, where it has one). */
+const LINK_TYPES = new Set(["official homepage", "bandcamp", "youtube", "social network", "discogs", "wikidata", "wikipedia"])
+
+async function linksOf(artist) {
+  const ask = async (path) => {
+    await sleep(1100)
+    return json(`${MUSICBRAINZ}${path}`)
+  }
+  const found = (await ask(`/artist?fmt=json&limit=1&query=${encodeURIComponent(`artist:${quoted(artist)}`)}`))?.artists?.[0]
+  if (found === undefined) return { relations: [], wikipedia: {} }
+  const relations = ((await ask(`/artist/${found.id}?inc=url-rels&fmt=json`))?.relations ?? []).filter((one) => LINK_TYPES.has(one.type) && one.ended !== true).map((one) => ({ type: one.type, url: one.url.resource }))
+  const item = /\/(Q\d+)$/.exec(relations.find((one) => one.type === "wikidata")?.url ?? "")?.[1]
+  const sitelinks = item === undefined ? {} : ((await json(`https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=sitelinks%2Furls&sitefilter=nowiki%7Cnnwiki%7Cenwiki&ids=${item}`))?.entities?.[item]?.sitelinks ?? {})
+  return { relations, wikipedia: Object.fromEntries(Object.values(sitelinks).map((one) => [one.site.replace(/wiki$/, ""), one.url])) }
+}
+
 mkdirSync(OUT, { recursive: true })
+
+if (process.argv.includes("--links")) {
+  const data = JSON.parse(readFileSync(DATA, "utf8"))
+  // Put after the picture, before the albums: a key of its own in each artist.
+  const artists = []
+  for (const { links: _links, albums, ...rest } of data.artists) {
+    const links = await linksOf(rest.name)
+    console.log(`links ${rest.name}: ${links.relations.length} relations, Wikipedia ${Object.keys(links.wikipedia).join(", ") || "none"}`)
+    artists.push({ ...rest, links, albums })
+  }
+  data.artists = artists
+  writeFileSync(DATA, `${JSON.stringify(data, null, 2)}\n`)
+  process.exit(0)
+}
 
 if (process.argv.includes("--images")) {
   const data = JSON.parse(readFileSync(DATA, "utf8"))
@@ -147,7 +181,7 @@ for (const [artistIndex, wanted] of ARTISTS.entries()) {
     await sleep(300)
   }
   const about = await wiki(wanted.wiki)
-  data.artists.push({ name: found.name, tags: [...tags, "norwegian"].slice(0, 4), weight: wanted.weight, since: wanted.since, bio: about.text ?? `${found.name} er en artist.`, image: { file: await image(`artist-${artistIndex}`, found.picture_big), source: found.picture_big }, albums })
+  data.artists.push({ name: found.name, tags: [...tags, "norwegian"].slice(0, 4), weight: wanted.weight, since: wanted.since, bio: about.text ?? `${found.name} er en artist.`, image: { file: await image(`artist-${artistIndex}`, found.picture_big), source: found.picture_big }, links: await linksOf(found.name), albums })
 }
 
 for (const [index, [name, department]] of PEOPLE.entries()) {

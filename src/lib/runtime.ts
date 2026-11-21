@@ -7,7 +7,7 @@ import { env } from "cloudflare:workers"
 
 import type { AstroCookies } from "astro"
 
-import { type Env, forUsers, type Get, lastfmError, lastfmUserExists, type Listening, loadAlbum, loadArtist, loadArtistListening, loadArtistPictures, loadLastfmNow, loadMusic, loadPerson, loadTrack, loadTrackCovers, loadWatched, settle, traktUserExists } from "./sources.ts"
+import { type Env, forUsers, type Get, lastfmError, lastfmUserExists, type Listening, loadAlbum, loadArtist, loadArtistLinks, loadArtistListening, loadArtistPictures, loadLastfmNow, loadLatestRelease, loadMusic, loadPerson, loadTrack, loadTrackCovers, loadWatched, settle, traktUserExists } from "./sources.ts"
 import { MOCK_VERSION, mockFetch, mockSettings } from "./mock.ts"
 import { loadMonth, loadTrend, loadWeek, type Medium } from "./week-source.ts"
 import type { Month } from "./months.ts"
@@ -77,6 +77,8 @@ export const lastfmNow = (users: Users): Promise<NowPlaying | null> => settle(lo
 export const artist = (users: Users, name: string) => loadArtist(settingsFor(users), get, name)
 export const artistListening = (users: Users, name: string) => settle(loadArtistListening(settingsFor(users), get, name, Date.now()))
 export const artistPictures = (names: readonly string[]) => loadArtistPictures(settings(), get, names)
+export const latestRelease = (artist: string, mbid: string | null) => loadLatestRelease(get, artist, mbid, new Date().toISOString().slice(0, 10))
+export const artistLinks = (mbid: string | null) => loadArtistLinks(get, mbid)
 export const trackCovers = (users: Users, artist: string, titles: readonly string[]) => loadTrackCovers(settingsFor(users), get, artist, titles)
 export const person = (id: number) => settle(loadPerson(settings(), get, id))
 export const album = (users: Users, artist: string, title: string) => loadAlbum(settingsFor(users), get, artist, title)
