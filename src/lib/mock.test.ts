@@ -7,7 +7,7 @@ import { artistChartUrl, artistInfoUrl, artistTopAlbumsUrl, albumInfoUrl, parseA
 import { albumShelf, realAlbums } from "./albums.ts"
 import { MOCK_ARTISTS, mockFetch, mockSettings } from "./mock.ts"
 import { parseStudioAlbums, releaseGroupsUrl } from "./musicbrainz.ts"
-import { albumChartUrl, albumPlaysIn, parseAlbumChart } from "./album-listening.ts"
+import { albumChartUrl, albumPlaysIn, allTimeAlbumsUrl, discographyChartText, discographyPlays, parseAlbumChart, parseTopAlbumsOfUser } from "./album-listening.ts"
 import { firstRelease, groupReleasesUrl, parseCredits, parseReleaseGroupMatch, parseReleases, releaseCreditsUrl, releaseGroupSearchUrl, studioIndex } from "./musicbrainz-release.ts"
 import { artistUrlsUrl, latestReleasesUrl, parseArtistUrls, parseLatestRelease, parseWikipedia, wikipediaLinksUrl } from "./musicbrainz-artist.ts"
 import { parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl } from "./spotify.ts"
@@ -110,6 +110,8 @@ test("MusicBrainz: an album's group among the albums or by a search (an EP), its
   assert.equal(parseReleaseGroupMatch(await ask(releaseGroupSearchUrl("Todd Terje", "Ukjent")), "Todd Terje", "Ukjent"), null)
   const chart = parseAlbumChart(await ask(albumChartUrl(BASE, SECONDS - 3 * 365 * DAY, SECONDS)))
   assert.ok(chart.length > 3 && MOCK_ARTISTS.some((artist) => chart.some((album) => album.artist === artist && albumPlaysIn(chart, artist, album.title) > 0)))
+  const discography = discographyPlays(studio, parseTopAlbumsOfUser(await ask(allTimeAlbumsUrl(BASE))), "Röyksopp")
+  assert.ok(discographyChartText(discography, "Melody A.M.", "Röyksopp") !== null && discography.filter((album) => album.plays > 0).length >= 2)
 })
 
 test("Trakt and TMDB: history in a range, then each title's poster, facts, credits and each person", async () => {

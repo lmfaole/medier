@@ -62,6 +62,8 @@ interface MockArtist {
       credits: { level: string; track: number | null; type: string; attributes: string[]; name: string }[]
     } | null
   }[]
+  /** Its other studio albums on MusicBrainz, never played here: its discography has them, with no plays. */
+  studio?: { title: string; year: number }[]
   /** Its links on, real ones from MusicBrainz (url-rels of the kinds shown) and its Wikipedia articles by language, from Wikidata. */
   links: { relations: { type: string; url: string }[]; wikipedia: Partial<Record<string, string>> }
 }
@@ -174,7 +176,7 @@ function lastfmReleases(artist: MockArtist, index: number): { title: string; pla
   ].map((release) => ({ ...release, plays: Math.round(release.plays) }))
 }
 
-/** MusicBrainz's answer to the search for an artist's official albums (`musicbrainz.ts`), by its id or its name: its albums, and a live album and a compilation that are not albums. */
+/** MusicBrainz's answer to the search for an artist's official albums (`musicbrainz.ts`), by its id or its name: its albums (and its others never played here), and a live album and a compilation that are not albums. */
 function musicbrainz(url: URL, now: number): Response {
   if (url.pathname.startsWith("/ws/2/release/") || url.pathname === "/ws/2/release" || (url.pathname === "/ws/2/release-group" && (url.searchParams.get("query") ?? "").includes("releasegroup:"))) return musicbrainzRelease(url)
   const artistPath = /^\/ws\/2\/artist\/([^/]+)$/.exec(url.pathname)
@@ -189,6 +191,7 @@ function musicbrainz(url: URL, now: number): Response {
   const group = (slot: number, title: string, year: number | null, secondary: string[]) => ({ id: groupMbid(index, slot), title, "primary-type": "Album", ...(secondary.length === 0 ? {} : { "secondary-types": secondary }), "first-release-date": year === null ? "" : String(year), "artist-credit": credit })
   const groups = [
     ...artist.albums.flatMap((album, albumIndex) => (album.type === "Album" ? [group(albumIndex, album.title, album.year, [])] : [])),
+    ...(artist.studio ?? []).map((album, at) => group(50 + at, album.title, album.year, [])),
     group(90, "Live at Rockefeller", 2019, ["Live"]),
     group(91, `The Best of ${artist.name}`, 2020, ["Compilation"]),
   ]
@@ -341,15 +344,17 @@ function lastfm(params: URLSearchParams, now: number): Response {
     const overall = params.get("period") === "overall"
     return json({ topartists: { artist: chart(overall ? 0 : now - 30 * DAY, now).map((one, index) => ({ name: one.artist.name, playcount: String(one.plays), url: lastfmUrl(one.artist.name), "@attr": { rank: String(index + 1) } })) } })
   }
-  if (method === "user.getweeklyalbumchart") {
+  if (method === "user.getweeklyalbumchart" || method === "user.gettopalbums") {
     const albums = new Map<string, { play: Play; plays: number }>()
-    for (const play of playsIn(Number(params.get("from")) || 0, Number(params.get("to")) || now, now)) {
+    const overall = method === "user.gettopalbums"
+    for (const play of playsIn(overall ? 0 : Number(params.get("from")) || 0, overall ? now : Number(params.get("to")) || now, now)) {
       const key = `${play.artistIndex}:${play.albumIndex}`
       const found = albums.get(key) ?? { play, plays: 0 }
       found.plays += 1
       albums.set(key, found)
     }
     const ranked = [...albums.values()].sort((a, b) => b.plays - a.plays)
+    if (overall) return json({ topalbums: { album: ranked.map((one, index) => ({ name: one.play.album, playcount: String(one.plays), url: lastfmUrl(one.play.artist.name, one.play.album), artist: { name: one.play.artist.name, url: lastfmUrl(one.play.artist.name) }, "@attr": { rank: String(index + 1) } })) } })
     return json({ weeklyalbumchart: { album: ranked.map((one, index) => ({ name: one.play.album, playcount: String(one.plays), url: lastfmUrl(one.play.artist.name, one.play.album), artist: { "#text": one.play.artist.name, mbid: "" }, "@attr": { rank: String(index + 1) } })) } })
   }
   if (method === "user.getweeklyartistchart") {

@@ -3,11 +3,13 @@
  * is quick and the sources are asked little. Pure: the asking is done by the `get` that is passed in (`runtime.ts`), so a test hands it a fake one.
  */
 
-import { type AlbumInfo, albumInfoUrl, allTimeArtistsUrl, allTimeTracksUrl, artistChartUrl, type ArtistInfo, artistInfoUrl, artistTopAlbumsUrl, type Music, parseAlbumInfo, parseArtistChart, parseArtistInfo, parseRecentTracks, parseSimilarArtists, parseTopAlbums, parseTopArtists, parseTopTracks, parseTrackInfo, parseUserInfo, similarArtistsUrl, type TopTrack, type TrackInfo, trackInfoUrl, userInfoUrl } from "./lastfm.ts"
+import { type AlbumInfo, albumInfoUrl, allTimeArtistsUrl, allTimeTracksUrl, artistChartUrl, type ArtistInfo, artistInfoUrl, artistTopAlbumsUrl, type Music, parseAlbumInfo, type Play, parseArtistChart, parseArtistInfo, parseRecentPage, parseRecentTracks, parseSimilarArtists, parseTopAlbums, parseTopArtists, parseTopTracks, parseTrackInfo, parseUserInfo, playsInRangeUrl, similarArtistsUrl, type TopTrack, type TrackInfo, trackInfoUrl, userInfoUrl } from "./lastfm.ts"
 import { albumShelf, type ShelfAlbum } from "./albums.ts"
 import { listeningPeriods, type PeriodUnit, placeAmong, playsIn, similarHeard, tracksBy } from "./artist-listening.ts"
 import { parseStudioAlbums, releaseGroupsUrl } from "./musicbrainz.ts"
-import { albumChartUrl, albumPlaysIn, parseAlbumChart } from "./album-listening.ts"
+import { albumChartUrl, albumDayCounts, albumPlaysIn, allTimeAlbumsUrl, type DiscographyAlbum, discographyPlays, parseAlbumChart, parseTopAlbumsOfUser } from "./album-listening.ts"
+import { type Month, recentMonths } from "./months.ts"
+import { dateAt } from "./weeks.ts"
 import { type Credits, discographyPlace, type DiscographyPlace, type Edition, firstRelease, groupReleasesUrl, otherEditions, parseCredits, parseReleaseGroupMatch, parseReleases, type Release, releaseCreditsUrl, releaseGroupSearchUrl, studioIndex } from "./musicbrainz-release.ts"
 import { type ArtistLink, artistUrlsUrl, type LatestRelease, latestReleasesUrl, parseArtistUrls, parseLatestRelease, parseWikipedia, wikipediaLinksUrl, withWikipedia } from "./musicbrainz-artist.ts"
 import { type NowPlaying, parseAlbumMatch, parseArtistMatch, parseToken, parseTrackMatch, refreshRequest, searchAlbumUrl, searchArtistUrl, searchTrackUrl, type SpotifyAlbum, type SpotifyArtist, type SpotifyTrack } from "./spotify.ts"
@@ -266,14 +268,15 @@ export async function loadTrack(env: Env, get: Get, artist: string, track: strin
  * An album's page: Last.fm's tags, listeners, tracks and the owner's own count, Spotify's link, day and number of tracks, and the owner's most played songs by the artist (their first thousand
  * of all time, the one answer every artist's page shares), from which each track's plays are read (`trackPlays`).
  */
-export async function loadAlbum(env: Env, get: Get, artist: string, album: string): Promise<{ lastfm: AlbumInfo | null; spotify: SpotifyAlbum | null; top: TopTrack[] | null }> {
+export async function loadAlbum(env: Env, get: Get, artist: string, album: string): Promise<{ lastfm: AlbumInfo | null; spotify: SpotifyAlbum | null; top: TopTrack[] | null; artistPlays: number | null }> {
   const base = lastfmBase(env)
-  const [lastfm, spotify, top] = await Promise.all([
+  const [lastfm, spotify, top, artistInfo] = await Promise.all([
     lastfmInfo(env, get, (base, user) => albumInfoUrl(base, artist, album, user), parseAlbumInfo),
     spotifyFound(env, get, searchAlbumUrl(album, artist), (answer) => parseAlbumMatch(answer, album, artist)),
     base === null ? null : settle(get(allTimeTracksUrl(base), { ttl: TTL.allTime })).then((answer) => (answer === null ? null : tracksBy(parseTopTracks(answer.data), artist, Number.POSITIVE_INFINITY))),
+    lastfmInfo(env, get, (base, user) => artistInfoUrl(base, artist, user), parseArtistInfo),
   ])
-  return { lastfm, spotify, top }
+  return { lastfm, spotify, top, artistPlays: artistInfo?.userPlays ?? null }
 }
 
 /**
@@ -303,6 +306,8 @@ export interface AlbumRelease {
   editions: Edition[]
   credits: Credits | null
   place: DiscographyPlace | null
+  /** The artist's studio albums in the order they came out, each with the user's plays of it (their thousand most played albums of all time, one answer every album's page shares); `null` where either is not known. */
+  discography: DiscographyAlbum[] | null
 }
 
 /** How long to wait between two asks of MusicBrainz that were not kept: it allows one a second. */
@@ -329,7 +334,11 @@ export async function loadAlbumRelease(env: Env, get: Get, artist: string, title
     }
   }
   const mbid = await lastfmInfo(env, get, (base, user) => artistInfoUrl(base, artist, user), parseArtistInfo).then((info) => info?.mbid ?? null)
-  const studio = await settle(musicbrainz(releaseGroupsUrl(artist, mbid), TTL.albums)).then((answer) => (answer === null ? null : parseStudioAlbums(answer, artist, mbid)))
+  const base = lastfmBase(env)
+  const [studio, topAlbums] = await Promise.all([
+    settle(musicbrainz(releaseGroupsUrl(artist, mbid), TTL.albums)).then((answer) => (answer === null ? null : parseStudioAlbums(answer, artist, mbid))),
+    base === null ? null : settle(get(allTimeAlbumsUrl(base), { ttl: TTL.allTime })).then((answer) => (answer === null ? null : parseTopAlbumsOfUser(answer.data))),
+  ])
   const index = studio === null ? null : studioIndex(studio, title)
   const found = studio !== null && index !== null ? studio[index] : undefined
   const searched = found === undefined ? await settle(musicbrainz(releaseGroupSearchUrl(artist, title), TTL.release)).then((answer) => (answer === null ? null : parseReleaseGroupMatch(answer, artist, title))) : null
@@ -339,7 +348,44 @@ export async function loadAlbumRelease(env: Env, get: Get, artist: string, title
   if (releases === null) return null
   const first = firstRelease(releases)
   const credits = !options.credits || first === null ? null : await settle(musicbrainz(releaseCreditsUrl(first.id), TTL.release)).then((answer) => (answer === null ? null : parseCredits(answer, artist)))
-  return { group, first, editions: otherEditions(releases, first), credits, place: studio === null ? null : discographyPlace(studio, index) }
+  return { group, first, editions: otherEditions(releases, first), credits, place: studio === null ? null : discographyPlace(studio, index), discography: studio === null || topAlbums === null ? null : discographyPlays(studio, topAlbums, artist) }
+}
+
+/** The most pages of plays (200 each) the calendar of an album's days reads in one ask of its page: six months of a heavy listener (40 plays a day) fit. */
+export const MAX_DAY_PAGES = 40
+/** How many months back the calendar of an album's days goes, the month now included. */
+export const ALBUM_DAY_MONTHS = 6
+
+/**
+ * The user's plays of an album each day of the last `ALBUM_DAY_MONTHS` months, from every play in them (the pages of `user.getrecenttracks` the history's month pages read and keep, so the two share
+ * them; a month that is over is kept for a month, the one now for five minutes). Read newest first, a few pages at a time, and only whole months: a month that would go over `MAX_DAY_PAGES`, or
+ * a page that could not be had, ends it, so the calendar is the months read and says from which day. `null` where Last.fm is not set up or not even this month could be read.
+ */
+export async function loadAlbumDays(env: Env, get: Get, artist: string, title: string, nowMs: number): Promise<{ date: string; value: number }[] | null> {
+  const base = lastfmBase(env)
+  if (base === null) return null
+  const read: { month: Month; plays: Play[] }[] = []
+  let asked = 0
+  for (const month of recentMonths(nowMs, ALBUM_DAY_MONTHS - 1)) {
+    if (asked >= MAX_DAY_PAGES) break
+    const ttl = month.end * 1000 <= nowMs ? TTL.periodDone : TTL.weekLive
+    const page = (number: number) => settle(get(playsInRangeUrl(base, month.start, month.end, number), { ttl })).then((answer) => (answer === null ? null : parseRecentPage(answer.data)))
+    const first = await page(1)
+    asked += 1
+    if (first === null) break
+    const rest = Array.from({ length: Math.max(0, first.totalPages - 1) }, (_, index) => index + 2)
+    if (asked + rest.length > MAX_DAY_PAGES) break
+    const pages: (Play[] | null)[] = []
+    // A few at a time: Last.fm refuses an IP that asks too fast.
+    for (let start = 0; start < rest.length; start += 3) pages.push(...(await Promise.all(rest.slice(start, start + 3).map((number) => page(number).then((one) => one?.plays ?? null)))))
+    asked += rest.length
+    if (pages.some((one) => one === null)) break
+    read.push({ month, plays: [...first.plays, ...pages.flatMap((one) => one ?? [])] })
+  }
+  if (read.length === 0) return null
+  const today = dateAt(nowMs)
+  const months = read.map((one) => one.month).reverse()
+  return albumDayCounts(months, read.flatMap((one) => one.plays), artist, title, `${today.year}-${String(today.month).padStart(2, "0")}-${String(today.day).padStart(2, "0")}`)
 }
 
 /** Spotify's picture of each artist in a list, asked for in the order of the list and no more than `MAX_POSTER_LOOKUPS` that were not kept in one page (the rest come with the next pages). */

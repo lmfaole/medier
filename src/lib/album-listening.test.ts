@@ -1,7 +1,8 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { aboutText, albumChartUrl, albumPlaysIn, albumSeconds, durationText, listenedSeconds, parseAlbumChart, trackPlays } from "./album-listening.ts"
+import { aboutText, albumChartUrl, albumDayCounts, albumDaysText, albumFigures, albumPlaysIn, albumSeconds, allTimeAlbumsUrl, discographyChartText, discographyPlays, durationText, listenedSeconds, parseAlbumChart, parseTopAlbumsOfUser, trackPlays } from "./album-listening.ts"
+import { parseMonth, type Month } from "./months.ts"
 
 test("the weekly album chart is read, and an album's plays count every edition of it by the artist whatever its case", () => {
   assert.equal(albumChartUrl("B", 10, 20), "B&method=user.getweeklyalbumchart&from=10&to=20")
@@ -56,4 +57,82 @@ test("lengths and about-times are said as a person would", () => {
   assert.equal(aboutText(6.2 * 3600), "omtrent 6 t")
   assert.equal(aboutText(6.3 * 3600), "omtrent 6,5 t")
   assert.equal(aboutText(123.4 * 3600), "omtrent 123 t")
+})
+
+test("the user's albums of all time are read from one shared answer, and each studio album gets their plays of every edition of it, 0 where it is not among them", () => {
+  assert.equal(allTimeAlbumsUrl("B"), "B&method=user.gettopalbums&period=overall&limit=1000")
+  const top = parseTopAlbumsOfUser({
+    topalbums: {
+      album: [
+        { name: "Melody A.M.", artist: { name: "Röyksopp" }, playcount: "120" },
+        { name: "Junior (Deluxe)", artist: { name: "röyksopp" }, playcount: "30" },
+        { name: "Junior", artist: { name: "Röyksopp" }, playcount: "60" },
+        { name: "", artist: { name: "Röyksopp" }, playcount: "5" },
+      ],
+    },
+  })
+  assert.equal(top.length, 3)
+  assert.deepEqual(parseTopAlbumsOfUser({ error: 6 }), [])
+  const studio = [
+    { title: "Melody A.M.", released: "2001-09-03" },
+    { title: "The Understanding", released: "2005-07-11" },
+    { title: "Junior", released: "2009-03-20" },
+  ]
+  assert.deepEqual(
+    discographyPlays(studio, top, "Röyksopp").map((album) => album.plays),
+    [120, 0, 90],
+  )
+})
+
+test("the chart of the discography says where this album is among them, what is counted and over what time; with too few albums or none played there is no chart", () => {
+  const albums = [
+    { title: "Melody A.M.", released: "2001-09-03", plays: 120 },
+    { title: "The Understanding", released: "2005-07-11", plays: 0 },
+    { title: "Junior", released: "2009-03-20", plays: 90 },
+  ]
+  const most = discographyChartText(albums, "Melody A.M.", "Röyksopp")
+  assert.equal(most?.title, "Melody A.M. er albumet av Röyksopp du har spilt mest")
+  assert.equal(most?.highlight, "Melody A.M.")
+  assert.match(most?.description ?? "", /3 studioalbumene, 2001–2009, eldste først/)
+  assert.equal(discographyChartText(albums, "Junior (Deluxe)", "Röyksopp")?.title, "Junior er det nest mest spilte albumet ditt av Röyksopp")
+  assert.equal(discographyChartText(albums, "The Understanding", "Röyksopp")?.title, "Du har ikke spilt The Understanding, men Melody A.M. er det du har spilt mest")
+  assert.match(discographyChartText(albums, "Junior", "Röyksopp")?.summary ?? "", /Junior: 90 avspillinger, nummer 2 av 3/)
+  assert.equal(discographyChartText(albums.slice(0, 2), "Melody A.M.", "Röyksopp"), null)
+  assert.equal(discographyChartText(albums, "Senior", "Röyksopp"), null)
+  assert.equal(discographyChartText(albums.map((album) => ({ ...album, plays: 0 })), "Junior", "Röyksopp"), null)
+})
+
+test("the head's figures are the plays, about how long, and the share of the artist; a figure that is not known is left out", () => {
+  assert.deepEqual(albumFigures(1204, 6 * 3600, 3168, "Röyksopp"), [
+    { value: "1\u00a0204", label: "avspillinger" },
+    { value: "6 t", label: "lyttetid, omtrent" },
+    { value: "38 %", label: "av det du har spilt av Röyksopp" },
+  ])
+  assert.deepEqual(albumFigures(1, null, null, "Röyksopp"), [{ value: "1", label: "avspilling" }])
+  assert.equal(albumFigures(10, null, 5, "Röyksopp").length, 1)
+})
+
+test("the days an album was played are counted on their date in Oslo, every day of the months read gets a row, and none after today", () => {
+  const months = ["2026-01", "2026-02"].map((id) => parseMonth(id) as Month)
+  const play = (playedAt: string, album = "Junior", artist = "Röyksopp") => ({ track: "Happy Up Here", artist, album, image: null, url: "", playedAt })
+  const days = albumDayCounts(
+    months,
+    [play("2026-01-31T23:30:00Z"), play("2026-02-01T10:00:00Z", "Junior (Deluxe)"), play("2026-02-02T10:00:00Z", "Senior"), play("2026-02-02T11:00:00Z", "Junior", "Other"), play("2026-01-05T08:00:00Z")],
+    "röyksopp",
+    "Junior",
+    "2026-02-10",
+  )
+  assert.equal(days.length, 31 + 10)
+  assert.equal(days[0]?.date, "2026-01-01")
+  assert.equal(days.at(-1)?.date, "2026-02-10")
+  assert.equal(days.find((day) => day.date === "2026-02-01")?.value, 2)
+  assert.equal(days.find((day) => day.date === "2026-01-05")?.value, 1)
+  assert.equal(days.reduce((sum, day) => sum + day.value, 0), 3)
+  assert.deepEqual(albumDayCounts([], [], "Röyksopp", "Junior", "2026-02-10"), [])
+
+  const text = albumDaysText(days, "Junior")
+  assert.equal(text?.title, "Du har spilt Junior 2 dager i det siste")
+  assert.match(text?.description ?? "", /fra 1\. januar 2026 til 10\. februar 2026: 3 avspillinger i alt/)
+  assert.equal(albumDaysText(days.map((day) => ({ ...day, value: 0 })), "Junior")?.title, "Du har ikke spilt Junior i det siste")
+  assert.equal(albumDaysText([], "Junior"), null)
 })

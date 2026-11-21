@@ -36,3 +36,12 @@ export function ListeningChart({ title, description, ariaLabel, summary, points 
     </ChartCard>
   )
 }
+
+/** The user's plays of each of the artist's studio albums in the order they came out, with this one picked out (`highlight`, its value over it, its label in bold), in a card. An island: the chart is drawn in the browser. */
+export function DiscographyChart({ title, description, summary, ariaLabel, highlight, albums }: { title: string; description: string; summary: string; ariaLabel: string; highlight: string; albums: readonly { title: string; plays: number }[] }) {
+  return (
+    <ChartCard title={title} description={description}>
+      <ColumnChart data={albums.map((album) => ({ label: album.title, value: album.plays }))} ariaLabel={ariaLabel} valueLabel="Avspillinger" height={220} summary={summary} highlight={highlight} showTable />
+    </ChartCard>
+  )
+}

@@ -14,7 +14,7 @@ const OUT = new URL("../public/mock/", import.meta.url)
 
 const ARTISTS = [
   { name: "a-ha", wiki: "A-ha", weight: 10, since: 1500, albums: ["Hunting High and Low", "Scoundrel Days"] },
-  { name: "Röyksopp", wiki: "Röyksopp", weight: 8, since: 1200, albums: ["Melody A.M.", "Junior"] },
+  { name: "Röyksopp", wiki: "Röyksopp", weight: 8, since: 1200, albums: ["Melody A.M.", "Junior"], studio: [["The Understanding", 2005], ["Senior", 2010], ["The Inevitable End", 2014], ["Profound Mysteries", 2022]] },
   { name: "Kings of Convenience", wiki: "Kings of Convenience", weight: 7, since: 1000, albums: ["Riot on an Empty Street", "Quiet Is the New Loud"] },
   { name: "Sigrid", wiki: "Sigrid (singer)", weight: 6, since: 700, albums: ["Sucker Punch", "How to Let Go"] },
   { name: "AURORA", wiki: "Aurora (singer)", weight: 5, since: 500, albums: ["All My Demons Greeting Me as a Friend", "A Different Kind of Human (Step 2)"] },
@@ -242,7 +242,7 @@ for (const [artistIndex, wanted] of ARTISTS.entries()) {
     await sleep(300)
   }
   const about = await wiki(wanted.wiki)
-  data.artists.push({ name: found.name, tags: [...tags, "norwegian"].slice(0, 4), weight: wanted.weight, since: wanted.since, bio: about.text ?? `${found.name} er en artist.`, image: { file: await image(`artist-${artistIndex}`, found.picture_big), source: found.picture_big }, links: await linksOf(found.name), albums })
+  data.artists.push({ name: found.name, tags: [...tags, "norwegian"].slice(0, 4), weight: wanted.weight, since: wanted.since, bio: about.text ?? `${found.name} er en artist.`, image: { file: await image(`artist-${artistIndex}`, found.picture_big), source: found.picture_big }, links: await linksOf(found.name), albums, ...(wanted.studio === undefined ? {} : { studio: wanted.studio.map(([title, year]) => ({ title, year })) }) })
 }
 
 for (const [index, [name, department]] of PEOPLE.entries()) {

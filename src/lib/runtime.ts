@@ -7,7 +7,7 @@ import { env } from "cloudflare:workers"
 
 import type { AstroCookies } from "astro"
 
-import { type Env, forUsers, type Get, lastfmError, lastfmUserExists, type Listening, loadAlbum, loadAlbumRelease, loadAlbumTimeline, loadArtist, loadArtistLinks, loadArtistListening, loadArtistPictures, loadLastfmNow, loadLatestRelease, loadMusic, loadPerson, loadTrack, loadTrackCovers, loadWatched, settle, traktUserExists } from "./sources.ts"
+import { type Env, forUsers, type Get, lastfmError, lastfmUserExists, type Listening, loadAlbum, loadAlbumDays, loadAlbumRelease, loadAlbumTimeline, loadArtist, loadArtistLinks, loadArtistListening, loadArtistPictures, loadLastfmNow, loadLatestRelease, loadMusic, loadPerson, loadTrack, loadTrackCovers, loadWatched, settle, traktUserExists } from "./sources.ts"
 import { MOCK_VERSION, mockFetch, mockSettings } from "./mock.ts"
 import { loadMonth, loadTrend, loadWeek, type Medium } from "./week-source.ts"
 import type { Month } from "./months.ts"
@@ -84,6 +84,7 @@ export const person = (id: number) => settle(loadPerson(settings(), get, id))
 export const album = (users: Users, artist: string, title: string) => loadAlbum(settingsFor(users), get, artist, title)
 export const albumTimeline = (users: Users, artist: string, title: string) => settle(loadAlbumTimeline(settingsFor(users), get, artist, title, Date.now()))
 export const albumRelease = (users: Users, artist: string, title: string, credits: boolean) => settle(loadAlbumRelease(settingsFor(users), get, artist, title, { credits, pause: (ms) => (mocking() ? Promise.resolve() : new Promise((done) => setTimeout(done, ms))) }))
+export const albumDays = (users: Users, artist: string, title: string) => settle(loadAlbumDays(settingsFor(users), get, artist, title, Date.now()))
 export const track = (users: Users, artist: string, title: string) => loadTrack(settingsFor(users), get, artist, title)
 export const week = (users: Users, which: Week, medium: Medium) => settle(loadWeek(settingsFor(users), get, which, Date.now(), medium))
 export const month = (users: Users, which: Month, medium: Medium) => settle(loadMonth(settingsFor(users), get, which, Date.now(), medium))

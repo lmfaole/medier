@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { type Env, forUsers, type Get, lastfmUserExists, loadAlbum, loadAlbumRelease, loadAlbumTimeline, loadArtist, loadArtistLinks, loadArtistListening, loadArtistPictures, loadLastfmNow, loadLatestRelease, loadMusic, lastfmError, loadPerson, loadTrack, loadTrackCovers, loadWatched, MAX_POSTER_LOOKUPS, MAX_TRACK_COVERS, settle, traktUserExists, TTL } from "./sources.ts"
+import { type Env, forUsers, type Get, lastfmUserExists, loadAlbum, loadAlbumDays, loadAlbumRelease, loadAlbumTimeline, loadArtist, loadArtistLinks, loadArtistListening, loadArtistPictures, loadLastfmNow, loadLatestRelease, loadMusic, lastfmError, loadPerson, loadTrack, loadTrackCovers, loadWatched, MAX_POSTER_LOOKUPS, MAX_TRACK_COVERS, settle, traktUserExists, TTL, MAX_DAY_PAGES } from "./sources.ts"
 
 /** A `get` that answers from a table by the start of the address and remembers what was asked. */
 function fake(answers: Record<string, unknown>, hits = new Set<string>()): { get: Get; asked: { url: string; ttl: number; method: string | undefined }[] } {
@@ -279,7 +279,7 @@ test("an album or a track Spotify does not know, or with Spotify not set up, has
   const noSpotify = await loadTrack({ LASTFM_API_KEY: "k", LASTFM_USER: "u" }, musicGet().get, "Band", "Song")
   assert.equal(noSpotify.spotify, null)
   assert.equal(noSpotify.lastfm?.userPlays, 4)
-  assert.deepEqual(await loadAlbum({}, musicGet().get, "Band", "LP"), { lastfm: null, spotify: null, top: null })
+  assert.deepEqual(await loadAlbum({}, musicGet().get, "Band", "LP"), { lastfm: null, spotify: null, top: null, artistPlays: null })
 })
 
 test("an answer of Last.fm's that is an error says so, though its status was ok, and nothing else is taken for one", () => {
@@ -378,6 +378,8 @@ test("an album on MusicBrainz is its group among the artist's albums, the group'
   assert.equal(brainz.length, 3)
   assert.deepEqual(brainz.slice(1).map((one) => one.ttl), [TTL.release, TTL.release])
   assert.deepEqual(pauses, [1100, 1100])
+  assert.deepEqual(found?.discography?.map((one) => [one.title, one.plays]), [["Melody A.M.", 0], ["The Understanding", 0]])
+  assert.ok(asked.some((one) => one.url.endsWith("&method=user.gettopalbums&period=overall&limit=1000") && one.ttl === TTL.allTime))
   const lean = fake({ "https://ws.audioscrobbler.com/2.0/": {}, "https://musicbrainz.org/ws/2/release-group": { "release-groups": [] }, "https://musicbrainz.org/ws/2/release?": { releases: [] } })
   assert.equal((await loadAlbumRelease(ENV, lean.get, "Röyksopp", "Senior", { credits: false, pause }))?.credits ?? null, null)
   assert.ok(!lean.asked.some((one) => one.url.includes("/ws/2/release/")))
@@ -396,4 +398,30 @@ test("an album's listening over time is one weekly album chart a stretch, a fini
   assert.equal(charts.filter((one) => one.ttl === TTL.periodDone).length, charts.length - 1)
   const down: Get = async (url) => (url.includes("user.getinfo") ? { data: { user: { registered: { unixtime: String(registered) } } }, hit: false } : Promise.reject(new Error("down")))
   assert.equal(await loadAlbumTimeline(ENV, down, "Röyksopp", "Junior", now), null)
+})
+
+test("the days an album was played are read from whole months of plays, newest first, a finished month kept for a month; a month that would go over the limit of pages, or a page that fails, ends it", async () => {
+  const now = Date.UTC(2026, 2, 15, 12)
+  const asked: { url: string; ttl: number }[] = []
+  const play = (iso: string, album: string) => ({ name: "Happy Up Here", artist: { "#text": "Röyksopp" }, album: { "#text": album }, url: "", date: { uts: String(Date.parse(iso) / 1000) } })
+  const get: Get = async (url, request) => {
+    asked.push({ url, ttl: request.ttl })
+    const query = new URL(url).searchParams
+    const month = new Date(Number(query.get("from")) * 1000 + 86400000).toISOString().slice(0, 7)
+    const pages = month === "2026-01" ? MAX_DAY_PAGES : 2
+    const track = month === "2026-02" && query.get("page") === "1" ? [play("2026-02-03T10:00:00Z", "Junior"), play("2026-02-03T11:00:00Z", "Senior")] : []
+    return { data: { recenttracks: { track, "@attr": { page: query.get("page"), totalPages: String(pages), total: String(pages * 200) } } }, hit: false }
+  }
+  const days = await loadAlbumDays(ENV, get, "Röyksopp", "Junior", now)
+  assert.equal(days?.[0]?.date, "2026-02-01")
+  assert.equal(days?.at(-1)?.date, "2026-03-15")
+  assert.equal(days?.find((day) => day.date === "2026-02-03")?.value, 1)
+  assert.equal(days?.reduce((sum, day) => sum + day.value, 0), 1)
+  assert.deepEqual([...new Set(asked.map((one) => `${new Date(Number(new URL(one.url).searchParams.get("from")) * 1000 + 86400000).toISOString().slice(0, 7)} ${one.ttl}`))], [`2026-03 ${TTL.weekLive}`, `2026-02 ${TTL.periodDone}`, `2026-01 ${TTL.periodDone}`])
+  assert.ok(asked.length <= MAX_DAY_PAGES)
+  const failing: Get = async () => {
+    throw new Error("429")
+  }
+  assert.equal(await loadAlbumDays(ENV, failing, "Röyksopp", "Junior", now), null)
+  assert.equal(await loadAlbumDays({}, get, "Röyksopp", "Junior", now), null)
 })

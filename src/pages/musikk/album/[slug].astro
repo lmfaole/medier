@@ -1,9 +1,12 @@
 ---
 import { AlbumDetail, AlbumFacts, albumFactsOf } from '../../../components/detail'
+import AlbumDaysIsland from '../../../components/AlbumDaysIsland.astro'
 import AlbumFactsIsland from '../../../components/AlbumFactsIsland.astro'
 import AlbumListeningIsland from '../../../components/AlbumListeningIsland.astro'
 import AlbumReleaseIsland from '../../../components/AlbumReleaseIsland.astro'
+import AlbumTrendIsland from '../../../components/AlbumTrendIsland.astro'
 import { SectionSkeleton } from '@lmfaole/designsystem/components/section-skeleton'
+import { albumFigures } from '../../../lib/album-listening'
 import { albumKey } from '../../../lib/albums'
 import { Head } from '../../../components/head'
 import { sourcesOf } from '../../../lib/image-sources'
@@ -19,6 +22,9 @@ if (users.lastfm !== null && page === undefined) return Astro.rewrite('/404/')
 const info = page === undefined ? null : await album(users, page.artist, page.title)
 const played = new Set(listening === null ? [] : trackPages(listening).map((track) => track.slug))
 const base = import.meta.env.BASE_URL
+const facts = page === undefined || info === null ? null : albumFactsOf(page, info)
+// The head's figures, said there and not again in the facts: the plays (with a line of them over time, streamed in), about how long, and the share of the artist.
+const figures = page === undefined || info === null || facts === null ? [] : albumFigures(facts.userPlays, facts.listened, info.artistPlays, page.artist)
 // The artist's albums that have a page here, under the title each was played under: the discography links to them.
 const linked: [string, string][] = page === undefined || listening === null ? [] : [...new Map(albumPages(listening).filter((one) => one.artist === page.artist).map((one) => [albumKey(one.title), one.title]))]
 ---
@@ -34,7 +40,13 @@ const linked: [string, string][] = page === undefined || listening === null ? []
   lead={`Album av ${page.artist}`}
   crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.artist, href: artistHref(base, page.artist) }, { label: page.title, href: albumHref(base, page.artist, page.title) }]}
 >
-  <Head client:idle kind="Album" title={page.title} sources={sourcesOf(page.image)} shape="album" sleeve by={{ name: page.artist, href: artistHref(base, page.artist) }} />
+  <Head client:idle kind="Album" title={page.title} sources={sourcesOf(page.image)} shape="album" sleeve large figures={figures} by={{ name: page.artist, href: artistHref(base, page.artist) }}>
+    {figures.length > 0 && (
+      <AlbumTrendIsland slot="trend" server:defer artist={page.artist} title={page.title}>
+        <Fragment slot="fallback" />
+      </AlbumTrendIsland>
+    )}
+  </Head>
   <AlbumDetail page={page} base={base} info={info} played={played}>
     <AlbumFactsIsland slot="facts" server:defer facts={albumFactsOf(page, info)} artist={page.artist} title={page.title} base={base}>
       <AlbumFacts slot="fallback" facts={albumFactsOf(page, info)} base={base} />
@@ -42,6 +54,9 @@ const linked: [string, string][] = page === undefined || listening === null ? []
     <AlbumListeningIsland slot="chart" server:defer artist={page.artist} title={page.title}>
       <SectionSkeleton slot="fallback" title="lyttingen din over tid" lines={6} />
     </AlbumListeningIsland>
+    <AlbumDaysIsland slot="days" server:defer artist={page.artist} title={page.title}>
+      <SectionSkeleton slot="fallback" title="dagene du spilte albumet" lines={6} />
+    </AlbumDaysIsland>
     <AlbumReleaseIsland slot="release" server:defer artist={page.artist} title={page.title} base={base} linked={linked}>
       <SectionSkeleton slot="fallback" title="medvirkende og utgaver fra MusicBrainz" lines={6} />
     </AlbumReleaseIsland>
