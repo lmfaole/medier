@@ -1,38 +1,35 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { artistKind, artistLines, firstWith, monthRanges, mostPlayedOf, placeAmong, playsIn, shareText, similarHeard, tracksBy, yearAgoToday, yearRanges } from "./artist-listening.ts"
-import type { Play } from "./lastfm.ts"
+import { artistFigures, artistKind, listeningChartText, listeningPeriods, placeAmong, playsIn, shareText, similarHeard, tracksBy } from "./artist-listening.ts"
 import { osloMidnight } from "./weeks.ts"
 
-test("the years run from the one the user started in to this one, in Oslo time, and a month's ranges meet end to start", () => {
-  const years = yearRanges(osloMidnight(2019, 6, 1), Date.UTC(2021, 2, 1))
-  assert.deepEqual(years.map((one) => one.year), [2019, 2020, 2021])
-  assert.equal(years[1]?.start, osloMidnight(2020, 1, 1))
-  assert.equal(years[1]?.end, osloMidnight(2021, 1, 1))
-  const months = monthRanges(2020)
-  assert.equal(months.length, 12)
-  assert.ok(months.every((one, index) => index === 0 || one.start === months[index - 1]?.end))
-  assert.equal(months[11]?.end, osloMidnight(2021, 1, 1))
+test("the stretches since the user started are the finest of month, quarter, half-year and year that make at most 24, on the calendar's boundaries in Oslo, end to start", () => {
+  const months = listeningPeriods(osloMidnight(2025, 3, 10), Date.UTC(2026, 10, 21, 12))
+  assert.equal(months.unit, "month")
+  assert.equal(months.periods.length, 21)
+  assert.deepEqual([months.periods[0]?.label, months.periods[0]?.long, months.periods[0]?.start], ["mars 2025", "mars 2025", osloMidnight(2025, 3, 1)])
+  assert.equal(months.periods.at(-1)?.label, "nov. 2026")
+  assert.equal(months.periods.at(-1)?.end, osloMidnight(2026, 12, 1))
+  assert.ok(months.periods.every((one, index) => index === 0 || one.start === months.periods[index - 1]?.end))
+  const quarters = listeningPeriods(osloMidnight(2022, 2, 1), Date.UTC(2026, 10, 21, 12))
+  assert.equal(quarters.unit, "quarter")
+  assert.deepEqual([quarters.periods[0]?.label, quarters.periods[0]?.long, quarters.periods[0]?.start], ["1. kv. 2022", "1. kvartal 2022", osloMidnight(2022, 1, 1)])
+  assert.equal(quarters.periods.length, 20)
+  assert.equal(quarters.periods.at(-1)?.end, osloMidnight(2027, 1, 1))
+  const halves = listeningPeriods(osloMidnight(2018, 8, 1), Date.UTC(2026, 10, 21, 12))
+  assert.equal(halves.unit, "half")
+  assert.deepEqual(halves.periods.map((one) => one.label).slice(0, 2), ["2. halvår 2018", "1. halvår 2019"])
+  const years = listeningPeriods(osloMidnight(2000, 1, 1), Date.UTC(2026, 10, 21, 12))
+  assert.equal(years.unit, "year")
+  assert.equal(years.periods.length, 24)
+  assert.deepEqual([years.periods[0]?.label, years.periods.at(-1)?.label], ["2003", "2026"])
 })
 
 test("an artist's plays in a chart are found whatever the case, and are 0 where it is not in it", () => {
   const chart = [{ name: "AURORA", plays: 12, rank: 1 }]
   assert.equal(playsIn(chart, "Aurora"), 12)
   assert.equal(playsIn(chart, "Sigrid"), 0)
-})
-
-test("the first item with something is found by halving: a dozen months in four questions, and none where nothing is or a question fails", async () => {
-  const months = [0, 0, 0, 0, 0, 0, 0, 3, 0, 5, 0, 0]
-  let asked = 0
-  const has = async (from: number, to: number) => {
-    asked += 1
-    return months.slice(from, to + 1).some((one) => one > 0)
-  }
-  assert.equal(await firstWith(12, has), 7)
-  assert.ok(asked <= 5)
-  assert.equal(await firstWith(12, async () => false), null)
-  assert.equal(await firstWith(12, async (_from, to) => (to === 11 ? true : null)), null)
 })
 
 test("the place among all the user has heard, and its share, written in Norwegian", () => {
@@ -54,25 +51,24 @@ test("the user's songs by the artist, and the artists like it that they play too
   assert.equal(similarHeard(similar, top, "a-ha", 1).length, 1)
 })
 
-test("a year ago today is that day in Oslo, and 29 February is the 28th a year on", () => {
-  assert.deepEqual(yearAgoToday(Date.UTC(2026, 10, 21, 12)), { start: osloMidnight(2025, 11, 21), end: osloMidnight(2025, 11, 22) })
-  assert.deepEqual(yearAgoToday(Date.UTC(2028, 1, 29, 12)), { start: osloMidnight(2027, 2, 28), end: osloMidnight(2027, 3, 1) })
-})
-
-test("the song played most that day, the one played first of two as many, and nothing where the artist was not played", () => {
-  const play = (track: string, artist = "a-ha"): Play => ({ track, artist, album: "", image: null, url: "", playedAt: "2025-11-21T12:00:00.000Z" })
-  // Newest first, as Last.fm gives them.
-  const plays = [play("Hunting High and Low"), play("Take On Me"), play("Hunting High and Low"), play("Take On Me"), play("Strangers", "Sigrid")]
-  assert.deepEqual(mostPlayedOf(plays, "A-ha"), { track: "Take On Me", plays: 2 })
-  assert.equal(mostPlayedOf(plays, "Aurora"), null)
-})
-
-test("the head says the artist's place in words, how much and since when", () => {
+test("the head says the artist's place in words, and its plays, share of all and plays last month as figures", () => {
   assert.equal(artistKind(null), "Artist")
   assert.equal(artistKind(1), "Din mest spilte artist")
   assert.equal(artistKind(4), "Din fjerde mest spilte artist")
   assert.equal(artistKind(1042), `Nr. ${(1042).toLocaleString("nb-NO")} av artistene dine`)
-  assert.deepEqual(artistLines(1234, 0.031, { year: 2011, month: 3 }), [`${(1234).toLocaleString("nb-NO")} avspillinger · 3,1 % av alt du har hørt`, "Først hørt i mars 2011"])
-  assert.deepEqual(artistLines(null, null, { year: 2011, month: null }), ["Først hørt i 2011"])
-  assert.deepEqual(artistLines(null, null, null), [])
+  assert.deepEqual(artistFigures(1234, 0.031, 56), [{ value: (1234).toLocaleString("nb-NO"), label: "avspillinger" }, { value: "3,1 %", label: "av alt du har hørt" }, { value: "56", label: "siste måned" }])
+  assert.deepEqual(artistFigures(1, null, null), [{ value: "1", label: "avspilling" }])
+  assert.deepEqual(artistFigures(null, null, 1), [{ value: "1", label: "siste måned" }])
+})
+
+test("the chart over time says when it was first played, when most and how much now; and that it started before the history where it did", () => {
+  const series = [{ long: "1. kvartal 2022", plays: 0 }, { long: "2. kvartal 2022", plays: 0 }, { long: "3. kvartal 2022", plays: 12 }, { long: "4. kvartal 2022", plays: 40 }, { long: "1. kvartal 2023", plays: 7 }]
+  assert.deepEqual(listeningChartText("quarter", series), {
+    title: "Mest spilt i 4. kvartal 2022",
+    description: "Avspillinger per kvartal, 1. kvartal 2022 til 1. kvartal 2023.",
+    summary: "Arealdiagram. Først spilt i 3. kvartal 2022, mest i 4. kvartal 2022 (40 avspillinger), 7 avspillinger hittil i 1. kvartal 2023.",
+  })
+  assert.equal(listeningChartText("year", [{ long: "2025", plays: 3 }, { long: "2026", plays: 9 }])?.summary, "Arealdiagram. Spilt alt i 2025, da historikken din på Last.fm begynner, mest hittil i 2026 (9 avspillinger).")
+  assert.equal(listeningChartText("month", [{ long: "mai 2026", plays: 0 }, { long: "juni 2026", plays: 0 }])?.title, "Ikke spilt i perioden")
+  assert.equal(listeningChartText("month", [{ long: "mai 2026", plays: 4 }]), null)
 })

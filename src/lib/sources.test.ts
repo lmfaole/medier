@@ -274,7 +274,7 @@ test("an answer of Last.fm's that is an error says so, though its status was ok,
   for (const other of [null, "text", [], 3, undefined]) assert.equal(lastfmError(other), null)
 })
 
-test("an artist's listening: plays by year (a year over kept long, this one briefly), the month first heard, its place and share, its songs, the artists like it heard too, and a year ago today", async () => {
+test("an artist's listening: plays over time (a stretch over kept long, this one briefly), its place and share, its songs, and the artists like it heard too", async () => {
   const now = Date.UTC(2026, 10, 21, 12)
   const asked: { url: string; ttl: number }[] = []
   // Plays in 2025 (from March) and 2026; the chart answers by the range asked.
@@ -294,21 +294,22 @@ test("an artist's listening: plays by year (a year over kept long, this one brie
     if (method === "user.gettopartists") return { data: { topartists: { artist: [{ name: "Sigrid", playcount: "400" }, { name: "a-ha", playcount: "310" }, { name: "Aurora", playcount: "20" }] } }, hit: false }
     if (method === "user.gettoptracks") return { data: { toptracks: { track: [{ name: "Strangers", playcount: "50", artist: { name: "Sigrid" } }, { name: "Take On Me", playcount: "40", artist: { name: "a-ha" } }] } }, hit: false }
     if (method === "artist.getsimilar") return { data: { similarartists: { artist: [{ name: "Morten Harket", match: "1" }, { name: "Aurora", match: "0.4" }] } }, hit: false }
-    if (method === "user.getrecenttracks") return { data: { recenttracks: { track: [{ name: "Take On Me", artist: { "#text": "a-ha" }, date: { uts: "1763700000" } }, { name: "Take On Me", artist: { "#text": "a-ha" }, date: { uts: "1763690000" } }] } }, hit: false }
     throw new Error(`nothing for ${url}`)
   }
   const found = await loadArtistListening({ ...ENV, SPOTIFY_CLIENT_ID: "s", SPOTIFY_CLIENT_SECRET: "s", SPOTIFY_REFRESH_TOKEN: "r" }, get, "a-ha", now)
-  assert.deepEqual(found?.years, [{ year: 2024, plays: 0 }, { year: 2025, plays: 5 }, { year: 2026, plays: 7 }])
-  assert.deepEqual(found?.first, { year: 2025, month: 3 })
+  // From June 2024 to November 2026 is 30 months: quarters, eleven of them (from the second of 2024).
+  assert.equal(found?.timeline?.unit, "quarter")
+  assert.equal(found?.timeline?.series.length, 11)
+  assert.deepEqual(found?.timeline?.series.slice(2, 4), [{ label: "4. kv. 2024", long: "4. kvartal 2024", plays: 0 }, { label: "1. kv. 2025", long: "1. kvartal 2025", plays: 5 }])
+  assert.deepEqual(found?.timeline?.series.at(-1), { label: "4. kv. 2026", long: "4. kvartal 2026", plays: 7 })
   assert.deepEqual(found?.place, { rank: 2, plays: 310, share: 0.031 })
   assert.deepEqual(found?.tracks?.map((track) => track.title), ["Take On Me"])
   assert.deepEqual(found?.similar, [{ name: "Aurora", plays: 20, url: "", spotify: null }])
-  assert.deepEqual(found?.memory, { track: "Take On Me", plays: 2 })
   const charts = asked.filter((one) => one.url.includes("getweeklyartistchart"))
-  assert.equal(charts.find((one) => one.url.includes(`from=${Date.UTC(2024, 0, 1) / 1000 - 3600}&`))?.ttl, TTL.yearDone)
-  assert.equal(charts.find((one) => one.url.includes(`from=${Date.UTC(2026, 0, 1) / 1000 - 3600}&`))?.ttl, TTL.yearLive)
-  assert.ok(charts.length <= 3 + 5)
-  assert.equal(asked.find((one) => one.url.includes("method=user.getrecenttracks"))?.ttl, TTL.memory)
+  assert.equal(charts.find((one) => one.url.includes(`from=${Date.UTC(2024, 3, 1) / 1000 - 7200}&`))?.ttl, TTL.periodDone)
+  assert.equal(charts.find((one) => one.url.includes(`from=${Date.UTC(2026, 9, 1) / 1000 - 7200}&`))?.ttl, TTL.periodLive)
+  assert.equal(charts.length, 11)
+  assert.ok(!asked.some((one) => one.url.includes("method=user.getrecenttracks")))
 })
 
 test("an artist's listening leaves out only what failed, and asks nothing without a username", async () => {
@@ -317,6 +318,6 @@ test("an artist's listening leaves out only what failed, and asks nothing withou
     throw new Error("down")
   }
   const found = await loadArtistListening(ENV, get, "a-ha", Date.UTC(2026, 10, 21))
-  assert.deepEqual(found, { years: null, first: null, place: { rank: 1, plays: 3, share: null }, tracks: null, similar: [], memory: null })
+  assert.deepEqual(found, { timeline: null, place: { rank: 1, plays: 3, share: null }, tracks: null, similar: [] })
   assert.equal(await loadArtistListening(forUsers(ENV, { lastfm: null, trakt: null }), get, "a-ha", 0), null)
 })

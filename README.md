@@ -74,12 +74,11 @@ The page of an artist lists its most played albums (`artist.gettopalbums`, one c
 
 ## Your listening to an artist
 
-The page of an artist also says what the visitor's own listening to it is (`loadArtistListening` in `src/lib/sources.ts`, read by `src/lib/artist-listening.ts`), each part left out on its own when Last.fm does not answer:
-the head says its place among all they have heard in words («Din fjerde mest spilte artist»), their plays and share of all («10 903 avspillinger · 22 % av alt du har hørt»), when they first heard it and its tags as badges;
-**Din lytting** has the plays year by year since they started on Last.fm (`user.getinfo`, then one `user.getweeklyartistchart` a year: a year that is over is kept for a month, this one for an hour), the month it
-was first heard (the first year halved and halved again, four charts more) and what they played of it a year ago today (`user.getrecenttracks` for that day in Oslo, kept for the day); **Dine mest spilte** are their
-most played songs by it (`user.gettoptracks` of all time, a thousand, one answer for every artist's page; each links to its page where it has one); and **Lignende artister du også hører** are those of
-Last.fm's 50 like it (`artist.getsimilar`) that are among their thousand most played artists of all time (`user.gettopartists`, shared too), at most six, with Spotify's pictures. A first visit asks some 10–20 questions, kept afterwards.
+The page of an artist also says what the visitor's own listening to it is (`loadArtistListening` in `src/lib/sources.ts`, read by `src/lib/artist-listening.ts`), each part left out on its own when Last.fm does not answer, and each fact said once:
+the head (`DetailHeader size="large"`) is the artist's face, its Spotify picture large and lit (`Picture size="feature"`), with its place among all they have heard in words («Din fjerde mest spilte artist»), three figures large beside it (their plays, share of all and plays the last month) and its tags as badges;
+**Om artisten** comes first, Last.fm's text and its listeners; **Din lytting** is an area chart of their plays over time since they started on Last.fm (`user.getinfo`, then one `user.getweeklyartistchart` a period: the finest of months, quarters, half years and years that gives at most 24 points, so a first visit asks at most 24; a period that is over is kept for a month, the current one for an hour, and the charts are the same for every artist, so they are shared by all artists' pages): where the line leaves zero is when they first heard it, and its summary says it in words;
+**Dine mest spilte** are their most played songs by it (`user.gettoptracks` of all time, a thousand, one answer for every artist's page; each links to its page where it has one); and **Lignende artister du også hører**, in the pane, are those of
+Last.fm's 50 like it (`artist.getsimilar`) that are among their thousand most played artists of all time (`user.gettopartists`, shared too), at most six, with Spotify's pictures.
 
 ## Weekly and monthly wrapped
 

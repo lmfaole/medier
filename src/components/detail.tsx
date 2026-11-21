@@ -16,7 +16,6 @@ import { type AlbumPage, type Appearance, type ArtistPage, artistHref, slugify, 
 import type { SpotifyAlbum, SpotifyArtist, SpotifyTrack } from "../lib/spotify.ts"
 import { albumKey } from "../lib/albums.ts"
 import type { AlbumsFrom, ArtistListening } from "../lib/sources.ts"
-import { firstText, shareText } from "../lib/artist-listening.ts"
 import { sourcesOf } from "../lib/image-sources.ts"
 import { SHAPES } from "../lib/shapes.ts"
 import { type Person, profileSources } from "../lib/tmdb.ts"
@@ -85,59 +84,67 @@ export function TitleDetail({ page, base }: { page: TitlePage; base: string }) {
 }
 
 /**
- * An artist: what is known of it and the visitor's own listening to it (by year, when first heard, a year ago today, their most played songs by it), its albums, its recent plays, the artists like it
+ * An artist: what Last.fm's users write of it first, then the visitor's own listening to it (their plays over time, their most played songs by it), its albums, its recent plays, the artists like it
  * that they play too, and last the ways to it on Last.fm and Spotify. The picture and the link to it are Spotify's; the tags, the listeners and the text are Last.fm's (its text is the users', CC BY-SA, with
- * the link back where it is shown). `chart` is the chart of the plays by year, an island the page puts in.
+ * the link back where it is shown). `chart` is the chart of the plays over time, an island the page puts in.
  */
 export function ArtistDetail({ page, base, info, listening, links, chart }: { page: ArtistPage; base: string; info: { lastfm: ArtistInfo | null; spotify: SpotifyArtist | null; albums: ArtistAlbum[]; albumsFrom: AlbumsFrom }; listening: ArtistListening | null; /** The slugs of the songs and the artists that have a page of their own here. */ links: { tracks: ReadonlySet<string>; artists: ReadonlySet<string> }; chart?: ReactNode }) {
   const { lastfm, spotify, albums, albumsFrom } = info
   // The albums among the recent plays have a page of their own here, under the name of the edition that was played; the others are only named.
   const played = new Map(page.plays.filter((play) => play.album !== "").map((play) => [albumKey(play.album), play.album]))
-  const place = listening?.place ?? null
-  const first = listening?.first ?? null
-  const memory = listening?.memory ?? null
   const tracks = listening?.tracks ?? []
   const similar = listening?.similar ?? []
   const song = (title: string) => (links.tracks.has(trackSlug(page.name, title)) ? <TextLink href={trackHref(base, page.name, title)}>{title}</TextLink> : title)
+  // The plays, the place, the share of all and last month's plays are the head's figures, and when it was first heard is in the chart: each is said once. The pane is what is like it, and the ways out.
   const rail = (
-    <Stack gap="lg">
-      <FactList
-        facts={[
-          ["Spilt av deg totalt", lastfm?.userPlays == null ? (place === null ? null : count(place.plays, "gang", "ganger")) : count(lastfm.userPlays, "gang", "ganger")],
-          ["Blant artistene dine", place === null ? null : `Nr. ${place.rank.toLocaleString("nb-NO")}`],
-          ["Av alt du har hørt", place?.share == null ? null : shareText(place.share)],
-          ["Først hørt", first === null ? null : firstText(first)],
-          ["Mest spilt siste måned", page.top === null ? null : `Nr. ${page.top.rank}, ${count(page.top.plays, "avspilling", "avspillinger")}`],
-          ["Blant de siste avspillingene", page.plays.length === 0 ? "Ingen" : count(page.plays.length, "gang", "ganger")],
-          ["Lyttere på Last.fm", lastfm?.listeners == null ? null : lastfm.listeners.toLocaleString("nb-NO")],
-        ]}
-      />
+    <Stack gap="xl">
+      {similar.length === 0 ? null : (
+        <PageSection id="lignende" title="Lignende artister du også hører" icon="person">
+          <PictureRows
+            {...SHAPES.artist}
+            rows={similar.map((one) => ({
+              key: one.name,
+              picture: null,
+              sources: one.spotify?.images ?? [],
+              title: links.artists.has(slugify(one.name)) ? <TextLink href={artistHref(base, one.name)}>{one.name}</TextLink> : one.name,
+              detail: one.spotify === null ? null : <ExternalLink href={one.spotify.url}>Åpne i Spotify</ExternalLink>,
+              aside: count(one.plays, "avspilling", "avspillinger"),
+            }))}
+          />
+          <Text size="sm" tone="muted">
+            Artistene <TextLink href={page.url} external>Last.fm</TextLink> finner lignende, blant dem du har hørt mest på.
+          </Text>
+        </PageSection>
+      )}
+      <Stack gap="sm">
+        <LinkButton href={page.url} external>Åpne på Last.fm</LinkButton>
+        {spotify === null ? null : <LinkButton href={spotify.url} external>Åpne i Spotify</LinkButton>}
+      </Stack>
     </Stack>
   )
   return (
-    <Split rail={rail}>
-      {chart === undefined && first === null && memory === null ? null : (
-        <PageSection id="lytting" title="Din lytting" icon="chart">
-          {first === null ? null : <Text>Du hørte {page.name} første gang i {firstText(first)}.</Text>}
-          {memory === null ? null : (
-            <Text>
-              For ett år siden i dag spilte du «{song(memory.track)}» {count(memory.plays, "gang", "ganger")}.
-            </Text>
+    <Split rail={rail} position="end">
+      {lastfm?.bio == null && lastfm?.listeners == null ? null : (
+        <PageSection id="om" title="Om artisten">
+          {lastfm.bio == null ? null : (
+            <>
+              <Text>{lastfm.bio}</Text>
+              <Text size="sm" tone="muted">
+                Tekst fra <TextLink href={page.url} external>Last.fm</TextLink>, brukernes egen (CC BY-SA).
+              </Text>
+            </>
           )}
+          <FactList facts={[["Lyttere på Last.fm", lastfm.listeners == null ? null : lastfm.listeners.toLocaleString("nb-NO")]]} />
+        </PageSection>
+      )}
+      {chart === undefined ? null : (
+        <PageSection id="lytting" title="Din lytting" icon="chart">
           {chart}
         </PageSection>
       )}
       {tracks.length === 0 ? null : (
         <PageSection id="mest-spilte" title="Dine mest spilte" icon="play">
           <RankedRows rows={tracks.map((track) => ({ key: track.title, title: song(track.title), value: count(track.plays, "avspilling", "avspillinger"), amount: track.plays }))} />
-        </PageSection>
-      )}
-      {lastfm?.bio == null ? null : (
-        <PageSection id="om" title="Om artisten">
-          <Text>{lastfm.bio}</Text>
-          <Text size="sm" tone="muted">
-            Tekst fra <TextLink href={page.url} external>Last.fm</TextLink>, brukernes egen (CC BY-SA).
-          </Text>
         </PageSection>
       )}
       {albums.length === 0 ? null : (
@@ -176,28 +183,6 @@ export function ArtistDetail({ page, base, info, listening, links, chart }: { pa
           <PlayRows plays={page.plays} base={base} artistLinks={false} />
         </PageSection>
       )}
-      {similar.length === 0 ? null : (
-        <PageSection id="lignende" title="Lignende artister du også hører" icon="person">
-          <PictureRows
-            {...SHAPES.artist}
-            rows={similar.map((one) => ({
-              key: one.name,
-              picture: null,
-              sources: one.spotify?.images ?? [],
-              title: links.artists.has(slugify(one.name)) ? <TextLink href={artistHref(base, one.name)}>{one.name}</TextLink> : one.name,
-              detail: one.spotify === null ? null : <ExternalLink href={one.spotify.url}>Åpne i Spotify</ExternalLink>,
-              aside: count(one.plays, "avspilling", "avspillinger"),
-            }))}
-          />
-          <Text size="sm" tone="muted">
-            Artistene <TextLink href={page.url} external>Last.fm</TextLink> finner lignende, blant dem du har hørt mest på.
-          </Text>
-        </PageSection>
-      )}
-      <Stack gap="sm">
-        <LinkButton href={page.url} external>Åpne på Last.fm</LinkButton>
-        {spotify === null ? null : <LinkButton href={spotify.url} external>Åpne i Spotify</LinkButton>}
-      </Stack>
     </Split>
   )
 }

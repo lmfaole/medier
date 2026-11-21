@@ -1,56 +1,67 @@
 /**
- * What an artist's page says of the visitor's own listening to it: the plays year by year and when it was first heard, its place among all they have heard, their most played songs by it, the
- * artists like it that they hear too, and what they played of it a year ago today. Pure, so a test pins it; `sources.ts` asks Last.fm for what it is read from.
+ * What an artist's page says of the visitor's own listening to it: its plays over time and what the chart of them says, its place among all they have heard, their most played songs by it and the
+ * artists like it that they hear too. Pure, so a test pins it; `sources.ts` asks Last.fm for what it is read from.
  */
 
-import type { ChartArtist, Play, SimilarArtist, TopArtist, TopTrack } from "./lastfm.ts"
+import type { ChartArtist, SimilarArtist, TopArtist, TopTrack } from "./lastfm.ts"
 import { dateAt, osloMidnight } from "./weeks.ts"
 
 /** Names are the same artist whatever their case («AURORA» and «Aurora»). */
 const same = (a: string, b: string): boolean => a.localeCompare(b, "nb", { sensitivity: "accent" }) === 0
 
-/** A calendar year in Oslo time, as a half-open range of unix seconds. */
-export interface YearRange {
-  year: number
+/** How long one point of the chart of an artist's plays is: the finest that keeps the chart to `MAX_PERIODS` points. */
+export type PeriodUnit = "month" | "quarter" | "half" | "year"
+
+/** A stretch of the calendar in Oslo time, as a half-open range of unix seconds, named short (on the axis) and in full (in a sentence). */
+export interface Period {
+  label: string
+  long: string
   start: number
   end: number
 }
 
-/** Each year from the one the user started in to the one `nowMs` is in, oldest first. */
-export function yearRanges(registered: number, nowMs: number): YearRange[] {
-  const first = dateAt(registered * 1000).year
-  const last = dateAt(nowMs).year
-  const years: YearRange[] = []
-  for (let year = Math.max(first, last - 30); year <= last; year += 1) years.push({ year, start: osloMidnight(year, 1, 1), end: osloMidnight(year + 1, 1, 1) })
-  return years
+/** The most points the chart of an artist's plays has: one weekly chart from Last.fm each, shared by every artist's page, so a first visit asks at most this many. */
+export const MAX_PERIODS = 24
+
+const UNITS: readonly (readonly [PeriodUnit, number])[] = [["month", 1], ["quarter", 3], ["half", 6], ["year", 12]]
+const MONTHS = ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"] as const
+const SHORT_MONTHS = ["jan.", "feb.", "mars", "april", "mai", "juni", "juli", "aug.", "sep.", "okt.", "nov.", "des."] as const
+
+function named(unit: PeriodUnit, year: number, month: number): { label: string; long: string } {
+  if (unit === "month") return { label: `${SHORT_MONTHS[month - 1] ?? ""} ${year}`, long: `${MONTHS[month - 1] ?? ""} ${year}` }
+  if (unit === "quarter") {
+    const quarter = Math.floor((month - 1) / 3) + 1
+    return { label: `${quarter}. kv. ${year}`, long: `${quarter}. kvartal ${year}` }
+  }
+  if (unit === "half") {
+    const half = month <= 6 ? 1 : 2
+    return { label: `${half}. halvår ${year}`, long: `${half}. halvår ${year}` }
+  }
+  return { label: String(year), long: String(year) }
 }
 
-/** The months of a year in Oslo time, January first. */
-export function monthRanges(year: number): { month: number; start: number; end: number }[] {
-  return Array.from({ length: 12 }, (_, index) => ({ month: index + 1, start: osloMidnight(year, index + 1, 1), end: index === 11 ? osloMidnight(year + 1, 1, 1) : osloMidnight(year, index + 2, 1) }))
+/**
+ * The stretches from the one the user started on Last.fm in to the one `nowMs` is in, oldest first, in the finest unit (month, quarter, half-year, year) that gives at most `most` of them; in years, only the
+ * last `most`. They begin on the calendar's own boundaries, so a stretch is the same from one day to the next and its chart is kept.
+ */
+export function listeningPeriods(registered: number, nowMs: number, most = MAX_PERIODS): { unit: PeriodUnit; periods: Period[] } {
+  const from = dateAt(registered * 1000)
+  const to = dateAt(nowMs)
+  const first = from.year * 12 + from.month - 1
+  const last = to.year * 12 + to.month - 1
+  const [unit, step] = UNITS.find(([, months]) => Math.floor(last / months) - Math.floor(first / months) + 1 <= most) ?? ["year", 12]
+  const periods: Period[] = []
+  for (let at = Math.max(Math.floor(first / step), Math.floor(last / step) - most + 1) * step; at <= last; at += step) {
+    const year = Math.floor(at / 12)
+    const month = (at % 12) + 1
+    const next = at + step
+    periods.push({ ...named(unit, year, month), start: osloMidnight(year, month, 1), end: osloMidnight(Math.floor(next / 12), (next % 12) + 1, 1) })
+  }
+  return { unit, periods }
 }
 
 /** How many times the artist was played in a chart (0 where it is not in it). */
 export const playsIn = (chart: readonly ChartArtist[], name: string): number => chart.find((one) => same(one.name, name))?.plays ?? 0
-
-/**
- * The first of `items` (in order) that `has` says yes to, asking about whole runs of them at once: `has(from, to)` is whether any of `items[from..to]` is one. A dozen months take four questions, not twelve.
- * `null` where none is, or a question was not answered.
- */
-export async function firstWith(count: number, has: (from: number, to: number) => Promise<boolean | null>): Promise<number | null> {
-  let low = 0
-  let high = count - 1
-  const any = await has(low, high)
-  if (any !== true) return null
-  while (low < high) {
-    const middle = Math.floor((low + high) / 2)
-    const before = await has(low, middle)
-    if (before === null) return null
-    if (before) high = middle
-    else low = middle + 1
-  }
-  return low
-}
 
 /** The artist's place among all the user has heard (1 is the most played), its plays, and what share of all their plays it is (0 to 1); `null` where it is not among them. */
 export function placeAmong(top: readonly TopArtist[], name: string, total: number | null): { rank: number; plays: number; share: number | null } | null {
@@ -78,29 +89,6 @@ export function similarHeard(similar: readonly SimilarArtist[], top: readonly To
   }).slice(0, limit)
 }
 
-/** The day a year before `nowMs` in Oslo (29 February is the 28th a year on), as a half-open range of unix seconds. */
-export function yearAgoToday(nowMs: number): { start: number; end: number } {
-  const today = dateAt(nowMs)
-  const year = today.year - 1
-  const days = new Date(Date.UTC(year, today.month, 0)).getUTCDate()
-  const day = Math.min(today.day, days)
-  const next = new Date(Date.UTC(year, today.month - 1, day + 1))
-  return { start: osloMidnight(year, today.month, day), end: osloMidnight(next.getUTCFullYear(), next.getUTCMonth() + 1, next.getUTCDate()) }
-}
-
-/** The artist's song the user played most on a day (the one played first, of two as many times), and how many times; `null` where they did not play it. */
-export function mostPlayedOf(plays: readonly Play[], name: string): { track: string; plays: number } | null {
-  const counts = new Map<string, { track: string; plays: number }>()
-  for (const play of [...plays].reverse()) {
-    if (!same(play.artist, name)) continue
-    const key = play.track.toLowerCase()
-    const found = counts.get(key) ?? { track: play.track, plays: 0 }
-    found.plays += 1
-    counts.set(key, found)
-  }
-  return [...counts.values()].reduce<{ track: string; plays: number } | null>((best, one) => (best === null || one.plays > best.plays ? one : best), null)
-}
-
 const ORDINALS = ["", "nest", "tredje", "fjerde", "femte", "sjette", "sjuende", "åttende", "niende", "tiende"] as const
 
 /** «Din mest spilte artist», «Din fjerde mest spilte artist» up to the tenth, then «Nr. 42 av artistene dine»; «Artist» where its place is not known. */
@@ -111,13 +99,34 @@ export function artistKind(rank: number | null): string {
   return word === undefined ? `Nr. ${rank.toLocaleString("nb-NO")} av artistene dine` : `Din ${word} mest spilte artist`
 }
 
-const MONTHS = ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"] as const
+const PER: Readonly<Record<PeriodUnit, string>> = { month: "måned", quarter: "kvartal", half: "halvår", year: "år" }
 
-/** «mars 2011», or «2011» where the month is not known. */
-export const firstText = (first: { year: number; month: number | null }): string => (first.month === null ? String(first.year) : `${MONTHS[first.month - 1] ?? ""} ${first.year}`)
+const plural = (n: number, one: string, many: string): string => `${n.toLocaleString("nb-NO")} ${n === 1 ? one : many}`
 
-/** The lines under the artist's name in its head: how much the user has played it and what share of all, and since when. */
-export function artistLines(plays: number | null, share: number | null, first: { year: number; month: number | null } | null): string[] {
-  const amount = [plays === null ? null : `${plays.toLocaleString("nb-NO")} ${plays === 1 ? "avspilling" : "avspillinger"}`, share === null ? null : `${shareText(share)} av alt du har hørt`].filter((part) => part !== null)
-  return [amount.join(" · "), first === null ? "" : `Først hørt i ${firstText(first)}`].filter((line) => line !== "")
+/** The figures in the artist's head: how much the user has played it, what share of all they have played that is, and how much they played it the last month. */
+export function artistFigures(plays: number | null, share: number | null, lastMonth: number | null): { value: string; label: string }[] {
+  return [
+    plays === null ? null : { value: plays.toLocaleString("nb-NO"), label: plays === 1 ? "avspilling" : "avspillinger" },
+    share === null ? null : { value: shareText(share), label: "av alt du har hørt" },
+    lastMonth === null ? null : { value: lastMonth.toLocaleString("nb-NO"), label: "siste måned" },
+  ].filter((one) => one !== null)
+}
+
+/**
+ * What the chart of the plays over time says: its title (the message: when it was played most), its subtitle (what is counted, per what, from when to when) and its summary, which says when it was first played,
+ * when most and how much so far in the stretch now. `null` with fewer than two stretches (the number says it better than a chart). The first stretch with plays is only «first» if there is one before it without.
+ */
+export function listeningChartText(unit: PeriodUnit, series: readonly { long: string; plays: number }[]): { title: string; description: string; summary: string } | null {
+  const first = series[0]
+  const last = series.at(-1)
+  if (series.length < 2 || first === undefined || last === undefined) return null
+  const description = `Avspillinger per ${PER[unit]}, ${first.long} til ${last.long}.`
+  const start = series.findIndex((one) => one.plays > 0)
+  const heard = series[start]
+  if (heard === undefined) return { title: "Ikke spilt i perioden", description, summary: "Arealdiagram. Ingen avspillinger i perioden." }
+  const peak = series.reduce((best, one) => (one.plays > best.plays ? one : best), heard)
+  const since = start === 0 ? `Spilt alt i ${heard.long}, da historikken din på Last.fm begynner` : `Først spilt i ${heard.long}`
+  const most = `${plural(peak.plays, "avspilling", "avspillinger")}`
+  const now = peak === last ? `mest hittil i ${last.long} (${most})` : `mest i ${peak.long} (${most}), ${plural(last.plays, "avspilling", "avspillinger")} hittil i ${last.long}`
+  return { title: `Mest spilt i ${peak.long}`, description, summary: `Arealdiagram. ${since}, ${now}.` }
 }

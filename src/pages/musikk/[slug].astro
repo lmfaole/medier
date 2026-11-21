@@ -2,9 +2,9 @@
 import { ArtistDetail } from '../../components/detail'
 import { Head } from '../../components/head'
 import NeedsUsername from '../../components/NeedsUsername.astro'
-import { PlaysChart } from '../../components/trend'
+import { ListeningChart } from '../../components/trend'
 import Page from '../../layouts/Page.astro'
-import { artistKind, artistLines } from '../../lib/artist-listening'
+import { artistFigures, artistKind, listeningChartText } from '../../lib/artist-listening'
 import { artistPages, trackPages } from '../../lib/pages'
 import { artist, artistListening, music, usersOf } from '../../lib/runtime'
 
@@ -20,25 +20,25 @@ const [info, own] = page === undefined ? [null, null] : await Promise.all([artis
 const links = { tracks: new Set(listening === null ? [] : trackPages(listening).map((one) => one.slug)), artists: new Set(pages.map((one) => one.slug)) }
 const tags = info?.lastfm !== null && info?.lastfm !== undefined && info.lastfm.tags.length > 0 ? info.lastfm.tags : (info?.spotify?.genres ?? [])
 const plays = info?.lastfm?.userPlays ?? own?.place?.plays ?? null
-const years = own?.years ?? []
-const peak = years.reduce<{ year: number; plays: number } | null>((best, one) => (best === null || one.plays > best.plays ? one : best), null)
+const timeline = own?.timeline ?? null
+const chart = timeline === null ? null : listeningChartText(timeline.unit, timeline.series)
 ---
 
 {page === undefined || info === null ? (
   <NeedsUsername medium="music" />
 ) : (
 <Page bare current="music" width="pane" title={page.name} lead={artistKind(own?.place?.rank ?? null)} crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }, { label: page.name, href: `${base}musikk/${page.slug}/` }]}>
-  <Head client:idle kind={artistKind(own?.place?.rank ?? null)} title={page.name} sources={info.spotify?.images ?? []} shape="artist" lines={artistLines(plays, own?.place?.share ?? null, own?.first ?? null)} tags={tags.slice(0, 4)} />
+  <Head client:idle kind={artistKind(own?.place?.rank ?? null)} title={page.name} sources={info.spotify?.images ?? []} shape="artist" large figures={artistFigures(plays, own?.place?.share ?? null, page.top?.plays ?? null)} tags={tags.slice(0, 4)} />
   <ArtistDetail page={page} base={base} info={info} listening={own} links={links}>
-    {years.length > 1 && (
-      <PlaysChart
+    {timeline !== null && chart !== null && (
+      <ListeningChart
         slot="chart"
         client:visible
-        title={peak === null || peak.plays === 0 ? 'År for år' : `Mest spilt i ${peak.year}`}
-        description={`Avspillinger per år, ${years[0]?.year}–${years.at(-1)?.year}.`}
-        ariaLabel={`Avspillinger av ${page.name} per år`}
-        columns={years.map((one) => ({ label: String(one.year), value: one.plays }))}
-        labelEvery={years.length > 12 ? 2 : 1}
+        title={chart.title}
+        description={chart.description}
+        summary={chart.summary}
+        ariaLabel={`Avspillinger av ${page.name} over tid`}
+        points={timeline.series.map((one) => ({ label: one.label, value: one.plays }))}
       />
     )}
   </ArtistDetail>
