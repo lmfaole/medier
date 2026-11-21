@@ -7,11 +7,10 @@ interface Props {
   facts: AlbumFactsData
   artist: string
   title: string
-  base: string
 }
 
-const { facts, artist, title, base } = Astro.props
+const { facts, artist, title } = Astro.props
 const release = await albumRelease(usersOf(Astro.cookies), artist, title, false)
 ---
 
-<AlbumFacts facts={facts} base={base} release={release?.first ?? null} />
+<AlbumFacts facts={facts} release={release?.first ?? null} />

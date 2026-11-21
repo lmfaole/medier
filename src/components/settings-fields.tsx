@@ -86,7 +86,7 @@ export function MedierFirstRun({ open, action, back, validateUrl, initialStep, i
       ...(install === undefined ? {} : { content: install }),
     },
   ]
-  return <FirstRun open={open} title="Kom i gang med Medier" action={action} back={back} validateUrl={validateUrl} steps={steps} {...(initialStep === undefined ? {} : { initialStep })} />
+  return <FirstRun open={open} title="Kom i gang med Medier" glyph="play" action={action} back={back} validateUrl={validateUrl} steps={steps} {...(initialStep === undefined ? {} : { initialStep })} />
 }
 
 /**

@@ -61,6 +61,7 @@ link (the rows keep theirs). Cards are not nested (rule 8).
 ## Colour rules
 
 - Colour comes from tokens only. The interface has one colour (`destructive`); a state is a symbol and a word. A second colour is a new role with a symbol, measured first (guide «Colour and state»).
+- An app's **brand** hue (`data-brand` on `<html>`) is identity, not a colour of meaning: it reaches the page only through the components (the mark, the `NavBar`'s current place, the ring, the one primary `Button`), never through a `className`, and never in content, charts or states (**designsystem-brand**).
 - **Alpha never carries text or a mark that needs 3:1** (`border` and `input` are decorative, about 1.3:1; a field takes its edge from `muted-foreground`). Check a pair on `card` as well as on the page.
 - Chart colours: `series-*` are six that differ in lightness as well as hue and are told apart for every kind of colour vision; a chart still names its series. Never rely on the lightest default steps or a `chart-*` step alone.
 - A part with a shadow-only edge or a fill-only state also has a border or a mark (forced colours drop shadows and fills). Icons use `currentColor`.

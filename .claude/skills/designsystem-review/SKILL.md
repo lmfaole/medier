@@ -43,6 +43,11 @@ and a detail page, not only the front page.
 - [ ] Cards only where a card is right; `destructive` only for what stops something.
 - [ ] Icons where they carry meaning (section titles, row kind, statuses, actions), none as decoration, none repeated without reason.
 
+**Brand (designsystem-brand)**
+- [ ] `data-brand` once, on `<html>`, with a hue from `BRAND_HUES`; the `NavBar` has the app's `glyph` and `family`, the `FirstRun` its `glyph`.
+- [ ] The brand hue is only where the components put it (mark, current place, ring, primary button); never in content, charts, states or around a picture.
+- [ ] The icons and favicon are from `npx designsystem-app-icons` with the same hue and glyph; the name is the same everywhere.
+
 **Accessibility (designsystem-accessibility)**
 - [ ] Storybook accessibility panel: no violations, light and dark.
 - [ ] Keyboard: reachable, visible focus, no trap. Targets at least 24 px.

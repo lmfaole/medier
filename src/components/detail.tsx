@@ -345,9 +345,7 @@ export function TrackDetail({ page, base, info }: { page: TrackPage; base: strin
 
 /** What an album's facts say, as plain data, so a server island can be given them and add MusicBrainz's label and country (`albumFactsOf`). */
 export interface AlbumFactsData {
-  artist: string
   released: string | null
-  tracks: number | null
   /** How long it is, in seconds. */
   length: number | null
   tags: string[]
@@ -355,41 +353,34 @@ export interface AlbumFactsData {
   userPlays: number | null
   /** About how long the visitor has listened to it, in seconds (`listenedSeconds`). */
   listened: number | null
-  recent: number
 }
 
-/** What an album's facts are made of: Spotify's day and number of tracks, Last.fm's tracks, tags, listeners and the visitor's plays, and the time spent on it estimated from them. */
+/** What an album's facts are made of: Spotify's day, Last.fm's tracks, tags, listeners and the visitor's plays, and the time spent on it estimated from them. */
 export function albumFactsOf(page: AlbumPage, info: { lastfm: AlbumInfo | null; spotify: SpotifyAlbum | null; top: TopTrack[] | null }): AlbumFactsData {
   const { lastfm, spotify } = info
   const tracks = lastfm?.tracks ?? []
   const userPlays = lastfm?.userPlays ?? null
   return {
-    artist: page.artist,
     released: spotify?.released == null ? null : releaseText(spotify.released),
-    tracks: spotify?.tracks ?? (tracks.length === 0 ? null : tracks.length),
     length: albumSeconds(tracks),
     tags: lastfm?.tags ?? [],
     listeners: lastfm?.listeners ?? null,
     userPlays,
     listened: listenedSeconds(tracks, userPlays, trackPlays(info.top ?? [], page.artist, tracks.map((track) => track.title))),
-    recent: page.plays.length,
   }
 }
 
-/** An album's facts (the visitor's plays and time listened are the head's figures, `albumFigures`, and not said again), with the label and the country of its first release where MusicBrainz has told them (`release`, from the page's server island). */
-export function AlbumFacts({ facts, base, release }: { facts: AlbumFactsData; base: string; release?: AlbumEdition | null }) {
+/** An album's facts, each said only here: the artist is the head's «av …», the tracks are counted by their list, the visitor's plays and time listened are the head's figures (`albumFigures`) and the recent plays have their section, with the label and the country of its first release where MusicBrainz has told them (`release`, from the page's server island). */
+export function AlbumFacts({ facts, release }: { facts: AlbumFactsData; release?: AlbumEdition | null }) {
   return (
     <FactList
       facts={[
-        ["Artist", <TextLink href={artistHref(base, facts.artist)}>{facts.artist}</TextLink>],
         ["Utgitt", facts.released],
         ["Plateselskap", release == null || release.labels.length === 0 ? null : release.labels.slice(0, 3)],
         ["Land", countryName(release?.country ?? null)],
-        ["Spor", facts.tracks === null ? null : String(facts.tracks)],
         ["Lengde", facts.length === null ? null : durationText(facts.length)],
         ["Sjangere", tagsText(facts.tags)],
         ["Lyttere på Last.fm", listeners(facts.listeners)],
-        ["Blant de siste avspillingene", count(facts.recent, "gang", "ganger")],
       ]}
     />
   )
@@ -413,7 +404,6 @@ function DiscographyAlbum({ album, artist, base, linked }: { album: StudioAlbum;
  */
 export function AlbumRelease({ release, artist, base, linked, chart }: { release: AlbumReleaseData; artist: string; base: string; linked: ReadonlyMap<string, string>; /** The visitor's plays of each of the artist's albums with this one picked out (`DiscographyChart`, an island): it says the place, in place of «Plass». */ chart?: ReactNode }) {
   const { credits, editions, place, first } = release
-  const where = first === null ? null : [yearOf(first.date), countryName(first.country)].filter((one) => one !== null).join(", ")
   return (
     <>
       {credits === null ? null : (
@@ -426,7 +416,7 @@ export function AlbumRelease({ release, artist, base, linked, chart }: { release
             ]}
           />
           <Text size="sm" tone="muted">
-            Fra <TextLink href={`https://musicbrainz.org/release/${first?.id ?? ""}`} external>MusicBrainz</TextLink>, for den første utgivelsen{where === null || where === "" ? "" : ` (${where})`}.
+            Fra <TextLink href={`https://musicbrainz.org/release/${first?.id ?? ""}`} external>MusicBrainz</TextLink>, for den første utgivelsen.
           </Text>
         </PageSection>
       )}
@@ -505,14 +495,14 @@ function AlbumTracks({ tracks, plays, artist, base, played }: { tracks: AlbumInf
 }
 
 /**
- * An album: what Last.fm's users write of it, the visitor's plays of it over time (`chart`, a server island the page puts in), its tracks in order with their plays of each (each links to its page
- * where it has been played), what MusicBrainz says of who made it, its editions and its place among the artist's albums (`release`, another), the plays from it here, and last the ways to it on
- * Last.fm and Spotify. The facts are `AlbumFacts` (`facts`, a third island, adds the label and the country); the day and the number of tracks are Spotify's, the rest Last.fm's.
+ * An album: what Last.fm's users write of it, its tracks in order with the visitor's plays of each (each links to its page where it has been played), their plays of it over time (`chart`, a
+ * server island the page puts in) and by day (`days`), what MusicBrainz says of who made it, its editions and its place among the artist's albums (`release`, another), the plays from it here,
+ * and last the ways to it on Last.fm and Spotify. The facts are `AlbumFacts` (`facts`, a third island, adds the label and the country); the day is Spotify's, the rest Last.fm's.
  */
 export function AlbumDetail({ page, base, info, played, chart, days, release, facts }: { page: AlbumPage; base: string; info: { lastfm: AlbumInfo | null; spotify: SpotifyAlbum | null; top: TopTrack[] | null }; /** The slugs of the tracks that have a page. */ played: ReadonlySet<string>; chart?: ReactNode; /** The days the visitor played it (a calendar, another island). */ days?: ReactNode; release?: ReactNode; facts?: ReactNode }) {
   const { lastfm, spotify } = info
   const tracks = lastfm?.tracks ?? []
-  const rail = <Stack gap="lg">{facts ?? <AlbumFacts facts={albumFactsOf(page, info)} base={base} />}</Stack>
+  const rail = <Stack gap="lg">{facts ?? <AlbumFacts facts={albumFactsOf(page, info)} />}</Stack>
   return (
     <Split rail={rail}>
       {lastfm?.bio == null ? null : (
@@ -523,16 +513,16 @@ export function AlbumDetail({ page, base, info, played, chart, days, release, fa
           </Text>
         </PageSection>
       )}
-      {chart}
-      {days}
       {tracks.length === 0 ? null : (
         <PageSection id="spor" title="Spor">
           <AlbumTracks tracks={tracks} plays={trackPlays(info.top ?? [], page.artist, tracks.map((track) => track.title))} artist={page.artist} base={base} played={played} />
         </PageSection>
       )}
+      {chart}
+      {days}
       {release}
       <PageSection id="siste" title="Siste avspillinger">
-        <PlayRows plays={page.plays} base={base} artistLinks={false} albumLinks={false} />
+        <PlayRows plays={page.plays} base={base} within="album" />
       </PageSection>
       <MusicLinks lastfm={page.url} spotify={spotify?.url ?? null} />
     </Split>

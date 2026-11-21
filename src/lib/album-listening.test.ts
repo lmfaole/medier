@@ -103,13 +103,13 @@ test("the chart of the discography says where this album is among them, what is 
 })
 
 test("the head's figures are the plays, about how long, and the share of the artist; a figure that is not known is left out", () => {
-  assert.deepEqual(albumFigures(1204, 6 * 3600, 3168, "Röyksopp"), [
+  assert.deepEqual(albumFigures(1204, 6 * 3600, 3168), [
     { value: "1\u00a0204", label: "avspillinger" },
     { value: "6 t", label: "lyttetid, omtrent" },
-    { value: "38 %", label: "av det du har spilt av Röyksopp" },
+    { value: "38 %", label: "av alt du har hørt av artisten" },
   ])
-  assert.deepEqual(albumFigures(1, null, null, "Röyksopp"), [{ value: "1", label: "avspilling" }])
-  assert.equal(albumFigures(10, null, 5, "Röyksopp").length, 1)
+  assert.deepEqual(albumFigures(1, null, null), [{ value: "1", label: "avspilling" }])
+  assert.equal(albumFigures(10, null, 5).length, 1)
 })
 
 test("the days an album was played are counted on their date in Oslo, every day of the months read gets a row, and none after today", () => {

@@ -142,12 +142,12 @@ export function discographyChartText(albums: readonly DiscographyAlbum[], title:
 }
 
 /** The figures in the head of an album's page: the user's plays of it, about how long they have listened to it, and what share it is of their plays of the artist. */
-export function albumFigures(plays: number | null, listened: number | null, artistPlays: number | null, artist: string): { value: string; label: string }[] {
+export function albumFigures(plays: number | null, listened: number | null, artistPlays: number | null): { value: string; label: string }[] {
   const share = plays === null || artistPlays === null || artistPlays <= 0 || plays > artistPlays ? null : plays / artistPlays
   return [
     plays === null ? null : { value: plays.toLocaleString("nb-NO"), label: plays === 1 ? "avspilling" : "avspillinger" },
     listened === null ? null : { value: aboutText(listened).replace(/^omtrent /, ""), label: "lyttetid, omtrent" },
-    share === null ? null : { value: `${Math.round(share * 100).toLocaleString("nb-NO")} %`, label: `av det du har spilt av ${artist}` },
+    share === null ? null : { value: `${Math.round(share * 100).toLocaleString("nb-NO")} %`, label: "av alt du har hørt av artisten" },
   ].filter((one) => one !== null)
 }
 

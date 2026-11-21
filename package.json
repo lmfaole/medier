@@ -16,13 +16,14 @@
     "skills": "designsystem-skills",
     "skills:check": "designsystem-skills --check",
     "ds:bump": "designsystem-bump",
+    "icons": "designsystem-app-icons --hue amber --glyph play --out public/icons/amber",
     "settings:push": "node scripts/settings.ts push",
     "spotify:auth": "node scripts/spotify-auth.ts"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.9",
     "@astrojs/react": "^7.1.2",
-    "@lmfaole/designsystem": "github:lmfaole/designsystem#4173559e6efdfea9f0875e91771005aa0eb05cff",
+    "@lmfaole/designsystem": "github:lmfaole/designsystem#f400c8bbb103ea23dd40dad8960bc51f514b69ec",
     "@tailwindcss/vite": "^4.3.5",
     "astro": "^7.4.5",
     "react": "^19.2.8",

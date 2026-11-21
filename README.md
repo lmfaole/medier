@@ -117,11 +117,30 @@ are made of; both are tested.
 ## Installed app (PWA)
 
 The site installs on a phone or a computer and opens without the browser around it: «Legg til på Hjem-skjerm» on iOS, the install offer in the address bar on Android and desktop Chrome (there is no install button
-of our own). `public/manifest.webmanifest` is the identity (`id` and scope `/`, never changed once installed; dark colours, `any` and `maskable` icons at 192 and 512 drawn by `node scripts/icons.mjs`), and
+of our own). `public/manifest.webmanifest` is the identity (`id` and scope `/`, never changed once installed; the brand's amber as `theme_color` and the dark page as `background_color`, `any` and `maskable` icons at 192 and 512), and
 `public/sw.js` the service worker: a page from the network first with the last copy of each page when there is no network (the forty last, kept by address with the query, and only the current visitor's: a page for other usernames or other `prefs` or with the wizard open or closed, by the server's `X-Medier-Who`, drops the ones before), the front page and then `/offline/` when there
 is none; the built files and icons from the cache. Nothing from another site is kept (the covers are Spotify's, Last.fm's and TMDB's own), a redirect or an error is never kept as a page, and a new version waits until the
 app is closed (no `skipWaiting`) and then deletes the old caches: change `VERSION` in `sw.js` to make it. A bar at the foot on a phone, a rail from tablet width, goes between Forside, Musikk, Film, TV and Innstillinger (on a phone it scrolls sideways, the current place brought into view; the bar is an island for that);
 `ConnectionBanner` says so when the device is offline and the page is the last one fetched. `src/pwa.test.ts` pins the manifest and runs the worker against a cache and a network of its own.
+
+## Brand
+
+Medier is one of the lmfaole family (design system, «Foundations / Brand», and the skill `designsystem-brand`), endorsed: «Medier · lmfaole». Its hue is **amber**
+(`data-brand="amber"` on `<html>`, in `src/layouts/Page.astro` and `src/pages/404.astro`) and its glyph **`play`**: the `NavBar` opens with its `Wordmark`, the
+first run with its mark, and the hue is only where the design system's components put it (the current place in the menu, the focus ring, the primary button, a
+ticked box). Never in the content, a chart, a state or around a cover. The icons (`public/favicon.svg`, `public/favicon.png`, `public/apple-touch-icon.png`,
+`public/icons/amber/`, a new folder so the year-long `immutable` cache of `/icons/*` gives the new ones) are drawn from the same data by `npm run icons` (`designsystem-app-icons --hue amber --glyph play --out public/icons/amber`; Playwright from `$PLAYWRIGHT` or a global
+one). The bar's colour follows the brand: `theme-color` is the amber of each scheme (`#9c640d` light, `#c6811c` dark, as the script's `brandColours`), the
+manifest's `theme_color` the light one; its `background_color` stays the dark page, which the splash screen is.
+
+- **Purpose:** see what you have listened to and watched, and find your way back to it.
+- **Position:** for one person who scrobbles and logs, instead of four services' own pages: one calm place where the covers lead.
+- **Personality:** warm, not cute; curious, not nosy; quiet, not cold.
+- **Voice:** plain bokmål, «du», short sentences, no exclamation marks. Welcome «Her er det du har hørt og sett.»; empty «Ingenting spilt ennå i dag.»; error
+  «Fikk ikke kontakt med Last.fm. Prøver igjen om litt.»; success «Koblet til Trakt.»
+- **Distinctive assets:** amber, the `play` glyph on the family's rounded tile, the name «Medier» the same in the title, the manifest, the `Wordmark` and the first run.
+- **Signature moments:** the first run; the album page's sleeve in the light; a look back at the week or the year.
+- **Do:** let the cover's colour lead; keep the mark in the rail. **Don't:** tint covers, charts or a source's logo amber; write a brand colour of our own.
 
 ## Shape language
 

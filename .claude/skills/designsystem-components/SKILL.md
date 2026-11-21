@@ -39,6 +39,7 @@ description: Use when choosing which design system component to use for somethin
 | A value against a goal | `Progress`; pages of a long list with addresses `Pagination` |
 | The way between pages | top-level pages `NavBar` (bar at the foot on a phone, scrolling sideways when there are more than fit, rail from tablet width; given to `PageLayout` as `nav`; «Innstillinger» last); where you are and the way back `Breadcrumbs`; the pages under a page that is nothing but its subpages (a settings overview) `SubPages`, and one subpage that continues a section `PageSection continues`; narrowing a list `FilterChips`; a view switch `SegmentedToggle` |
 | An icon | `Icon` (a meaning from `ICONS` in `src/lib/icons.ts`) |
+| The app's own name and mark | `Wordmark` (glyph tile, name, «· lmfaole»), `AppMark` (the tile alone); in the rail by `NavBar` `glyph` and `family`, in onboarding by `FirstRun` `glyph`; the colour from `data-brand` on `<html>` (**designsystem-brand**) |
 | A picture | `Picture`, `PictureCard`, `ImageLightbox`, `Logo`, `Logos`; its shape says what kind of thing it is (`corners`: `round` a person or band, `sharp` a record, `soft` a single, `normal` a poster): one shape for each kind, everywhere that kind shows |
 | A person named (reviewers, authors, who wrote last) | `Person`: the name with their round picture beside it |
 | A card | `Card` (see the cards rule), `ChartCard` for a chart |

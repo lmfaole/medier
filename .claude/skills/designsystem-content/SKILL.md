@@ -15,6 +15,10 @@ Code and comments are English; **on-screen text is Norwegian bokmål** (rule 9).
 - **A control says exactly what happens.** «Åpne på GitHub», «Se alle 14», «Bruk min posisjon». Never «Klikk her», «Mer», «OK».
 - **Links say what they open and where.** A link out names the place; a back link names the list («Pull requests»), never «Tilbake».
 - **Active voice,** plain words, the way a knowledgeable person would say it. No stock phrases, no scare quotes.
+- **One voice, many tones.** Every app in the family speaks the same way: plain bokmål, «du», short sentences, no exclamation marks, dry
+  humour at most and never in an error. The tone moves with the moment (a welcome is warmer than an error), and the app's name is written
+  the same everywhere: `<title>`, manifest, `Wordmark`, first run. No slogans. The app's own voice and examples are in its brand platform
+  (**designsystem-brand**).
 
 ## States
 

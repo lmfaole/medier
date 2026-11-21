@@ -1,4 +1,5 @@
 import { EmptyState } from "@lmfaole/designsystem/components/empty-state"
+import { Rows } from "@lmfaole/designsystem/components/rows"
 import { details, PictureRows } from "@lmfaole/designsystem/components/picture-rows"
 import { ExternalLink } from "@lmfaole/designsystem/components/external-link"
 import { NowPlayingCard } from "@lmfaole/designsystem/components/now-playing-card"
@@ -17,13 +18,25 @@ import { shortWhen } from "../lib/when.ts"
  * The plays, newest first, each with its cover; the artist links to the artist's page here (`artistLinks` off on that page itself). `now` is the song playing this
  * moment, first, marked «nå»: its artist only links where there is a page for it, which is an artist among the plays.
  */
-export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = true, albumLinks = true, now = null }: { plays: readonly Play[]; base: string; limit?: number; artistLinks?: boolean; trackLinks?: boolean; albumLinks?: boolean; now?: Playing | null }) {
+export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = true, albumLinks = true, now = null, within }: { plays: readonly Play[]; base: string; limit?: number; artistLinks?: boolean; trackLinks?: boolean; albumLinks?: boolean; now?: Playing | null; /** On an album's page every play has its cover, artist and album: only the song and when are said. */ within?: "album" }) {
   const rows = [
     ...(now === null ? [] : [{ key: `now-${now.url}`, artist: now.artist, track: now.track, album: now.album, image: now.image, aside: "Spilles nå", live: true, played: false }]),
     ...plays.map((play) => ({ key: `${play.playedAt}-${play.url}`, artist: play.artist, track: play.track, album: play.album, image: play.image, aside: play.playedAt === null ? "Spilles nå" : shortWhen(play.playedAt), live: play.playedAt === null, played: play.playedAt !== null })),
   ]
   const shown = limit === undefined ? rows : rows.slice(0, limit)
   if (shown.length === 0) return <EmptyState icon="music" title="Ingen avspillinger ennå" description="Last.fm fører opp det du hører på når en spiller (Spotify, Apple Music eller andre) er koblet til kontoen. Det kan også være at Last.fm ikke svarte akkurat nå." action={{ href: "https://www.last.fm/about/trackmymusic", label: "Koble til en spiller" }} />
+  if (within === "album") {
+    return (
+      <Rows
+        columns={{ name: "Låt", value: "Spilt" }}
+        rows={shown.map((row) => ({
+          key: row.key,
+          body: trackLinks && row.played ? <TextLink href={trackHref(base, row.artist, row.track)}>{row.track}</TextLink> : row.track,
+          trailing: <Text as="span" size="sm" tone="muted">{row.aside}</Text>,
+        }))}
+      />
+    )
+  }
   const known = new Set(plays.map((play) => play.artist))
   return (
     <PictureRows
