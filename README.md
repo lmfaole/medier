@@ -14,10 +14,11 @@ Hva du hører på og ser: en side på Cloudflare Workers, <https://medier.lmfaol
   (`ChoiceCards` with `EffectsPreview`/`TiltPreview` as the cards, one island each, `src/components/effect-choices.tsx`). It is drawn open by the server (no flash) until `first-run@1` is in `seen`, and works without JS
   as one form; with JS (`FirstRunEnhancer`) it is one step at a time, and a username is checked as the step is left (`validate=<step>`, answered with `{ errors }`). It posts to
   `src/pages/api/innstillinger.ts`, which keeps the usernames (as `/api/brukernavn/` does), the choices in the design system's `prefs` cookie (theme, effects, tilt, sections; not `HttpOnly`) and marks it seen.
-  A username not found sends back to its step (`?forste-gang=<step>` with the error); «Hopp over» (`skip=1`) only marks it seen. It is never drawn on Innstillinger or `/offline/`, and the intros wait until it is done.
+  Its first step has the play mark, which beats twice once (`glyph="play"`); «Ferdig» draws the check over it, «Klar til å lytte og se» (`finishLabel`), while the next page loads, and buzzes the brand's
+  signature where the phone can. A username not found sends back to its step (`?forste-gang=<step>` with the error); «Hopp over» (`skip=1`) only marks it seen. It is never drawn on Innstillinger or `/offline/`, and the intros wait until it is done.
 - **Innstillinger** (`/innstillinger/`, the last place in the bar) is an overview (`SubPages`, each with what is chosen there now) of four subpages, each with breadcrumbs and its own small form to
   the same endpoint (`back` = the subpage with `?lagret=1`, which shows «Lagret.» as a success `Banner`; a username not found comes back to its field): `kontoer` (Last.fm, Trakt), `forside` (which sections,
-  and their order in a `ReorderList`), `utseende` (theme, effects, tilt) and `app` (install, «Vis introen igjen»). «Vis introen igjen» (`rerun=1`, also at the foot of the overview) takes the wizard out of
+  and their order in a `ReorderList`), `utseende` (theme, effects, tilt, and «Vibrasjon», the design system's `HapticsSetting`, kept in the browser and applied at once) and `app` (install, «Vis introen igjen»). «Vis introen igjen» (`rerun=1`, also at the foot of the overview) takes the wizard out of
   `seen`. The anchors of the one long page of before (`/innstillinger/#tema`) lead to their subpage. The order is `order=a,b,c` in `prefs`; without JavaScript «Flytt opp» / «Flytt ned» post the form with
   `move=<id>:up|down`, and the endpoint saves `applyMove(order, move)` (`lib/reorder`) and comes back.
   The root layout spreads `htmlAttributes(prefs)` on `<html>` (`data-theme`, `data-effects`, `data-tilt`), and the front page shows only the sections chosen (all until some are; none says so), in the
@@ -133,13 +134,20 @@ ticked box). Never in the content, a chart, a state or around a cover. The icons
 one). The bar's colour follows the brand: `theme-color` is the amber of each scheme (`#9c640d` light, `#c6811c` dark, as the script's `brandColours`), the
 manifest's `theme_color` the light one; its `background_color` stays the dark page, which the splash screen is.
 
+Motion and haptics are the design system's («Foundations / Motion» §9, «Foundations / Haptics»), nothing of our own: amber's accent is rhythmic, the mark beating twice. Rare is loud, frequent is
+quiet, so the mark moves only in a signature moment, once: the first run's first step and its finish, and the empty «Ingen avspillinger ennå» on the front page and Musikk (`PlayRows start`, the app's
+first, empty start; never more than one on a page). A change of page is the browser's own view transition (`transitionAttributes()` on `<html>` beside `brandAttributes`, no `ClientRouter`): the
+menu's current place slides to the new one and `<main>` rises in. `listenForHaptics()` runs once in the layout; the visitor turns vibration off under Innstillinger › Utseende. Under reduced motion
+everything stands still. No `AppMark loading` (no wait of over a second for the app itself: the islands have their skeletons) and no `data-haptic="warning"` (nothing is deleted: a username is
+forgotten by leaving its field empty).
+
 - **Purpose:** see what you have listened to and watched, and find your way back to it.
 - **Position:** for one person who scrobbles and logs, instead of four services' own pages: one calm place where the covers lead.
 - **Personality:** warm, not cute; curious, not nosy; quiet, not cold.
 - **Voice:** plain bokmål, «du», short sentences, no exclamation marks. Welcome «Her er det du har hørt og sett.»; empty «Ingenting spilt ennå i dag.»; error
   «Fikk ikke kontakt med Last.fm. Prøver igjen om litt.»; success «Koblet til Trakt.»
 - **Distinctive assets:** amber, the `play` glyph on the family's rounded tile, the name «Medier» the same in the title, the manifest, the `Wordmark` and the first run.
-- **Signature moments:** the first run; the album page's sleeve in the light; a look back at the week or the year.
+- **Signature moments:** the first run (the mark's beat, then the check); the album page's sleeve in the light; a look back at the week or the year.
 - **Do:** let the cover's colour lead; keep the mark in the rail. **Don't:** tint covers, charts or a source's logo amber; write a brand colour of our own.
 
 ## Shape language

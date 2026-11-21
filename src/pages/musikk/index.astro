@@ -25,7 +25,7 @@ const now = playingNow(listening?.now ?? null)
       <>
         <Intro intro={INTROS.musikk} />
         <PageSection id="siste" title="Siste avspillinger" continues={{ href: mediumHref(base, 'music', 'historikk/'), label: 'Se hele lyttehistorikken' }}>
-          <PlayRows plays={(listening?.recent ?? []).slice(0, 10)} now={now} base={base} />
+          <PlayRows plays={(listening?.recent ?? []).slice(0, 10)} now={now} base={base} start />
         </PageSection>
         <PageSection id="artister" title="Mest spilt siste måned" continues={{ href: mediumHref(base, 'music', 'maned/', monthAt(Date.now()).id), label: 'Se månedens Wrapped' }}>
           <TopArtistRows artists={listening?.topArtists ?? []} base={base} pictures={pictures} />

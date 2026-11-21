@@ -96,6 +96,11 @@ Durations and easings come from the `--motion-*` tokens, named by purpose (`inst
 curve. Everything is off under `prefers-reduced-motion`. Motion is for orienting the reader (a new row, a change of page), never decoration.
 The guide is **Foundations / Motion**.
 
+- **Productive everywhere, expressive rarely.** Everyday motion is the same in every app. The app's brand accent (`--motion-brand-*`, set by
+  its hue) is only for signature moments, through components: `AppMark reveal`/`loading`, `FirstRun glyph`, `FirstRunFinish`, `EmptyState
+  glyph`. Never replay a reveal, re-run a count-up or chart reveal on a refetch, spring text or a large surface, or add Lottie or Rive
+  (**designsystem-brand**).
+
 - **Every control keeps one state model**: hover (a tint, pointer only), pressed (at once, `motion-press`), focus (a solid outline in
   `--ring`, never animated), selected, busy (`aria-busy`, label kept, dimmed with `motion-pending`), done or failed (a sentence in a status
   region). No ripple; a state never changes the layout.

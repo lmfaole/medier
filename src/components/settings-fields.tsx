@@ -1,12 +1,11 @@
 import { Button } from "@lmfaole/designsystem/components/button"
 import { CheckboxList } from "@lmfaole/designsystem/components/checkbox-list"
 import { ChoiceCards } from "@lmfaole/designsystem/components/choice-cards"
-import { FirstRun } from "@lmfaole/designsystem/components/first-run"
 import { Stack } from "@lmfaole/designsystem/components/layout"
 import { TextField } from "@lmfaole/designsystem/components/text-field"
 import { ThemeSample } from "@lmfaole/designsystem/components/theme-sample"
 import type { Prefs } from "@lmfaole/designsystem/lib/preferences"
-import type { ReactNode } from "react"
+import type { ComponentType, ReactNode } from "react"
 
 import { FROM_FIRST_RUN, FRONT_SECTIONS, shownSections, SOURCE_FIELD, type Step } from "../lib/settings-form"
 import type { UsernameField } from "../lib/users"
@@ -56,9 +55,17 @@ interface FieldsProps {
   tiltField?: ReactNode
 }
 
-/** The wizard of the first visit, one question a step: what the site is, the two usernames, the front page, the theme, the effects, the tilt and the offer to install, in one form. */
-export function MedierFirstRun({ open, action, back, validateUrl, initialStep, install, ...fields }: FieldsProps & { open: boolean; action: string; back: string; validateUrl: string; initialStep?: Step | undefined; install?: ReactNode }) {
-  const steps: { id: Step; title: string; body?: string; icon?: "music" | "listen" | "film" | "home" | "moon" | "bolt" | "phone" | "download"; content?: ReactNode }[] = [
+type WizardStep = { id: Step; title: string; body?: string; icon?: "music" | "listen" | "film" | "home" | "moon" | "bolt" | "phone" | "download"; content?: ReactNode }
+type WizardProps = { open: boolean; title: string; glyph: "play"; finishLabel: string; action: string; back: string; validateUrl: string; steps: readonly WizardStep[]; initialStep?: Step }
+
+/**
+ * The wizard of the first visit, one question a step: what the site is, the two usernames, the front page, the theme, the effects, the tilt and the offer to install, in one form. The play mark beats on
+ * its first step, once, and at «Ferdig» the check is drawn over it with `finishLabel` while the next page loads (design system, «Motion» §9). The design system's `FirstRun` comes in as `wizard` from the
+ * Astro page: importing it here makes `tsc` check `first-run.tsx`, which in design system 8.59.0 passes `glyph` as `AppGlyph | undefined` to `FirstRunFinish`, an error under
+ * `exactOptionalPropertyTypes`; the props it is given are typed here instead.
+ */
+export function MedierFirstRun({ wizard: Wizard, open, action, back, validateUrl, initialStep, install, ...fields }: FieldsProps & { wizard: ComponentType<WizardProps>; open: boolean; action: string; back: string; validateUrl: string; initialStep?: Step | undefined; install?: ReactNode }) {
+  const steps: WizardStep[] = [
     {
       id: "velkommen",
       title: "Velkommen til Medier",
@@ -86,7 +93,7 @@ export function MedierFirstRun({ open, action, back, validateUrl, initialStep, i
       ...(install === undefined ? {} : { content: install }),
     },
   ]
-  return <FirstRun open={open} title="Kom i gang med Medier" glyph="play" action={action} back={back} validateUrl={validateUrl} steps={steps} {...(initialStep === undefined ? {} : { initialStep })} />
+  return <Wizard open={open} title="Kom i gang med Medier" glyph="play" finishLabel="Klar til å lytte og se" action={action} back={back} validateUrl={validateUrl} steps={steps} {...(initialStep === undefined ? {} : { initialStep })} />
 }
 
 /**

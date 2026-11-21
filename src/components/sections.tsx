@@ -18,13 +18,13 @@ import { shortWhen } from "../lib/when.ts"
  * The plays, newest first, each with its cover; the artist links to the artist's page here (`artistLinks` off on that page itself). `now` is the song playing this
  * moment, first, marked «nå»: its artist only links where there is a page for it, which is an artist among the plays.
  */
-export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = true, albumLinks = true, now = null, within }: { plays: readonly Play[]; base: string; limit?: number; artistLinks?: boolean; trackLinks?: boolean; albumLinks?: boolean; now?: Playing | null; /** On an album's page every play has its cover, artist and album: only the song and when are said. */ within?: "album" }) {
+export function PlayRows({ plays, base, limit, artistLinks = true, trackLinks = true, albumLinks = true, now = null, within, start = false }: { plays: readonly Play[]; base: string; limit?: number; artistLinks?: boolean; trackLinks?: boolean; albumLinks?: boolean; now?: Playing | null; /** On an album's page every play has its cover, artist and album: only the song and when are said. */ within?: "album"; /** The app's own start (the front page, Musikk): an empty list there is a first, empty start, and has the play mark in place of the icon. */ start?: boolean }) {
   const rows = [
     ...(now === null ? [] : [{ key: `now-${now.url}`, artist: now.artist, track: now.track, album: now.album, image: now.image, aside: "Spilles nå", live: true, played: false }]),
     ...plays.map((play) => ({ key: `${play.playedAt}-${play.url}`, artist: play.artist, track: play.track, album: play.album, image: play.image, aside: play.playedAt === null ? "Spilles nå" : shortWhen(play.playedAt), live: play.playedAt === null, played: play.playedAt !== null })),
   ]
   const shown = limit === undefined ? rows : rows.slice(0, limit)
-  if (shown.length === 0) return <EmptyState icon="music" title="Ingen avspillinger ennå" description="Last.fm fører opp det du hører på når en spiller (Spotify, Apple Music eller andre) er koblet til kontoen. Det kan også være at Last.fm ikke svarte akkurat nå." action={{ href: "https://www.last.fm/about/trackmymusic", label: "Koble til en spiller" }} />
+  if (shown.length === 0) return <EmptyState {...(start ? { glyph: "play" as const } : { icon: "music" as const })} title="Ingen avspillinger ennå" description="Last.fm fører opp det du hører på når en spiller (Spotify, Apple Music eller andre) er koblet til kontoen. Det kan også være at Last.fm ikke svarte akkurat nå." action={{ href: "https://www.last.fm/about/trackmymusic", label: "Koble til en spiller" }} />
   if (within === "album") {
     return (
       <Rows

@@ -1,6 +1,6 @@
 ---
 name: designsystem-brand
-description: Use when giving an app built with the design system its brand - its hue (data-brand), its mark and name in the NavBar and first run, its icons and favicon, its brand platform (purpose, personality, voice) - or when deciding whether a colour, logo or tone belongs in a page. The content leads, the brand signs.
+description: Use when giving an app built with the design system its brand - its hue (data-brand), its mark and name in the NavBar and first run, its icons and favicon, its motion accent in signature moments, its brand platform (purpose, personality, voice) - or when deciding whether a colour, logo or tone belongs in a page. The content leads, the brand signs.
 ---
 
 # Brand with the design system
@@ -50,6 +50,21 @@ draft for lmfaole, Medier and Startside, marked as a proposal until the owner ap
 The brand is felt where the app meets the person (the first run, an empty page, a look back at a week or a year, like Spotify Wrapped), not
 on every control. Distinctive assets work by repetition: use the same hue, tile, glyph and words the same way for a long time.
 
+## Brand motion: an accent, in signature moments only
+
+Every app moves on the same productive tokens; the hue also sets the app's **accent** (`--motion-brand-*`), used only in a signature
+moment. `amber` (Medier) is rhythmic: the play mark beats twice on the light spring. `teal` (Start) is calm and rising: the sun clears its
+horizon, with no overshoot. The guide is «Foundations / Motion», section 9.
+
+- **Use it** only through these: `FirstRun glyph` (the mark's gesture on the first step, once), `FirstRunFinish` (shown by the enhancer as
+  «Ferdig» sends the form: the check, then the mark), `EmptyState glyph` (an app's first, empty start, one on a page), and `AppMark loading`
+  (a wait of over a second for the app itself, with words beside it). Use `AppMark reveal` alone only on a page about the app.
+- **Page changes:** `transitionAttributes()` from `lib/motion` on `<html>`, beside `brandAttributes`, slides the `NavBar`'s current place
+  and lets `<main>` rise in. An Astro MPA needs nothing more. A Next.js app wraps its `children` in React's `<ViewTransition>` (see the guide).
+- **Never:** a reveal or celebration that replays on every visit or navigation; a celebration for a routine save; brand motion where the
+  hue isn't (cards, headings, text); a spring on text or a large surface; two expressive motions at once; a loop; a mark as a page loader
+  in front of content; Lottie or Rive; durations or curves of the app's own. Under reduced motion it all stands still, and that is complete.
+
 ## Checklist
 
 - [ ] `data-brand` is on `<html>` only, with a hue from `BRAND_HUES`.
@@ -57,3 +72,4 @@ on every control. Distinctive assets work by repetition: use the same hue, tile,
 - [ ] The icons and favicon come from `npx designsystem-app-icons` with the same hue and glyph.
 - [ ] No brand colour in content, charts, states or around pictures; no `className` for it.
 - [ ] The app's name is the same everywhere; the words follow the app's voice.
+- [ ] Brand motion only in the signature moments above, each once. Nothing new moves in the everyday, and nothing plays under reduced motion.

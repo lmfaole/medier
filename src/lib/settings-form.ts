@@ -173,7 +173,7 @@ export function withoutSeen(value: string | undefined, id: string): string {
 export const SETTINGS_PAGES = {
   kontoer: { label: "Kontoer", icon: "person", lead: "Hvem siden henter data for: brukernavnet ditt på Last.fm og på Trakt. Vi viser bare det som er offentlig på profilen." },
   forside: { label: "Forside", icon: "home", lead: "Hvilke seksjoner forsiden viser, og i hvilken rekkefølge." },
-  utseende: { label: "Utseende", icon: "moon", lead: "Lyst eller mørkt, effekter i 3D, og lys som følger telefonen." },
+  utseende: { label: "Utseende", icon: "moon", lead: "Lyst eller mørkt, effekter i 3D, lys som følger telefonen og vibrasjon." },
   app: { label: "App", icon: "phone", lead: "Ha Medier på hjem-skjermen, og se introen igjen." },
 } as const
 export type SettingsPage = keyof typeof SETTINGS_PAGES

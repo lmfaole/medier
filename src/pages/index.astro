@@ -51,7 +51,7 @@ const sources = [...(users.lastfm === null ? [] : [{ at: listening?.at ?? null, 
         <NowPlayingLive client:load initial={now} endpoint={`${base}api/now/`} />
       ) : id === 'musikk' ? (
         <PageSection id="musikk" title="Musikk" icon="music" continues={{ href: mediumHref(base, 'music', 'historikk/'), label: 'Se hele lyttehistorikken' }}>
-          <PlayRows plays={plays} base={base} limit={5} />
+          <PlayRows plays={plays} base={base} limit={5} start />
         </PageSection>
       ) : id === 'film' ? (
         <PageSection id="film" title="Film" icon="film" continues={{ href: mediumHref(base, 'film', 'historikk/'), label: 'Se hele filmhistorikken' }}>

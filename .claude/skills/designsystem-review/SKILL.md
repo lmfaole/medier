@@ -48,6 +48,10 @@ and a detail page, not only the front page.
 - [ ] The brand hue is only where the components put it (mark, current place, ring, primary button); never in content, charts, states or around a picture.
 - [ ] The icons and favicon are from `npx designsystem-app-icons` with the same hue and glyph; the name is the same everywhere.
 
+**Haptics (designsystem-haptics)**
+- [ ] Every buzz answers a gesture and has its sign on screen; none on hover, scroll, load or a timer; no `navigator.vibrate` of the app's own.
+- [ ] If the app buzzes, `HapticsSetting` is on its settings page.
+
 **Accessibility (designsystem-accessibility)**
 - [ ] Storybook accessibility panel: no violations, light and dark.
 - [ ] Keyboard: reachable, visible focus, no trap. Targets at least 24 px.

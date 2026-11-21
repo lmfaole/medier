@@ -4,7 +4,9 @@ A public site on Cloudflare Workers: never commit a key or a token. Every settin
 deploy; `npm run settings:push` sets them). Kept small on purpose; read `README.md` first.
 
 - UI follows the design system's skills in `.claude/skills/` (`npm run skills`, checked in CI): components and tokens only, no `className`,
-  `style` or stylesheet of our own, Norwegian bokmål on screen, run `designsystem-review` before calling UI work done.
+  `style` or stylesheet of our own, Norwegian bokmål on screen, run `designsystem-review` before calling UI work done. Motion and haptics too: brand motion only through the design system's
+  signature parts (`FirstRun glyph`, `EmptyState glyph` on an app's first, empty start, one on a page), page changes by `transitionAttributes()` on `<html>`, buzzes by `data-haptic` or the components
+  (README, «Brand»); no animation, duration or vibration of our own.
 - Data: nothing is stored. A page asks its sources when it is asked for (`src/lib/sources.ts`, pure, with a test; `src/lib/runtime.ts` is the Worker's end), and the answers are kept in
   the Worker's cache for as long as each source's `TTL` says. Reading an API's answer is a pure function in `src/lib/` with a test next to it (`node --test`).
 - A Worker on the lmfaole.party zone cannot reach Last.fm, Trakt, TMDB, Spotify or MusicBrainz (525): everything goes through the relay in `upstream/`, which allows only those hosts and only with the key the
