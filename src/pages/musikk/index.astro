@@ -17,7 +17,7 @@ const { listening, pictures } = users.lastfm === null ? { listening: null, pictu
 const now = playingNow(listening?.now ?? null)
 ---
 
-<Page current="music" title="Musikk" lead="De siste avspillingene og de mest spilte artistene siste måned, fra Last.fm." crumbs={[{ label: 'Medier', href: base }, { label: 'Musikk', href: `${base}musikk/` }]}>
+<Page current="music" title="Musikk" lead="De siste avspillingene og de mest spilte artistene siste måned, fra Last.fm.">
   {
     users.lastfm === null ? (
       <UsernameGate services={['lastfm']} />

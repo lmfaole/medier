@@ -25,7 +25,7 @@ const pages = (Object.keys(SETTINGS_PAGES) as SettingsPage[]).map((page) => ({
 const anchors = Object.fromEntries(Object.entries(OLD_ANCHORS).map(([anchor, page]) => [anchor, `${base}innstillinger/${page}/`]))
 ---
 
-<Page firstRun={false} current="settings" title="Innstillinger" lead="Hvem siden henter data for, hva forsiden viser, og hvordan den ser ut. Valgene lagres i informasjonskapsler i denne nettleseren." crumbs={[{ label: 'Medier', href: base }, { label: 'Innstillinger', href: `${base}innstillinger/` }]}>
+<Page firstRun={false} current="settings" title="Innstillinger" lead="Hvem siden henter data for, hva forsiden viser, og hvordan den ser ut. Valgene lagres i informasjonskapsler i denne nettleseren.">
   <SubPages label="Innstillinger" pages={pages} />
   <SettingsSection id="introen" title="Introen" body="Introen du fikk første gang, med de samme valgene ett og ett. Den åpner seg på forsiden.">
     <form method="post" action={`${base}api/innstillinger/`}>

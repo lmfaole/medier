@@ -13,7 +13,7 @@ import FirstRunWizard from '../components/FirstRunWizard.astro'
 interface Props {
   title: string
   lead: string
-  /** The pages above this one; none on the front page. */
+  /** The pages above this one, and this one last; none on a page in the menu (the front page, Musikk, Film, TV, Innstillinger): the menu says where it is. */
   crumbs?: Crumb[]
   /** `pane` for a detail page: the reading column and a `Split` pane beside it on a wide screen. */
   width?: 'reading' | 'pane'
@@ -35,7 +35,7 @@ const base = import.meta.env.BASE_URL
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>{crumbs === undefined ? title : `${title} – Medier`}</title>
+    <title>{current === 'front' ? title : `${title} – Medier`}</title>
     <meta name="description" content={lead} />
     <!-- The installed app: the manifest, the colour of the bar in each scheme (the design system's background, light and dark), the icons, and Safari's own way of saying «installed». -->
     <link rel="manifest" href="/manifest.webmanifest" />

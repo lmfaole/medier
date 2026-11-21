@@ -16,7 +16,7 @@ const seen = users.trakt === null ? null : await watched(users)
 const episodes = (seen?.items ?? []).filter((watch) => watch.kind === 'episode')
 ---
 
-<Page current="tv" title="TV" lead="Episodene og seriene du har sett sist, fra Trakt." crumbs={[{ label: 'Medier', href: base }, { label: 'TV', href: mediumHref(base, 'tv') }]}>
+<Page current="tv" title="TV" lead="Episodene og seriene du har sett sist, fra Trakt.">
   {
     users.trakt === null ? (
       <UsernameGate services={['trakt']} />
