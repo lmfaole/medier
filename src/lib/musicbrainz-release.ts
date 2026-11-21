@@ -90,6 +90,18 @@ export interface Edition {
 }
 
 const capital = (words: string): string => words.charAt(0).toUpperCase() + words.slice(1)
+
+/** A name without a bracket that closes nothing or is never closed («Deluxe Edition)» is «Deluxe Edition»), as MusicBrainz's notes sometimes have one. */
+export function balanced(name: string): string {
+  const kept = [...name]
+  const open: number[] = []
+  kept.forEach((char, index) => {
+    if (char === "(") open.push(index)
+    else if (char === ")" && open.pop() === undefined) kept[index] = ""
+  })
+  for (const index of open) kept[index] = ""
+  return kept.join("").replace(/\s+/g, " ").trim()
+}
 /** How many years after the first a release with no other name is a new edition (a reissue), not just the album in another country. */
 const REISSUE_YEARS = 5
 /** What MusicBrainz sets an edition apart by, not just where or how it was made («Australian manufactured release», «club edition» is one). */
@@ -106,7 +118,7 @@ export function otherEditions(releases: readonly Release[], first: Release | nul
   for (const release of [...releases].filter((one) => one.official && one.date !== null && one !== first).sort((a, b) => sortable(a.date).localeCompare(sortable(b.date)))) {
     const year = release.date?.slice(0, 4) ?? ""
     const ownTitle = first !== null && plain(release.title) !== plain(first.title)
-    const name = ownTitle ? release.title : EDITION.test(release.disambiguation) ? capital(release.disambiguation) : Number(year) - start >= REISSUE_YEARS ? "Nyutgivelse" : null
+    const name = ownTitle ? release.title : EDITION.test(release.disambiguation) ? capital(balanced(release.disambiguation)) : Number(year) - start >= REISSUE_YEARS ? "Nyutgivelse" : null
     if (name === null) continue
     const key = `${plain(name)}:${name === "Nyutgivelse" ? year : ""}`
     if (seen.has(key)) continue

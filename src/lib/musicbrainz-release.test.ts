@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import { test } from "node:test"
 
-import { countryName, discographyPlace, firstRelease, groupReleasesUrl, otherEditions, parseCredits, parseReleaseGroupMatch, parseReleases, placeText, releaseCreditsUrl, releaseGroupSearchUrl, studioIndex } from "./musicbrainz-release.ts"
+import { balanced, countryName, discographyPlace, firstRelease, groupReleasesUrl, otherEditions, parseCredits, parseReleaseGroupMatch, parseReleases, placeText, releaseCreditsUrl, releaseGroupSearchUrl, studioIndex } from "./musicbrainz-release.ts"
 
 const ALBUMS = [
   { id: "g1", title: "Melody A.M.", released: "2001" },
@@ -91,4 +91,10 @@ test("the place among the studio albums: which, of how many, and the ones on eac
   assert.equal(discographyPlace(ALBUMS, 0)?.previous, null)
   assert.equal(discographyPlace(ALBUMS, null), null)
   assert.equal(placeText({ number: 1, of: 1, previous: null, next: null }), "Eneste studioalbum")
+})
+
+test("balanced drops a bracket that closes nothing or is never closed, and keeps a pair", () => {
+  assert.equal(balanced("Deluxe Edition)"), "Deluxe Edition")
+  assert.equal(balanced("(remastered"), "remastered")
+  assert.equal(balanced("Deluxe (2010)"), "Deluxe (2010)")
 })
